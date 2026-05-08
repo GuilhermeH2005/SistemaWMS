@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>WMS - LG Logística</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/fornecedores.css">
+  <link rel="stylesheet" href="css/produtos.css">
+  <link rel="stylesheet" href="css/entrada.css">
+  <link rel="stylesheet" href="css/estoque.css">
+  <link rel="stylesheet" href="css/alerta_min.css">
+  <link rel="stylesheet" href="css/funcionarios.css">
+</head>
+<body>
+ 
+  <aside class="sidebar">
+    <div class="logo">LG Logística</div>
+ 
+    <nav>
+      <ul>
+ 
+        <li class="menu-item active">
+          <div class="icon-text">
+            <span class="icon">🏠</span>
+            <span class="text">Dashboard</span>
+          </div>
+        </li>
+ 
+        <li class="menu-item has-submenu">
+          <div class="icon-text">
+            <span class="icon">👥</span>
+            <span class="text">Usuários</span>
+          </div>
+          <ul class="submenu">
+            <li onclick="carregarPagina('pages/funcionarios.html')">Funcionários</li>
+            <li>Usuários</li>
+            <li>Perfis de Acesso</li>
+          </ul>
+        </li>
+ 
+        <li class="menu-item has-submenu">
+          <div class="icon-text">
+            <span class="icon">📥</span>
+            <span class="text">Recebimento</span>
+          </div>
+          <ul class="submenu">
+            <li onclick="carregarPagina('pages/fornecedores.html')">Fornecedores</li>
+            <li onclick="carregarPagina('pages/entrada.html')">Entrada de Mercadorias</li>
+            <li>Conferência</li>
+          </ul>
+        </li>
+ 
+        <li class="menu-item has-submenu">
+          <div class="icon-text">
+            <span class="icon">🏗️</span>
+            <span class="text">Armazenagem</span>
+          </div>
+          <ul class="submenu">
+            <li>Endereçamento</li>
+            <li>Posições</li>
+            <li>Cubagem</li>
+            <li>FIFO</li>
+          </ul>
+        </li>
+ 
+        <li class="menu-item has-submenu">
+          <div class="icon-text">
+            <span class="icon">📦</span>
+            <span class="text">Estoque</span>
+          </div>
+          <ul class="submenu">
+            <li onclick="carregarPagina('pages/produtos.html')">Produtos</li>
+            <li onclick="carregarPagina('pages/estoque.html')">Estoque</li>
+            <li>Balanceamento</li>
+            <li>Ajustes</li>
+            <li onclick="carregarPagina('pages/alerta_min.html')">
+              Alertas de Mínimo
+            </li>
+          </ul>
+        </li>
+ 
+        <li class="menu-item">
+          <div class="icon-text">
+            <span class="icon">🛒</span>
+            <span class="text">Picking</span>
+          </div>
+        </li>
+ 
+        <li class="menu-item has-submenu">
+          <div class="icon-text">
+            <span class="icon">🚚</span>
+            <span class="text">Expedição</span>
+          </div>
+          <ul class="submenu">
+            <li>Nota Fiscal</li>
+            <li>Romaneio</li>
+          </ul>
+        </li>
+ 
+        <li class="menu-item">
+          <div class="icon-text">
+            <span class="icon">📊</span>
+            <span class="text">Relatórios</span>
+          </div>
+        </li>
+ 
+        <li class="menu-item">
+          <div class="icon-text">
+            <span class="icon">🔍</span>
+            <span class="text">Auditoria</span>
+          </div>
+        </li>
+ 
+        <li class="menu-item">
+          <div class="icon-text">
+            <span class="icon">⚙️</span>
+            <span class="text">Configurações</span>
+          </div>
+        </li>
+ 
+      </ul>
+    </nav>
+  </aside>
+ 
+  <div class="main">
+    <header class="header">
+      <button id="menu-toggle">☰</button>
+      <div class="search-box">
+        <input type="text" placeholder="Buscar...">
+      </div>
+      <div class="user">👤 Admin</div>
+    </header>
+ 
+    <section class="content">
+      <h1>Dashboard</h1>
+      <p>LG Logística</p>
+ 
+      <div class="cards">
+        <div class="card">📦 Estoque Atual</div>
+        <div class="card">🚚 Pedidos em Aberto</div>
+        <div class="card">📥 Recebimentos Hoje</div>
+      </div>
+    </section>
+  </div>
+ 
+  <script src="script.js"></script>
+  <script src="js/fornecedores.js"></script>
+  <script src="js/produtos.js"></script>
+  <script src="js/entrada.js"></script>
+  <script src="js/estoque.js"></script>
+  <script src="js/alerta_min.js"></script>
+  <script src="js/funcionarios.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+/* ===== TÍTULOS ===== */
+
+.titulo-pagina {
+  margin-bottom: 20px;
+  color: #0b1f3a;
+}
+
+.subtitulo {
+  margin-bottom: 20px;
+  color: #0b1f3a;
+}
+
+/* ===== CARD ===== */
+
+.card-lista {
+  background: #fff;
+
+  padding: 20px;
+
+  border-radius: 10px;
+
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* ===== LISTA ===== */
+
+#listaAlertas {
+  list-style: none;
+  padding: 0;
+}
+
+.alerta-item {
+  background: #fff5f5;
+
+  padding: 15px;
+  margin-bottom: 12px;
+
+  border-radius: 6px;
+
+  border-left: 5px solid #dc3545;
+}
+
+.alerta-item strong {
+  color: #0b1f3a;
+}
+
+.sem-alerta {
+  background: #f0fff4;
+
+  padding: 15px;
+
+  border-radius: 6px;
+
+  border-left: 5px solid #28a745;
+
+  color: #155724;
+}

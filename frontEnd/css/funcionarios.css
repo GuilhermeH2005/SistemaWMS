@@ -1,0 +1,112 @@
+.titulo-pagina {
+  margin-bottom: 20px;
+  color: #0b1f3a;
+}
+
+.subtitulo {
+  margin-bottom: 20px;
+  color: #0b1f3a;
+}
+
+.card-formulario,
+.card-lista {
+  background: #fff;
+  padding: 20px;
+  margin-bottom: 25px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.form-funcionario {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.form-funcionario input,
+.form-funcionario select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+}
+
+.form-funcionario input:focus,
+.form-funcionario select:focus {
+  border-color: #2f5fa3;
+  box-shadow: 0 0 3px rgba(47,95,163,0.3);
+}
+
+.form-funcionario button {
+  grid-column: 1 / -1;
+  padding: 12px;
+  background: #2f5fa3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.form-funcionario button:hover {
+  background: #1e3a5f;
+}
+
+#listaFuncionarios {
+  list-style: none;
+  padding: 0;
+}
+
+#listaFuncionarios li {
+  background: #f8f9fa;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border-left: 5px solid #2f5fa3;
+}
+
+#listaFuncionarios button {
+  margin-top: 8px;
+  margin-right: 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#listaFuncionarios button:first-of-type {
+  background: #ffc107;
+}
+
+#listaFuncionarios button:last-of-type {
+  background: #dc3545;
+  color: white;
+}
+
+.descricao-cargo {
+  grid-column: 1 / -1;
+
+  background: #f8f9fa;
+
+  padding: 12px;
+
+  border-left: 4px solid #2f5fa3;
+
+  border-radius: 6px;
+
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .form-funcionario {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .form-funcionario {
+    grid-template-columns: 1fr;
+  }
+}

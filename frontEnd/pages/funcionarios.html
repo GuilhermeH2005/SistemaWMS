@@ -1,0 +1,56 @@
+<h2 class="titulo-pagina">Cadastro de Funcionários</h2>
+
+<section class="card-formulario">
+  <h3 class="subtitulo">Novo Funcionário</h3>
+
+  <form id="formFuncionario" class="form-funcionario">
+    <input type="text" id="nome" placeholder="Nome" required>
+    <input type="text" id="cpf" placeholder="CPF">
+    <input type="text" id="telefone" placeholder="Telefone">
+    <input type="email" id="email" placeholder="E-mail">
+   <select id="cargo">
+
+  <option value="">Selecione o cargo</option>
+
+  <option value="Administrador">
+    Administrador
+  </option>
+
+  <option value="Operador">
+    Operador
+  </option>
+
+  <option value="Conferente">
+    Conferente
+  </option>
+
+  <option value="Separador">
+    Separador
+  </option>
+
+  <option value="Estoquista">
+    Estoquista
+  </option>
+
+  <option value="Supervisor">
+    Supervisor
+  </option>
+
+  <option value="Gerente">
+    Gerente
+  </option>
+
+</select>
+
+<div id="descricaoCargo" class="descricao-cargo">
+  Selecione um cargo
+</div>
+
+    <button type="submit">Cadastrar</button>
+  </form>
+</section>
+
+<section class="card-lista">
+  <h3 class="subtitulo">Funcionários Cadastrados</h3>
+  <ul id="listaFuncionarios"></ul>
+</section>
