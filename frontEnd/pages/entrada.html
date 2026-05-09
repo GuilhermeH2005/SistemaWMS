@@ -1,6 +1,5 @@
 <h2 class="titulo-pagina">Entrada de Mercadorias</h2>
 
-<!-- CARD CADASTRO -->
 <section class="card-formulario">
 
   <h3 class="subtitulo">Cadastro de Entrada</h3>
@@ -9,7 +8,6 @@
 
     <div class="campo">
       <label>Produto</label>
-
       <select id="produto_id" required>
         <option value="">Selecione o produto</option>
       </select>
@@ -22,22 +20,22 @@
 
     <div class="campo">
       <label>Número da NF</label>
-      <input type="text" id="numero_nf">
+      <input type="text" id="numero_nf" placeholder="Ex: 12345">
     </div>
 
     <div class="campo">
-      <label>Data de Entrada da NF</label>
-      <input type="date" id="data_nf">
+      <label>Data da NF</label>
+      <input type="text" id="data_nf" placeholder="dd/mm/aaaa" maxlength="10">
     </div>
 
     <div class="campo">
       <label>Lote</label>
-      <input type="text" id="lote">
+      <input type="text" id="lote" placeholder="Ex: L001">
     </div>
 
     <div class="campo">
       <label>Data de Validade</label>
-      <input type="date" id="validade">
+      <input type="text" id="validade" placeholder="dd/mm/aaaa" maxlength="10">
     </div>
 
     <button type="submit">Registrar Entrada</button>
@@ -46,7 +44,6 @@
 
 </section>
 
-<!-- CARD LISTA -->
 <section class="card-lista">
 
   <h3 class="subtitulo">Entradas Registradas</h3>

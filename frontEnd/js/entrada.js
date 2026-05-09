@@ -5,6 +5,7 @@ function iniciarEntrada() {
 
   carregarProdutosEntrada();
   carregarEntradas();
+  aplicarMascaraData();
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -13,9 +14,14 @@ function iniciarEntrada() {
       produto_id: document.getElementById("produto_id").value,
       quantidade: document.getElementById("quantidade").value,
       numero_nf: document.getElementById("numero_nf").value,
-      data_nf: document.getElementById("data_nf").value,
+
+      // converte dd/mm/aaaa para aaaa-mm-dd antes de enviar ao banco
+      data_nf: converterDataParaBanco(document.getElementById("data_nf").value),
+
       lote: document.getElementById("lote").value,
-      validade: document.getElementById("validade").value
+
+      // converte dd/mm/aaaa para aaaa-mm-dd antes de enviar ao banco
+      validade: converterDataParaBanco(document.getElementById("validade").value)
     };
 
     try {
@@ -66,23 +72,58 @@ async function carregarEntradas() {
       <li>
         <strong>${e.produto_nome}</strong> - Quantidade: ${e.quantidade}
         <br>
-        NF: ${e.numero_nf || ""} | Série: ${e.serie_nf || ""}
+        NF: ${e.numero_nf || ""}
         <br>
         Lote: ${e.lote || ""} | Validade: ${formatarData(e.validade)}
         <br>
         Entrada: ${formatarDataHora(e.data_entrada)}
       </li>
-      <hr>
     `;
   });
 }
 
+function aplicarMascaraData() {
+  const campos = [
+    document.getElementById("data_nf"),
+    document.getElementById("validade")
+  ];
+
+  campos.forEach(campo => {
+    campo.addEventListener("input", () => {
+      let valor = campo.value.replace(/\D/g, "");
+
+      valor = valor.replace(/^(\d{2})(\d)/, "$1/$2");
+      valor = valor.replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3");
+
+      campo.value = valor.substring(0, 10);
+    });
+  });
+}
+
+function converterDataParaBanco(dataBR) {
+  if (!dataBR) return null;
+
+  const partes = dataBR.split("/");
+
+  if (partes.length !== 3) return null;
+
+  const dia = partes[0];
+  const mes = partes[1];
+  const ano = partes[2];
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 function formatarData(data) {
   if (!data) return "";
-  return new Date(data).toLocaleDateString("pt-BR");
+
+  const d = new Date(data);
+  return d.toLocaleDateString("pt-BR");
 }
 
 function formatarDataHora(data) {
   if (!data) return "";
-  return new Date(data).toLocaleString("pt-BR");
+
+  const d = new Date(data);
+  return d.toLocaleString("pt-BR");
 }
