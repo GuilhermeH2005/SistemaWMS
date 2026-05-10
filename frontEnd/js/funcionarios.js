@@ -6,7 +6,6 @@ function iniciarFuncionario() {
   if (!form) return;
 
   aplicarMascarasFuncionario();
-  configurarDescricaoCargo();
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -14,27 +13,53 @@ function iniciarFuncionario() {
     const funcionario = {
       nome: document.getElementById("nome").value,
       cpf: document.getElementById("cpf").value,
+      rg: document.getElementById("rg").value,
       telefone: document.getElementById("telefone").value,
       email: document.getElementById("email").value,
-      cargo: document.getElementById("cargo").value
+
+      rua: document.getElementById("rua").value,
+      numero: document.getElementById("numero").value,
+      bairro: document.getElementById("bairro").value,
+      cidade: document.getElementById("cidade").value,
+      cep: document.getElementById("cep").value,
+
+      data_admissao: converterDataParaBanco(
+        document.getElementById("data_admissao").value
+      )
     };
 
     try {
+      let res;
+
       if (editandoFuncionarioId) {
-        await fetch(`http://localhost:3000/funcionarios/${editandoFuncionarioId}`, {
+        res = await fetch(`http://localhost:3000/funcionarios/${editandoFuncionarioId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(funcionario)
         });
 
+        const msg = await res.text();
+
+        if (!res.ok) {
+          alert(msg);
+          return;
+        }
+
         alert("Funcionário atualizado!");
         editandoFuncionarioId = null;
       } else {
-        await fetch("http://localhost:3000/funcionarios", {
+        res = await fetch("http://localhost:3000/funcionarios", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(funcionario)
         });
+
+        const msg = await res.text();
+
+        if (!res.ok) {
+          alert(msg);
+          return;
+        }
 
         alert("Funcionário cadastrado!");
       }
@@ -61,14 +86,20 @@ async function carregarFuncionarios() {
   funcionarios.forEach(f => {
     lista.innerHTML += `
       <li>
-        <strong>${f.nome}</strong> - ${f.cargo || ""}
+        <strong>${f.nome}</strong>
         <br>
-        CPF: ${f.cpf || ""} | Telefone: ${f.telefone || ""}
+        CPF: ${f.cpf || ""} | RG: ${f.rg || ""}
         <br>
-        E-mail: ${f.email || ""}
+        Telefone: ${f.telefone || ""} | E-mail: ${f.email || ""}
+        <br>
+        Endereço: ${f.rua || ""}, ${f.numero || ""} - ${f.bairro || ""}, ${f.cidade || ""}
+        <br>
+        CEP: ${f.cep || ""}
+        <br>
+        Admissão: ${formatarData(f.data_admissao)}
 
         <button onclick='editarFuncionario(${JSON.stringify(f)})'>✏️ Editar</button>
-        <button onclick="excluirFuncionario(${f.id})">❌ Excluir</button>
+        <button onclick="excluirFuncionario(${f.id})">🗑️ Excluir</button>
       </li>
     `;
   });
@@ -77,9 +108,17 @@ async function carregarFuncionarios() {
 function editarFuncionario(f) {
   document.getElementById("nome").value = f.nome || "";
   document.getElementById("cpf").value = f.cpf || "";
+  document.getElementById("rg").value = f.rg || "";
   document.getElementById("telefone").value = f.telefone || "";
   document.getElementById("email").value = f.email || "";
-  document.getElementById("cargo").value = f.cargo || "";
+
+  document.getElementById("rua").value = f.rua || "";
+  document.getElementById("numero").value = f.numero || "";
+  document.getElementById("bairro").value = f.bairro || "";
+  document.getElementById("cidade").value = f.cidade || "";
+  document.getElementById("cep").value = f.cep || "";
+
+  document.getElementById("data_admissao").value = formatarData(f.data_admissao);
 
   editandoFuncionarioId = f.id;
 }
@@ -87,9 +126,16 @@ function editarFuncionario(f) {
 async function excluirFuncionario(id) {
   if (!confirm("Deseja excluir este funcionário?")) return;
 
-  await fetch(`http://localhost:3000/funcionarios/${id}`, {
+  const res = await fetch(`http://localhost:3000/funcionarios/${id}`, {
     method: "DELETE"
   });
+
+  const msg = await res.text();
+
+  if (!res.ok) {
+    alert(msg);
+    return;
+  }
 
   carregarFuncionarios();
 }
@@ -97,6 +143,8 @@ async function excluirFuncionario(id) {
 function aplicarMascarasFuncionario() {
   const cpf = document.getElementById("cpf");
   const telefone = document.getElementById("telefone");
+  const cep = document.getElementById("cep");
+  const dataAdmissao = document.getElementById("data_admissao");
 
   cpf.addEventListener("input", () => {
     let valor = cpf.value.replace(/\D/g, "");
@@ -116,82 +164,42 @@ function aplicarMascarasFuncionario() {
 
     telefone.value = valor.substring(0, 15);
   });
+
+  cep.addEventListener("input", () => {
+    let valor = cep.value.replace(/\D/g, "");
+
+    valor = valor.replace(/^(\d{5})(\d)/, "$1-$2");
+
+    cep.value = valor.substring(0, 9);
+  });
+
+  dataAdmissao.addEventListener("input", () => {
+    let valor = dataAdmissao.value.replace(/\D/g, "");
+
+    valor = valor.replace(/^(\d{2})(\d)/, "$1/$2");
+    valor = valor.replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3");
+
+    dataAdmissao.value = valor.substring(0, 10);
+  });
 }
 
-function configurarDescricaoCargo() {
-  const cargo = document.getElementById("cargo");
-  const descricao = document.getElementById("descricaoCargo");
+function converterDataParaBanco(dataBR) {
+  if (!dataBR) return null;
 
-  if (!cargo || !descricao) return;
+  const partes = dataBR.split("/");
 
-  cargo.addEventListener("change", () => {
-    switch (cargo.value) {
-      case "Administrador":
-        descricao.innerHTML = `
-          <strong>Permissões do Administrador:</strong>
-          ✔ Acesso total ao sistema<br>
-          ✔ Cadastros<br>
-          ✔ Estoque<br>
-          ✔ Relatórios<br>
-          ✔ Usuários e permissões
-        `;
-        break;
+  if (partes.length !== 3) return null;
 
-      case "Gerente":
-        descricao.innerHTML = `
-          <strong>Permissões do Gerente:</strong>
-          ✔ Estoque<br>
-          ✔ Relatórios<br>
-          ✔ Funcionários<br>
-          ✔ Entrada e saída
-        `;
-        break;
+  const dia = partes[0];
+  const mes = partes[1];
+  const ano = partes[2];
 
-      case "Operador":
-        descricao.innerHTML = `
-          <strong>Permissões do Operador:</strong>
-          ✔ Entrada de mercadorias<br>
-          ✔ Estoque
-        `;
-        break;
+  return `${ano}-${mes}-${dia}`;
+}
 
-      case "Conferente":
-        descricao.innerHTML = `
-          <strong>Permissões do Conferente:</strong>
-          ✔ Conferência de entrada<br>
-          ✔ Conferência de saída
-        `;
-        break;
+function formatarData(data) {
+  if (!data) return "";
 
-      case "Separador":
-        descricao.innerHTML = `
-          <strong>Permissões do Separador:</strong>
-          ✔ Picking<br>
-          ✔ Separação de pedidos
-        `;
-        break;
-
-      case "Estoquista":
-        descricao.innerHTML = `
-          <strong>Permissões do Estoquista:</strong>
-          ✔ Controle de estoque<br>
-          ✔ Entrada de mercadorias<br>
-          ✔ Ajustes de estoque
-        `;
-        break;
-
-      case "Supervisor":
-        descricao.innerHTML = `
-          <strong>Permissões do Supervisor:</strong>
-          ✔ Estoque<br>
-          ✔ Entrada e saída<br>
-          ✔ Relatórios<br>
-          ✔ Auditoria
-        `;
-        break;
-
-      default:
-        descricao.innerHTML = "Selecione um cargo";
-    }
-  });
+  const d = new Date(data);
+  return d.toLocaleDateString("pt-BR");
 }

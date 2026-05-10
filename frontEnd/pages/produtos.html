@@ -1,35 +1,51 @@
 <h2 class="titulo-pagina">Cadastro de Produtos</h2>
 
 <section class="card-formulario">
-
   <h3 class="subtitulo">Novo Produto</h3>
 
   <form id="formProduto" class="form-produto">
-
     <input type="text" id="nome" placeholder="Nome do Produto" required>
 
-    <input type="text" id="codigo" placeholder="Código">
-
-    <select id="fornecedor">
+    <select id="fornecedor" required>
       <option value="">Selecione o fornecedor</option>
     </select>
 
-    <input type="number" step="0.01" id="peso" placeholder="Peso (kg)">
+    <select id="categoria" required>
+      <option value="">Selecione a categoria</option>
+      <option value="Alimentos">Alimentos</option>
+      <option value="Higiene">Higiene</option>
+      <option value="Limpeza">Limpeza</option>
+      <option value="Bebidas">Bebidas</option>
+      <option value="Mercearia">Mercearia</option>
+      <option value="Utilidades">Utilidades</option>
+    </select>
 
-    <input type="number" step="0.01" id="volume" placeholder="Volume (m³)">
+    <select id="cor" required>
+      <option value="">Selecione a cor</option>
+      <option value="Branco">Branco</option>
+      <option value="Preto">Preto</option>
+      <option value="Azul">Azul</option>
+      <option value="Vermelho">Vermelho</option>
+      <option value="Verde">Verde</option>
+      <option value="Amarelo">Amarelo</option>
+      <option value="Transparente">Transparente</option>
+      <option value="Não se aplica">Não se aplica</option>
+    </select>
 
-    <input type="number" id="estoque_minimo" placeholder="Estoque mínimo">
+    <input type="number" step="0.01" id="altura" placeholder="Altura (m)" required>
+    <input type="number" step="0.01" id="largura" placeholder="Largura (m)" required>
+    <input type="number" step="0.01" id="profundidade" placeholder="Profundidade (m)" required>
+
+    <input type="number" step="0.01" id="custo" placeholder="Custo (R$)" required>
+    <input type="number" step="0.01" id="preco_venda" placeholder="Preço de Venda (R$)" required>
+
+    <input type="number" id="estoque_minimo" placeholder="Estoque mínimo" required>
 
     <button type="submit">Cadastrar</button>
-
   </form>
-
 </section>
 
 <section class="card-lista">
-
   <h3 class="subtitulo">Produtos Cadastrados</h3>
-
   <ul id="listaProdutos"></ul>
-
 </section>

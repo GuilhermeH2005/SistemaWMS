@@ -18,15 +18,18 @@ app.get("/teste-banco", (req, res) => {
   });
 });
 
-// CADASTRAR
+/* =========================
+   FORNECEDORES
+========================= */
+
 app.post("/fornecedores", (req, res) => {
   const {
     nome, cnpj, telefone, email,
     rua, numero, bairro, cidade, cep, inscricao_estadual
   } = req.body;
 
-  if (!nome) {
-    return res.status(400).send("Nome é obrigatório ❌");
+  if (!nome || !cnpj || !telefone || !email) {
+    return res.status(400).send("Preencha os campos obrigatórios ❌");
   }
 
   const sql = `
@@ -35,33 +38,27 @@ app.post("/fornecedores", (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(
-    sql,
-    [nome, cnpj, telefone, email, rua, numero, bairro, cidade, cep, inscricao_estadual],
-    (err, result) => {
-      if (err) {
-        console.error("Erro ao cadastrar:", err);
-        return res.status(500).send("Erro ao cadastrar ❌");
+  db.query(sql, [nome, cnpj, telefone, email, rua, numero, bairro, cidade, cep, inscricao_estadual], (err) => {
+    if (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.status(400).send("CNPJ já cadastrado ❌");
       }
 
-      res.send("Fornecedor cadastrado com sucesso ✅");
+      console.error(err);
+      return res.status(500).send("Erro ao cadastrar fornecedor ❌");
     }
-  );
+
+    res.send("Fornecedor cadastrado com sucesso ✅");
+  });
 });
 
-// LISTAR
 app.get("/fornecedores", (req, res) => {
   db.query("SELECT * FROM fornecedor", (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Erro ao buscar ❌");
-    }
-
+    if (err) return res.status(500).send("Erro ao buscar fornecedores ❌");
     res.json(result);
   });
 });
 
-// EDITAR
 app.put("/fornecedores/:id", (req, res) => {
   const { id } = req.params;
 
@@ -70,64 +67,64 @@ app.put("/fornecedores/:id", (req, res) => {
     rua, numero, bairro, cidade, cep, inscricao_estadual
   } = req.body;
 
-  if (!nome) {
-    return res.status(400).send("Nome é obrigatório ❌");
-  }
-
   const sql = `
     UPDATE fornecedor 
-    SET nome = ?, cnpj = ?, telefone = ?, email = ?, rua = ?, numero = ?, bairro = ?, cidade = ?, cep = ?, inscricao_estadual = ?
-    WHERE id = ?
+    SET nome=?, cnpj=?, telefone=?, email=?, rua=?, numero=?, bairro=?, cidade=?, cep=?, inscricao_estadual=?
+    WHERE id=?
   `;
 
-  db.query(
-    sql,
-    [nome, cnpj, telefone, email, rua, numero, bairro, cidade, cep, inscricao_estadual, id],
-    (err) => {
-      if (err) {
-        console.error("Erro ao atualizar:", err);
-        return res.status(500).send("Erro ao atualizar ❌");
+  db.query(sql, [nome, cnpj, telefone, email, rua, numero, bairro, cidade, cep, inscricao_estadual, id], (err) => {
+    if (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.status(400).send("CNPJ já cadastrado ❌");
       }
 
-      res.send("Fornecedor atualizado com sucesso ✅");
+      console.error(err);
+      return res.status(500).send("Erro ao atualizar fornecedor ❌");
     }
-  );
+
+    res.send("Fornecedor atualizado com sucesso ✅");
+  });
 });
 
-// EXCLUIR
 app.delete("/fornecedores/:id", (req, res) => {
   const { id } = req.params;
 
-  db.query("DELETE FROM fornecedor WHERE id = ?", [id], (err) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Erro ao excluir ❌");
-    }
-
+  db.query("DELETE FROM fornecedor WHERE id=?", [id], (err) => {
+    if (err) return res.status(500).send("Erro ao excluir fornecedor ❌");
     res.send("Fornecedor excluído com sucesso ✅");
   });
 });
 
-// CADASTRAR PRODUTO
-app.post("/produtos", (req, res) => {
-  const { nome, codigo, fornecedor_id, peso, volume, estoque_minimo } = req.body;
+/* =========================
+   PRODUTOS
+========================= */
 
-  if (!nome) {
-    return res.status(400).send("Nome do produto é obrigatório ❌");
+app.post("/produtos", (req, res) => {
+  const {
+    nome, fornecedor_id, categoria, cor,
+    altura, largura, profundidade, volume,
+    custo, preco_venda, margem_lucro, estoque_minimo
+  } = req.body;
+
+  if (!nome || !fornecedor_id || !categoria || !cor) {
+    return res.status(400).send("Preencha os campos obrigatórios do produto ❌");
   }
+
+  const codigo = "SKU" + Date.now();
 
   const sql = `
     INSERT INTO produto
-    (nome, codigo, fornecedor_id, peso, volume, estoque_minimo)
-    VALUES (?, ?, ?, ?, ?, ?)
+    (nome, codigo, fornecedor_id, categoria, cor, altura, largura, profundidade, volume, custo, preco_venda, margem_lucro, estoque_minimo)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
     sql,
-    [nome, codigo, fornecedor_id || null, peso || 0, volume || 0, estoque_minimo || 0],
+    [nome, codigo, fornecedor_id, categoria, cor, altura, largura, profundidade, volume, custo, preco_venda, margem_lucro, estoque_minimo],
     (err) => {
       if (err) {
-        console.error("Erro ao cadastrar produto:", err);
+        console.error(err);
         return res.status(500).send("Erro ao cadastrar produto ❌");
       }
 
@@ -136,7 +133,6 @@ app.post("/produtos", (req, res) => {
   );
 });
 
-// LISTAR PRODUTOS
 app.get("/produtos", (req, res) => {
   const sql = `
     SELECT 
@@ -144,8 +140,15 @@ app.get("/produtos", (req, res) => {
       produto.nome,
       produto.codigo,
       produto.fornecedor_id,
-      produto.peso,
+      produto.categoria,
+      produto.cor,
+      produto.altura,
+      produto.largura,
+      produto.profundidade,
       produto.volume,
+      produto.custo,
+      produto.preco_venda,
+      produto.margem_lucro,
       produto.quantidade_estoque,
       produto.estoque_minimo,
       fornecedor.nome AS fornecedor_nome
@@ -155,7 +158,7 @@ app.get("/produtos", (req, res) => {
 
   db.query(sql, (err, result) => {
     if (err) {
-      console.error("Erro ao buscar produtos:", err);
+      console.error(err);
       return res.status(500).send("Erro ao buscar produtos ❌");
     }
 
@@ -163,27 +166,27 @@ app.get("/produtos", (req, res) => {
   });
 });
 
-// EDITAR PRODUTO
 app.put("/produtos/:id", (req, res) => {
   const { id } = req.params;
-  const { nome, codigo, fornecedor_id, peso, volume, estoque_minimo } = req.body;
 
-  if (!nome) {
-    return res.status(400).send("Nome do produto é obrigatório ❌");
-  }
+  const {
+    nome, fornecedor_id, categoria, cor,
+    altura, largura, profundidade, volume,
+    custo, preco_venda, margem_lucro, estoque_minimo
+  } = req.body;
 
   const sql = `
     UPDATE produto
-    SET nome = ?, codigo = ?, fornecedor_id = ?, peso = ?, volume = ?, estoque_minimo = ?
-    WHERE id = ?
+    SET nome=?, fornecedor_id=?, categoria=?, cor=?, altura=?, largura=?, profundidade=?, volume=?, custo=?, preco_venda=?, margem_lucro=?, estoque_minimo=?
+    WHERE id=?
   `;
 
   db.query(
     sql,
-    [nome, codigo, fornecedor_id || null, peso || 0, volume || 0, estoque_minimo || 0, id],
+    [nome, fornecedor_id, categoria, cor, altura, largura, profundidade, volume, custo, preco_venda, margem_lucro, estoque_minimo, id],
     (err) => {
       if (err) {
-        console.error("Erro ao atualizar produto:", err);
+        console.error(err);
         return res.status(500).send("Erro ao atualizar produto ❌");
       }
 
@@ -192,13 +195,16 @@ app.put("/produtos/:id", (req, res) => {
   );
 });
 
-// EXCLUIR PRODUTO
 app.delete("/produtos/:id", (req, res) => {
   const { id } = req.params;
 
-  db.query("DELETE FROM produto WHERE id = ?", [id], (err) => {
+  db.query("DELETE FROM produto WHERE id=?", [id], (err) => {
     if (err) {
-      console.error("Erro ao excluir produto:", err);
+      if (err.code === "ER_ROW_IS_REFERENCED_2") {
+        return res.status(400).send("Este produto possui movimentações e não pode ser excluído ❌");
+      }
+
+      console.error(err);
       return res.status(500).send("Erro ao excluir produto ❌");
     }
 
@@ -206,34 +212,116 @@ app.delete("/produtos/:id", (req, res) => {
   });
 });
 
-// CADASTRAR ENTRADA DE MERCADORIA
+/* =========================
+   FUNCIONÁRIOS
+========================= */
+
+app.post("/funcionarios", (req, res) => {
+  const {
+    nome, cpf, rg, telefone, email,
+    rua, numero, bairro, cidade, cep,
+    data_admissao, 
+  } = req.body;
+
+  if (!nome || !cpf || !telefone || !email) {
+    return res.status(400).send("Preencha os campos obrigatórios ❌");
+  }
+
+  const sql = `
+    INSERT INTO funcionario
+    (nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(
+    sql,
+    [nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao cadastrar funcionário ❌");
+      }
+
+      res.send("Funcionário cadastrado com sucesso ✅");
+    }
+  );
+});
+
+app.get("/funcionarios", (req, res) => {
+  db.query("SELECT * FROM funcionario", (err, result) => {
+    if (err) return res.status(500).send("Erro ao buscar funcionários ❌");
+    res.json(result);
+  });
+});
+
+app.put("/funcionarios/:id", (req, res) => {
+  const { id } = req.params;
+
+  const {
+    nome, cpf, rg, telefone, email,
+    rua, numero, bairro, cidade, cep,
+    data_admissao
+  } = req.body;
+
+  const sql = `
+    UPDATE funcionario
+    SET nome=?, cpf=?, rg=?, telefone=?, email=?, rua=?, numero=?, bairro=?, cidade=?, cep=?, data_admissao=?,
+    WHERE id=?
+  `;
+
+  db.query(
+    sql,
+    [nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao, id],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao atualizar funcionário ❌");
+      }
+
+      res.send("Funcionário atualizado com sucesso ✅");
+    }
+  );
+});
+
+app.delete("/funcionarios/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.query("DELETE FROM funcionario WHERE id=?", [id], (err) => {
+    if (err) return res.status(500).send("Erro ao excluir funcionário ❌");
+    res.send("Funcionário excluído com sucesso ✅");
+  });
+});
+
+/* =========================
+   ENTRADAS
+========================= */
+
 app.post("/entradas", (req, res) => {
   const {
     produto_id,
     quantidade,
     numero_nf,
-    serie_nf,
     data_nf,
     lote,
     validade
   } = req.body;
 
-  if (!produto_id || !quantidade) {
-    return res.status(400).send("Produto e quantidade são obrigatórios ❌");
+  if (!produto_id || !quantidade || !numero_nf || !data_nf || !lote || !validade) {
+    return res.status(400).send("Preencha todos os campos da entrada ❌");
   }
 
   const sqlEntrada = `
     INSERT INTO entrada_mercadoria
-    (produto_id, quantidade, numero_nf, serie_nf, data_nf, lote, validade)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    (produto_id, quantidade, numero_nf, data_nf, lote, validade)
+    VALUES (?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
     sqlEntrada,
-    [produto_id, quantidade, numero_nf, serie_nf, data_nf, lote, validade],
+    [produto_id, quantidade, numero_nf, data_nf, lote, validade],
     (err) => {
       if (err) {
-        console.error("Erro ao registrar entrada:", err);
+        console.error(err);
         return res.status(500).send("Erro ao registrar entrada ❌");
       }
 
@@ -245,7 +333,7 @@ app.post("/entradas", (req, res) => {
 
       db.query(sqlAtualizaEstoque, [quantidade, produto_id], (err) => {
         if (err) {
-          console.error("Erro ao atualizar estoque:", err);
+          console.error(err);
           return res.status(500).send("Entrada salva, mas erro ao atualizar estoque ❌");
         }
 
@@ -255,14 +343,12 @@ app.post("/entradas", (req, res) => {
   );
 });
 
-// LISTAR ENTRADAS DE MERCADORIA
 app.get("/entradas", (req, res) => {
   const sql = `
     SELECT 
       entrada_mercadoria.id,
       entrada_mercadoria.quantidade,
       entrada_mercadoria.numero_nf,
-      entrada_mercadoria.serie_nf,
       entrada_mercadoria.data_nf,
       entrada_mercadoria.lote,
       entrada_mercadoria.validade,
@@ -276,82 +362,11 @@ app.get("/entradas", (req, res) => {
 
   db.query(sql, (err, result) => {
     if (err) {
-      console.error("Erro ao buscar entradas:", err);
+      console.error(err);
       return res.status(500).send("Erro ao buscar entradas ❌");
     }
 
     res.json(result);
-  });
-});
-
-// CADASTRAR FUNCIONÁRIO
-app.post("/funcionarios", (req, res) => {
-  const { nome, cpf, telefone, email, cargo, status } = req.body;
-
-  if (!nome) {
-    return res.status(400).send("Nome é obrigatório ❌");
-  }
-
-  const sql = `
-    INSERT INTO funcionario
-    (nome, cpf, telefone, email, cargo)
-    VALUES (?, ?, ?, ?, ?)
-  `;
-
-  db.query(sql, [nome, cpf, telefone, email, cargo, status], (err) => {
-    if (err) {
-      console.error("Erro ao cadastrar funcionário:", err);
-      return res.status(500).send("Erro ao cadastrar funcionário ❌");
-    }
-
-    res.send("Funcionário cadastrado com sucesso ✅");
-  });
-});
-
-// LISTAR FUNCIONÁRIOS
-app.get("/funcionarios", (req, res) => {
-  db.query("SELECT * FROM funcionario", (err, result) => {
-    if (err) {
-      console.error("Erro ao buscar funcionários:", err);
-      return res.status(500).send("Erro ao buscar funcionários ❌");
-    }
-
-    res.json(result);
-  });
-});
-
-// EDITAR FUNCIONÁRIO
-app.put("/funcionarios/:id", (req, res) => {
-  const { id } = req.params;
-  const { nome, cpf, telefone, email, cargo, status } = req.body;
-
-  const sql = `
-    UPDATE funcionario
-    SET nome = ?, cpf = ?, telefone = ?, email = ?, cargo = ?
-    WHERE id = ?
-  `;
-
-  db.query(sql, [nome, cpf, telefone, email, cargo, id], (err) => {
-    if (err) {
-      console.error("Erro ao atualizar funcionário:", err);
-      return res.status(500).send("Erro ao atualizar funcionário ❌");
-    }
-
-    res.send("Funcionário atualizado com sucesso ✅");
-  });
-});
-
-// EXCLUIR FUNCIONÁRIO
-app.delete("/funcionarios/:id", (req, res) => {
-  const { id } = req.params;
-
-  db.query("DELETE FROM funcionario WHERE id = ?", [id], (err) => {
-    if (err) {
-      console.error("Erro ao excluir funcionário:", err);
-      return res.status(500).send("Erro ao excluir funcionário ❌");
-    }
-
-    res.send("Funcionário excluído com sucesso ✅");
   });
 });
 
