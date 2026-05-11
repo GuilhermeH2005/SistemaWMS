@@ -1,0 +1,36 @@
+<div class="setores-container">
+
+  <div class="topo-setores">
+    <h1>Cadastro de Setores</h1>
+    <p>Gerencie os setores utilizados no sistema WMS</p>
+  </div>
+
+  <section class="card-setor">
+    <div class="form-setor">
+
+      <div class="campo-setor">
+        <label for="nomeSetor">Nome do Setor</label>
+
+        <input
+          type="text"
+          id="nomeSetor"
+          placeholder="Digite o nome do setor"
+        >
+      </div>
+
+      <button type="button" onclick="cadastrarSetor()">
+        Cadastrar Setor
+      </button>
+
+    </div>
+  </section>
+
+  <section class="card-lista">
+    <div class="topo-lista">
+      <h2>Setores Cadastrados</h2>
+    </div>
+
+    <ul id="listaSetores"></ul>
+  </section>
+
+</div>

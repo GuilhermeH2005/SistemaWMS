@@ -1,0 +1,106 @@
+<div class="usuarios-container">
+
+  <h1>Usuários</h1>
+
+  <div class="barra-acoes">
+
+    <button
+      class="btn-acao consultar"
+      onclick="consultarUsuarios()"
+      title="Consultar usuários"
+    >
+      🔍 Consultar
+    </button>
+
+    <button
+      class="btn-acao editar"
+      onclick="editarUsuario()"
+      title="Editar usuário"
+    >
+      ✏️ Editar
+    </button>
+
+    <button
+      class="btn-acao"
+      onclick="novoUsuario()"
+      title="Incluir usuário"
+    >
+      📄 Incluir
+    </button>
+
+    <button
+      class="btn-acao excluir"
+      onclick="excluirUsuario()"
+      title="Excluir usuário"
+    >
+      ❌ Excluir
+    </button>
+
+  </div>
+
+  <section class="card-usuarios">
+
+    <div class="filtros">
+
+      <div class="grupo-filtro">
+        <label>Código</label>
+        <input type="text" id="filtroCodigo">
+      </div>
+
+      <div class="grupo-filtro">
+        <label>Nome</label>
+        <input type="text" id="filtroNome">
+      </div>
+
+      <div class="grupo-filtro">
+        <label>Login</label>
+        <input type="text" id="filtroLogin">
+      </div>
+
+      <div class="grupo-filtro">
+        <label>Setor</label>
+        <select id="filtroSetor">
+          <option value="">TODOS</option>
+        </select>
+      </div>
+
+      <div class="grupo-filtro">
+        <label>Situação</label>
+        <select id="filtroSituacao">
+          <option value="">TODOS</option>
+          <option value="ATIVO">ATIVO</option>
+          <option value="INATIVO">INATIVO</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div
+      class="tabela-container"
+      id="areaTabelaUsuarios"
+      style="display: none;"
+    >
+
+      <table>
+
+        <thead>
+          <tr>
+            <th class="coluna-checkbox"></th>
+            <th>Código</th>
+            <th>Nome</th>
+            <th>Login</th>
+            <th>Setor</th>
+            <th>Último Acesso</th>
+            <th>Situação</th>
+          </tr>
+        </thead>
+
+        <tbody id="listaUsuarios"></tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</div>

@@ -1,155 +1,436 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
+
   <meta charset="UTF-8">
+
   <title>WMS - LG Logística</title>
+
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="style.css">
+
   <link rel="stylesheet" href="css/fornecedores.css">
   <link rel="stylesheet" href="css/produtos.css">
   <link rel="stylesheet" href="css/entrada.css">
   <link rel="stylesheet" href="css/estoque.css">
   <link rel="stylesheet" href="css/alerta_min.css">
   <link rel="stylesheet" href="css/funcionarios.css">
+  <link rel="stylesheet" href="css/usuarios.css">
+  <link rel="stylesheet" href="css/setores.css">
+  <link rel="stylesheet" href="css/cadastro-usuario.css">
+  <link rel="stylesheet" href="css/configuracoes.css">
+
 </head>
+
 <body>
- 
+
   <aside class="sidebar">
-    <div class="logo">LG Logística</div>
- 
+
+    <div class="logo">
+      LG Logística
+    </div>
+
     <nav>
+
       <ul>
- 
+
+        <!-- DASHBOARD -->
+
         <li class="menu-item active">
+
           <div class="icon-text">
+
             <span class="icon">🏠</span>
-            <span class="text">Dashboard</span>
+
+            <span class="text">
+              Dashboard
+            </span>
+
           </div>
+
         </li>
- 
+
+        <!-- USUÁRIOS -->
+
         <li class="menu-item has-submenu">
+
           <div class="icon-text">
+
             <span class="icon">👥</span>
-            <span class="text">Usuários</span>
+
+            <span class="text">
+              Usuários
+            </span>
+
           </div>
+
           <ul class="submenu">
-            <li onclick="carregarPagina('pages/funcionarios.html')">Funcionários</li>
-            <li>Usuários</li>
-            <li>Perfis de Acesso</li>
+
+            <li onclick="carregarPagina(
+              'pages/funcionarios.html',
+              'funcionarios'
+            )">
+              Funcionários
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/usuarios.html',
+              'usuarios'
+            )">
+              Usuários
+            </li>
+
+            <li>
+              Perfis de Acesso
+            </li>
+
           </ul>
+
         </li>
- 
+
+        <!-- RECEBIMENTO -->
+
         <li class="menu-item has-submenu">
+
           <div class="icon-text">
+
             <span class="icon">📥</span>
-            <span class="text">Recebimento</span>
+
+            <span class="text">
+              Recebimento
+            </span>
+
           </div>
+
           <ul class="submenu">
-            <li onclick="carregarPagina('pages/fornecedores.html')">Fornecedores</li>
-            <li onclick="carregarPagina('pages/entrada.html')">Entrada de Mercadorias</li>
-            <li>Conferência</li>
+
+            <li onclick="carregarPagina(
+              'pages/fornecedores.html',
+              'fornecedores'
+            )">
+              Fornecedores
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/entrada.html',
+              'entrada_mercadorias'
+            )">
+              Entrada de Mercadorias
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/conferencia.html',
+              'conferencia'
+            )">
+              Conferência
+            </li>
+
           </ul>
+
         </li>
- 
+
+        <!-- ARMAZENAGEM -->
+
         <li class="menu-item has-submenu">
+
           <div class="icon-text">
+
             <span class="icon">🏗️</span>
-            <span class="text">Armazenagem</span>
+
+            <span class="text">
+              Armazenagem
+            </span>
+
           </div>
+
           <ul class="submenu">
-            <li>Endereçamento</li>
-            <li>Posições</li>
-            <li>Cubagem</li>
-            <li>FIFO</li>
+
+            <li onclick="carregarPagina(
+              'pages/enderecamento.html',
+              'enderecamento'
+            )">
+              Endereçamento
+            </li>
+
+            <li>
+              Posições
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/cubagem.html',
+              'cubagem'
+            )">
+              Cubagem
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/fifo.html',
+              'fifo'
+            )">
+              FIFO
+            </li>
+
           </ul>
+
         </li>
- 
+
+        <!-- ESTOQUE -->
+
         <li class="menu-item has-submenu">
+
           <div class="icon-text">
+
             <span class="icon">📦</span>
-            <span class="text">Estoque</span>
+
+            <span class="text">
+              Estoque
+            </span>
+
           </div>
+
           <ul class="submenu">
-            <li onclick="carregarPagina('pages/produtos.html')">Produtos</li>
-            <li onclick="carregarPagina('pages/estoque.html')">Estoque</li>
-            <li>Balanceamento</li>
-            <li>Ajustes</li>
-            <li onclick="carregarPagina('pages/alerta_min.html')">
+
+            <li onclick="carregarPagina(
+              'pages/produtos.html',
+              'produtos'
+            )">
+              Produtos
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/estoque.html',
+              'estoque'
+            )">
+              Estoque
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/balanceamento.html',
+              'balanceamento'
+            )">
+              Balanceamento
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/ajustes.html',
+              'ajustes_estoque'
+            )">
+              Ajustes
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/alerta_min.html',
+              'alerta_estoque'
+            )">
               Alertas de Mínimo
             </li>
+
           </ul>
+
         </li>
- 
-        <li class="menu-item">
+
+        <!-- PICKING -->
+
+        <li
+          class="menu-item"
+          onclick="carregarPagina(
+            'pages/picking.html',
+            'picking'
+          )"
+        >
+
           <div class="icon-text">
+
             <span class="icon">🛒</span>
-            <span class="text">Picking</span>
+
+            <span class="text">
+              Picking
+            </span>
+
           </div>
+
         </li>
- 
+
+        <!-- EXPEDIÇÃO -->
+
         <li class="menu-item has-submenu">
+
           <div class="icon-text">
+
             <span class="icon">🚚</span>
-            <span class="text">Expedição</span>
+
+            <span class="text">
+              Expedição
+            </span>
+
           </div>
+
           <ul class="submenu">
-            <li>Nota Fiscal</li>
-            <li>Romaneio</li>
+
+            <li onclick="carregarPagina(
+              'pages/nota_fiscal.html',
+              'nota_fiscal'
+            )">
+              Nota Fiscal
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/romaneio.html',
+              'romaneio'
+            )">
+              Romaneio
+            </li>
+
           </ul>
+
         </li>
- 
-        <li class="menu-item">
+
+        <!-- RELATÓRIOS -->
+
+        <li
+          class="menu-item"
+          onclick="carregarPagina(
+            'pages/relatorios.html',
+            'relatorios'
+          )"
+        >
+
           <div class="icon-text">
+
             <span class="icon">📊</span>
-            <span class="text">Relatórios</span>
+
+            <span class="text">
+              Relatórios
+            </span>
+
           </div>
+
         </li>
- 
-        <li class="menu-item">
+
+        <!-- AUDITORIA -->
+
+        <li
+          class="menu-item"
+          onclick="carregarPagina(
+            'pages/auditoria.html',
+            'auditoria'
+          )"
+        >
+
           <div class="icon-text">
+
             <span class="icon">🔍</span>
-            <span class="text">Auditoria</span>
+
+            <span class="text">
+              Auditoria
+            </span>
+
           </div>
+
         </li>
- 
-        <li class="menu-item">
+
+        <!-- CONFIGURAÇÕES -->
+
+        <li class="menu-item has-submenu">
+
           <div class="icon-text">
+
             <span class="icon">⚙️</span>
-            <span class="text">Configurações</span>
+
+            <span class="text">
+              Configurações
+            </span>
+
           </div>
+
+          <ul class="submenu">
+
+            <li onclick="carregarPagina(
+              'pages/setores.html',
+              'setores'
+            )">
+              Cadastrar Setor
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/configuracoes.html',
+              'configuracoes'
+            )">
+              Trocar Senha
+            </li>
+
+          </ul>
+
         </li>
- 
+
       </ul>
+
     </nav>
+
   </aside>
- 
+
   <div class="main">
+
     <header class="header">
-      <button id="menu-toggle">☰</button>
+
+      <button id="menu-toggle">
+        ☰
+      </button>
+
       <div class="search-box">
-        <input type="text" placeholder="Buscar...">
+
+        <input
+          type="text"
+          placeholder="Buscar..."
+        >
+
       </div>
-      <div class="user">👤 Admin</div>
+
+      <div class="user" id="usuarioTopo">
+        👤 Admin
+      </div>
+
     </header>
- 
+
     <section class="content">
+
       <h1>Dashboard</h1>
+
       <p>LG Logística</p>
- 
+
       <div class="cards">
-        <div class="card">📦 Estoque Atual</div>
-        <div class="card">🚚 Pedidos em Aberto</div>
-        <div class="card">📥 Recebimentos Hoje</div>
+
+        <div class="card">
+          📦 Estoque Atual
+        </div>
+
+        <div class="card">
+          🚚 Pedidos em Aberto
+        </div>
+
+        <div class="card">
+          📥 Recebimentos Hoje
+        </div>
+
       </div>
+
     </section>
+
   </div>
- 
+
   <script src="script.js"></script>
+
   <script src="js/fornecedores.js"></script>
   <script src="js/produtos.js"></script>
   <script src="js/entrada.js"></script>
   <script src="js/estoque.js"></script>
   <script src="js/alerta_min.js"></script>
   <script src="js/funcionarios.js"></script>
+  <script src="js/usuarios.js"></script>
+  <script src="js/setores.js"></script>
+  <script src="js/cadastro-usuario.js"></script>
+  <script src="js/configuracoes.js"></script>
+
 </body>
+
 </html>

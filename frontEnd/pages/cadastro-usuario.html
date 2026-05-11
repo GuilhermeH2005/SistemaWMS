@@ -1,0 +1,231 @@
+<div class="cadastro-usuario-container">
+
+  <h1>Incluir Usuário</h1>
+
+  <div class="abas-usuario">
+
+    <button type="button" class="aba ativa" onclick="abrirAbaUsuario('dados')">
+      Dados Usuário
+    </button>
+
+    <button type="button" class="aba" onclick="abrirAbaUsuario('permissoes')">
+      Permissões
+    </button>
+
+  </div>
+
+  <form id="formUsuario" class="card-cadastro-usuario">
+
+    <div id="abaDadosUsuario" class="conteudo-aba ativo">
+
+      <div class="grid-usuario">
+
+        <div class="grupo-form">
+          <label>Funcionário</label>
+          <select id="nomeCompleto" required>
+            <option value="">Selecione o Funcionário</option>
+          </select>
+        </div>
+
+        <div class="grupo-form">
+          <label>Usuário</label>
+          <input type="text" id="login" required>
+        </div>
+
+        <div class="grupo-form">
+          <label>E-mail</label>
+          <input type="email" id="email" required>
+        </div>
+
+        <div class="grupo-form">
+          <label>Senha</label>
+          <input type="password" id="senha" required>
+        </div>
+
+        <div class="grupo-form">
+          <label>Setor</label>
+          <select id="setor" required>
+            <option value="">Selecione o Setor</option>
+          </select>
+        </div>
+
+        <div class="grupo-form">
+          <label>Situação</label>
+          <select id="situacao">
+            <option value="ATIVO">ATIVO</option>
+            <option value="INATIVO">INATIVO</option>
+          </select>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div id="abaPermissoesUsuario" class="conteudo-aba">
+
+      <div class="permissoes-grid">
+
+        <div class="grupo-permissao">
+          <h3>Usuário</h3>
+
+          <label>
+            <input type="checkbox" value="funcionarios">
+            Funcionário
+          </label>
+
+          <label>
+            <input type="checkbox" value="usuarios">
+            Usuário
+          </label>
+
+          <label>
+            <input type="checkbox" value="perfil_acesso">
+            Perfil de Acesso
+          </label>
+        </div>
+
+        <div class="grupo-permissao">
+          <h3>Recebimento</h3>
+
+          <label>
+            <input type="checkbox" value="fornecedores">
+            Fornecedor
+          </label>
+
+          <label>
+            <input type="checkbox" value="entrada_mercadorias">
+            Entrada de Mercadorias
+          </label>
+
+          <label>
+            <input type="checkbox" value="conferencia">
+            Conferência
+          </label>
+        </div>
+
+        <div class="grupo-permissao">
+          <h3>Armazenagem</h3>
+
+          <label>
+            <input type="checkbox" value="enderecamento">
+            Endereçamento
+          </label>
+
+          <label>
+            <input type="checkbox" value="posicoes">
+            Posições
+          </label>
+
+          <label>
+            <input type="checkbox" value="cubagem">
+            Cubagem
+          </label>
+
+          <label>
+            <input type="checkbox" value="fifo">
+            FIFO
+          </label>
+        </div>
+
+        <div class="grupo-permissao">
+          <h3>Estoque</h3>
+
+          <label>
+            <input type="checkbox" value="produtos">
+            Produtos
+          </label>
+
+          <label>
+            <input type="checkbox" value="balanceamento">
+            Balanceamento
+          </label>
+
+          <label>
+            <input type="checkbox" value="ajustes_estoque">
+            Ajuste
+          </label>
+
+          <label>
+            <input type="checkbox" value="alerta_estoque">
+            Alerta de Mínimo
+          </label>
+        </div>
+
+        <div class="grupo-permissao">
+          <h3>Picking</h3>
+
+          <label>
+            <input type="checkbox" value="picking">
+            Picking
+          </label>
+        </div>
+
+        <div class="grupo-permissao">
+          <h3>Expedição</h3>
+
+          <label>
+            <input type="checkbox" value="nota_fiscal">
+            Nota Fiscal
+          </label>
+
+          <label>
+            <input type="checkbox" value="romaneio">
+            Romaneio
+          </label>
+        </div>
+
+        <div class="grupo-permissao">
+          <h3>Relatórios</h3>
+
+          <label>
+            <input type="checkbox" value="relatorios">
+            Relatórios
+          </label>
+        </div>
+
+        <div class="grupo-permissao">
+          <h3>Auditoria</h3>
+
+          <label>
+            <input type="checkbox" value="auditoria">
+            Auditoria
+          </label>
+        </div>
+
+        <div class="grupo-permissao">
+          <h3>Configuração</h3>
+
+          <label>
+            <input type="checkbox" value="setores">
+            Setor
+          </label>
+
+          <label>
+            <input type="checkbox" value="configuracoes">
+            Trocar Senha
+          </label>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="botoes-form">
+
+      <button type="submit" class="btn-salvar">
+        Salvar Usuário
+      </button>
+
+      <button
+        type="button"
+        class="btn-voltar"
+        onclick="carregarPagina('pages/usuarios.html', 'usuarios')"
+      >
+        Voltar
+      </button>
+
+    </div>
+
+  </form>
+
+</div>

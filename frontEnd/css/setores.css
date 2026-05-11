@@ -1,0 +1,165 @@
+.setores-container {
+  padding: 30px;
+}
+
+/* TOPO */
+
+.topo-setores {
+  margin-bottom: 35px;
+}
+
+.topo-setores h1 {
+  font-size: 40px;
+  color: #003641;
+  margin-bottom: 12px;
+}
+
+.topo-setores p {
+  color: #666;
+  font-size: 16px;
+}
+
+/* CARDS */
+
+.card-setor,
+.card-lista {
+  background-color: #ffffff;
+
+  border-radius: 14px;
+
+  padding: 30px;
+
+  margin-bottom: 25px;
+
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+}
+
+/* FORM */
+
+.form-setor {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+}
+
+/* CAMPO */
+
+.campo-setor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* LABEL */
+
+.campo-setor label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #003641;
+
+  margin-bottom: 10px;
+}
+
+/* INPUT */
+
+#nomeSetor {
+  width: 100%;
+
+  height: 52px;
+
+  padding: 0 16px;
+
+  border: 1px solid #cfcfcf;
+
+  border-radius: 10px;
+
+  font-size: 16px;
+
+  transition: 0.3s;
+}
+
+#nomeSetor:focus {
+  outline: none;
+
+  border-color: #2f5fa3;
+
+  box-shadow: 0 0 0 4px rgba(47,95,163,0.15);
+}
+
+/* BOTÃO */
+
+.form-setor button {
+  height: 52px;
+
+  padding: 0 25px;
+
+  background-color: #2f5fa3;
+
+  color: white;
+
+  border: none;
+
+  border-radius: 10px;
+
+  font-size: 15px;
+
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+.form-setor button:hover {
+  background-color: #003641;
+}
+
+/* LISTA */
+
+.topo-lista {
+  margin-bottom: 25px;
+}
+
+.topo-lista h2 {
+  font-size: 30px;
+  color: #003641;
+}
+
+/* UL */
+
+#listaSetores {
+  list-style: none;
+}
+
+/* ITEM */
+
+#listaSetores li {
+  background-color: #f4f6f8;
+
+  border-left: 5px solid #2f5fa3;
+
+  border-radius: 10px;
+
+  padding: 16px 18px;
+
+  margin-bottom: 12px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 700px) {
+
+  .form-setor {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-setor button {
+    width: 100%;
+  }
+
+}
