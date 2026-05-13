@@ -142,6 +142,114 @@
   background: #555;
 }
 
+.regras-senha {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 10px;
+  background: #f4f6f8;
+  border-radius: 8px;
+  border-left: 4px solid #c0392b;
+}
+
+.regras-senha span {
+  font-size: 12px;
+  color: #c0392b;
+  font-weight: bold;
+}
+
+.regras-senha span.regra-ok {
+  color: #27ae60;
+}
+
+.grupo-permissao {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 18px;
+  border: 1px solid #dbe3ec;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.grupo-permissao h3 {
+  color: #003641;
+  margin-bottom: 14px;
+  font-size: 17px;
+  border-bottom: 1px solid #e1e7ee;
+  padding-bottom: 8px;
+}
+
+.grupo-permissao label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f4f6f8;
+  padding: 10px;
+  border-radius: 7px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #003641;
+}
+
+.grupo-permissao label:hover {
+  background: #eaf0f6;
+}
+
+.grupo-permissao input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+}
+
+.cadastro-usuario-container .grupo-form {
+  width: 100%;
+}
+
+.cadastro-usuario-container .grupo-form select,
+.cadastro-usuario-container .grupo-form input {
+  width: 100%;
+  min-width: 0;
+}
+
+#campoSituacao {
+  width: 100%;
+}
+
+#setor {
+  width: 100%;
+}
+
+#nomeCompleto,
+#setor,
+#login,
+#senha,
+#email,
+#situacao {
+  height: 48px;
+}
+
+#campoSenha {
+  grid-row: span 2;
+}
+
+#campoSenha input {
+  margin-bottom: 0;
+}
+
+.regras-senha {
+  min-height: 92px;
+}
+
+#campoSituacao,
+#campoSituacao select,
+#setor {
+  width: 100%;
+}
+
+.cadastro-usuario-container .grid-usuario {
+  align-items: start;
+}
+
 @media (max-width: 900px) {
 
   .cadastro-usuario-container .grid-usuario,
@@ -153,33 +261,4 @@
     flex-direction: column;
   }
 
-}
-
-.grupo-permissao {
-  background: #f5f7fa;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-  border: 1px solid #dbe3ec;
-}
-
-.grupo-permissao h3 {
-  color: #003641;
-  margin-bottom: 15px;
-  font-size: 18px;
-}
-
-.grupo-permissao label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  cursor: pointer;
-  font-size: 15px;
-}
-
-.grupo-permissao input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
 }

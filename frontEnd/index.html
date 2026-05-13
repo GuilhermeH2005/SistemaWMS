@@ -52,7 +52,7 @@
 
         <!-- USUÁRIOS -->
 
-        <li class="menu-item has-submenu">
+        <li class="menu-item has-submenu" id="menuUsuarios">
 
           <div class="icon-text">
 
@@ -79,18 +79,13 @@
             )">
               Usuários
             </li>
-
-            <li>
-              Perfis de Acesso
-            </li>
-
           </ul>
 
         </li>
 
         <!-- RECEBIMENTO -->
 
-        <li class="menu-item has-submenu">
+        <li class="menu-item has-submenu" id="menuRecebimento">
 
           <div class="icon-text">
 
@@ -131,7 +126,7 @@
 
         <!-- ARMAZENAGEM -->
 
-        <li class="menu-item has-submenu">
+        <li class="menu-item has-submenu" id="menuArmazenagem">
 
           <div class="icon-text">
 
@@ -176,7 +171,7 @@
 
         <!-- ESTOQUE -->
 
-        <li class="menu-item has-submenu">
+        <li class="menu-item has-submenu" id="menuEstoque">
 
           <div class="icon-text">
 
@@ -253,7 +248,7 @@
 
         <!-- EXPEDIÇÃO -->
 
-        <li class="menu-item has-submenu">
+        <li class="menu-item has-submenu" id="menuExpedicao">
 
           <div class="icon-text">
 
@@ -288,7 +283,7 @@
         <!-- RELATÓRIOS -->
 
         <li
-          class="menu-item"
+          class="menu-item" id="menuRelatorios"
           onclick="carregarPagina(
             'pages/relatorios.html',
             'relatorios'
@@ -310,7 +305,7 @@
         <!-- AUDITORIA -->
 
         <li
-          class="menu-item"
+          class="menu-item" id="menuAuditoria"
           onclick="carregarPagina(
             'pages/auditoria.html',
             'auditoria'
@@ -331,7 +326,7 @@
 
         <!-- CONFIGURAÇÕES -->
 
-        <li class="menu-item has-submenu">
+        <li class="menu-item has-submenu" id="menuConfiguracoes">
 
           <div class="icon-text">
 
@@ -386,9 +381,17 @@
 
       </div>
 
-      <div class="user" id="usuarioTopo">
-        👤 Admin
-      </div>
+      <div class="user-area">
+
+  <div class="user" id="usuarioTopo">
+    👤 Usuário
+  </div>
+
+  <button id="btnLogout">
+    Sair
+  </button>
+
+</div>
 
     </header>
 

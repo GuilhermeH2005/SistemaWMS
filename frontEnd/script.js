@@ -70,54 +70,80 @@ function atualizarUsuarioTopo() {
 
 // CARREGAR PÁGINA
 
-function carregarPagina(pagina, permissao = null) {
+function carregarPagina(pagina, permissaoNecessaria) {
 
-  const usuarioLogado =
-    JSON.parse(localStorage.getItem("usuarioLogado"));
+  const usuario =
+    JSON.parse(
+      localStorage.getItem("usuarioLogado")
+    );
 
-  // ADMIN
+  if (!usuario) {
+
+    window.location.href = "login.html";
+    return;
+
+  }
+
+  const permissoes =
+    usuario.permissoes || [];
 
   if (
-    usuarioLogado &&
-    usuarioLogado.login &&
-    usuarioLogado.login.toLowerCase() === "admin"
+    permissaoNecessaria &&
+    !permissoes.includes(permissaoNecessaria)
   ) {
 
-    abrirPagina(pagina);
+    alert(
+      "Você não possui permissão para acessar esta página ❌"
+    );
+
     return;
+
   }
 
-  // PERMISSÕES
+  fetch(pagina)
+    .then(res => res.text())
+    .then(html => {
 
-  if (permissao) {
+      document.querySelector(".content").innerHTML = html;
 
-    const permissoes =
-      usuarioLogado?.permissoes || [];
+      if (pagina.includes("fornecedores")) {
+        iniciarFornecedor();
+      }
 
-    if (!permissoes.includes(permissao)) {
+      if (pagina.includes("produtos")) {
+        iniciarProduto();
+      }
 
-      document.querySelector(".content").innerHTML = `
+      if (pagina.includes("entrada")) {
+        iniciarEntrada();
+      }
 
-        <div class="nao-autorizado">
+      if (pagina.includes("estoque")) {
+        iniciarEstoque();
+      }
 
-          <h1>
-            ⛔ Usuário não autorizado
-          </h1>
+      if (pagina.includes("alerta_min")) {
+        iniciarAlertas();
+      }
 
-          <p>
-            Você não possui permissão
-            para acessar esta funcionalidade.
-          </p>
+      if (pagina.includes("funcionarios")) {
+        iniciarFuncionario();
+      }
 
-        </div>
+      if (pagina.includes("usuarios")) {
+        consultarUsuarios();
+      }
 
-      `;
+      if (pagina.includes("setores")) {
+        carregarSetores();
+      }
 
-      return;
-    }
-  }
+      if (pagina.includes("cadastro-usuario")) {
+        iniciarCadastroUsuario();
+      }
 
-  abrirPagina(pagina);
+    });
+
 }
 
 // ABRIR PÁGINA
@@ -206,14 +232,9 @@ function abrirPagina(pagina) {
 
       // FUNCIONÁRIOS
 
-      if (
-        pagina.includes("funcionarios") &&
-        typeof iniciarFuncionario === "function"
-      ) {
-
-        iniciarFuncionario();
-
-      }
+     if (pagina.includes("funcionarios")) {
+  iniciarFuncionario();
+}
 
       // SETORES
 
@@ -298,3 +319,105 @@ function abrirPagina(pagina) {
 // INICIAR SISTEMA
 
 atualizarUsuarioTopo();
+
+function aplicarPermissoes() {
+
+  const usuario =
+    JSON.parse(
+      localStorage.getItem("usuarioLogado")
+    );
+
+  if (!usuario) return;
+
+  const permissoes =
+    usuario.permissoes || [];
+
+  // FORNECEDORES
+  if (
+    !permissoes.includes("fornecedores")
+  ) {
+
+    const menu =
+      document.getElementById(
+        "menuFornecedores"
+      );
+
+    if (menu) {
+      menu.style.display = "none";
+    }
+
+  }
+
+  // PRODUTOS
+  if (
+    !permissoes.includes("produtos")
+  ) {
+
+    const menu =
+      document.getElementById(
+        "menuProdutos"
+      );
+
+    if (menu) {
+      menu.style.display = "none";
+    }
+
+  }
+
+  // FUNCIONÁRIOS
+  if (
+    !permissoes.includes("funcionarios")
+  ) {
+
+    const menu =
+      document.getElementById(
+        "menuFuncionarios"
+      );
+
+    if (menu) {
+      menu.style.display = "none";
+    }
+
+  }
+
+}
+
+function configurarLogout() {
+
+  const btnLogout =
+    document.getElementById("btnLogout");
+
+  if (!btnLogout) return;
+
+  btnLogout.addEventListener("click", () => {
+
+    const confirmar =
+      confirm("Deseja sair do sistema?");
+
+    if (!confirmar) return;
+
+    localStorage.removeItem("usuarioLogado");
+
+    window.location.href = "login.html";
+
+  });
+
+}
+
+configurarLogout();
+function carregarUsuarioTopo() {
+  const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
+
+  if (!usuario) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  const usuarioTopo = document.getElementById("usuarioTopo");
+
+  if (usuarioTopo) {
+    usuarioTopo.innerHTML = `👤 ${usuario.nomeCompleto || usuario.login}`;
+  }
+}
+
+carregarUsuarioTopo();

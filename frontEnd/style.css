@@ -238,3 +238,32 @@ body {
 
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
+
+.user-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  color: #003641;
+}
+
+#btnLogout {
+  background-color: #c0392b;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+#btnLogout:hover {
+  background-color: #922b21;
+}

@@ -1,54 +1,88 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Login - LG Logística WMS</title>
+
   <link rel="stylesheet" href="login.css">
 </head>
+
 <body>
 
   <main class="login-container">
+
     <section class="login-card">
 
       <div class="login-logo">
         <h1>LG Logística</h1>
-        <p>Sistema WMS para Gestão de Armazém</p>
+
+        <p>
+          Sistema WMS para Gestão de Armazém
+        </p>
       </div>
 
       <form id="formLogin" class="login-form">
+
         <h2>Acesso ao Sistema</h2>
 
         <div class="form-group">
+
           <label for="usuario">Usuário</label>
-          <input 
-            type="text" 
-            id="usuario" 
-            name="usuario" 
+
+          <input
+            type="text"
+            id="usuario"
+            name="usuario"
             placeholder="Digite seu usuário"
             required
           >
+
         </div>
 
         <div class="form-group">
+
           <label for="senha">Senha</label>
-          <input 
-            type="password" 
-            id="senha" 
-            name="senha" 
-            placeholder="Digite sua senha"
-            required
-          >
+
+          <div class="senha-container">
+
+            <input
+              type="password"
+              id="senha"
+              name="senha"
+              placeholder="Digite sua senha"
+              required
+            >
+
+            <button
+              type="button"
+              id="toggleSenha"
+              class="btn-olho"
+            >
+              👁️
+            </button>
+
+          </div>
+
         </div>
 
-        <button type="submit">Entrar</button>
+        <button type="submit">
+          Entrar
+        </button>
 
+        
         <p id="mensagemErro" class="mensagem-erro"></p>
+
       </form>
 
     </section>
+
   </main>
 
   <script src="login.js"></script>
+
 </body>
+
 </html>

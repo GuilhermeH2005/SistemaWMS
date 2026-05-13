@@ -34,28 +34,39 @@
 
         <div class="grupo-form">
           <label>E-mail</label>
-          <input type="email" id="email" required>
+          <input type="email" id="email" placeholder="E-mail" readonly>
         </div>
 
-        <div class="grupo-form">
-          <label>Senha</label>
-          <input type="password" id="senha" required>
-        </div>
+        <div class="grupo-form" id="campoSenha">
+  <label>Senha</label>
+  <input type="password" id="senha" placeholder="Digite a senha" required>
+
+  <div class="regras-senha">
+    <span id="regraTamanho">✔ Mínimo de 8 caracteres</span>
+    <span id="regraMaiuscula">✔ Pelo menos 1 letra maiúscula</span>
+    <span id="regraNumero">✔ Pelo menos 1 número</span>
+    <span id="regraEspecial">✔ Pelo menos 1 caractere especial</span>
+  </div>
+</div>
 
         <div class="grupo-form">
-          <label>Setor</label>
-          <select id="setor" required>
-            <option value="">Selecione o Setor</option>
-          </select>
-        </div>
+  <label>Setor</label>
 
-        <div class="grupo-form">
-          <label>Situação</label>
-          <select id="situacao">
-            <option value="ATIVO">ATIVO</option>
-            <option value="INATIVO">INATIVO</option>
-          </select>
-        </div>
+  <select id="setor">
+    <option value="">
+      Selecione o Setor
+    </option>
+  </select>
+</div>
+
+       <div class="grupo-form" id="campoSituacao" style="display: none;">
+  <label>Situação</label>
+
+  <select id="situacao">
+    <option value="ATIVO">ATIVO</option>
+    <option value="INATIVO">INATIVO</option>
+  </select>
+</div>
 
       </div>
 

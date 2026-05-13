@@ -7,7 +7,6 @@ function iniciarFuncionario() {
 
   aplicarMascarasFuncionario();
 
-  carregarSetoresNoFuncionario();
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -24,8 +23,6 @@ function iniciarFuncionario() {
       bairro: document.getElementById("bairro").value,
       cidade: document.getElementById("cidade").value,
       cep: document.getElementById("cep").value,
-
-      setor: document.getElementById("setor").value,
 
       data_admissao: converterDataParaBanco(
         document.getElementById("data_admissao").value
@@ -84,8 +81,6 @@ function iniciarFuncionario() {
 
       form.reset();
 
-      carregarSetoresNoFuncionario();
-
       carregarFuncionarios();
 
     } catch (err) {
@@ -99,36 +94,6 @@ function iniciarFuncionario() {
   });
 
   carregarFuncionarios();
-}
-
-/* CARREGAR SETORES */
-
-function carregarSetoresNoFuncionario() {
-
-  const selectSetor =
-    document.getElementById("setor");
-
-  if (!selectSetor) return;
-
-  const setores =
-    JSON.parse(localStorage.getItem("setores")) || [];
-
-  selectSetor.innerHTML = `
-    <option value="">
-      Selecione o Setor
-    </option>
-  `;
-
-  setores.forEach(setor => {
-
-    selectSetor.innerHTML += `
-      <option value="${setor.nome}">
-        ${setor.nome}
-      </option>
-    `;
-
-  });
-
 }
 
 async function carregarFuncionarios() {
@@ -159,10 +124,6 @@ async function carregarFuncionarios() {
 
         Telefone: ${f.telefone || ""}
         | E-mail: ${f.email || ""}
-
-        <br>
-
-        Setor: ${f.setor || ""}
 
         <br>
 
@@ -227,8 +188,6 @@ function editarFuncionario(f) {
   document.getElementById("cep").value =
     f.cep || "";
 
-  document.getElementById("setor").value =
-    f.setor || "";
 
   document.getElementById("data_admissao").value =
     formatarData(f.data_admissao);

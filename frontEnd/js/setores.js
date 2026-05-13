@@ -1,90 +1,171 @@
-function carregarSetores() {
-  const listaSetores = document.getElementById("listaSetores");
+async function carregarSetores() {
+
+  const listaSetores =
+    document.getElementById("listaSetores");
 
   if (!listaSetores) {
     return;
   }
 
-  const setores = JSON.parse(localStorage.getItem("setores")) || [];
-
   listaSetores.innerHTML = "";
 
-  if (setores.length === 0) {
-    listaSetores.innerHTML = `
-      <li>Nenhum setor cadastrado.</li>
-    `;
-    return;
+  try {
+
+    const resposta =
+      await fetch("http://localhost:3000/setores");
+
+    const setores =
+      await resposta.json();
+
+    if (setores.length === 0) {
+
+      listaSetores.innerHTML = `
+        <li>Nenhum setor cadastrado.</li>
+      `;
+
+      return;
+    }
+
+    setores.forEach(setor => {
+
+      listaSetores.innerHTML += `
+        <li>
+
+          <span>${setor.nome}</span>
+
+          <button
+            type="button"
+            class="btn-excluir-setor"
+            onclick="excluirSetor(${setor.id})"
+          >
+            Excluir
+          </button>
+
+        </li>
+      `;
+
+    });
+
+  } catch (erro) {
+
+    console.error(erro);
+
+    alert(
+      "Erro ao carregar setores."
+    );
+
   }
 
-  setores.forEach((setor, index) => {
-    listaSetores.innerHTML += `
-      <li>
-        <span>${setor.nome}</span>
-
-        <button
-          type="button"
-          class="btn-excluir-setor"
-          onclick="excluirSetor(${index})"
-        >
-          Excluir
-        </button>
-      </li>
-    `;
-  });
 }
 
-function cadastrarSetor() {
-  const nomeSetorInput = document.getElementById("nomeSetor");
+async function cadastrarSetor() {
+
+  const nomeSetorInput =
+    document.getElementById("nomeSetor");
 
   if (!nomeSetorInput) {
     return;
   }
 
-  const nomeSetor = nomeSetorInput.value.trim();
+  const nomeSetor =
+    nomeSetorInput.value.trim();
 
   if (nomeSetor === "") {
+
     alert("Digite o nome do setor.");
+
     return;
   }
 
-  let setores = JSON.parse(localStorage.getItem("setores")) || [];
+  try {
 
-  const setorExiste = setores.some(setor =>
-    setor.nome.toLowerCase() === nomeSetor.toLowerCase()
-  );
+    const resposta =
+      await fetch(
+        "http://localhost:3000/setores",
+        {
+          method: "POST",
 
-  if (setorExiste) {
-    alert("Setor já cadastrado.");
-    return;
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            nome: nomeSetor
+          })
+        }
+      );
+
+    const mensagem =
+      await resposta.text();
+
+    if (!resposta.ok) {
+
+      alert(mensagem);
+
+      return;
+    }
+
+    nomeSetorInput.value = "";
+
+    carregarSetores();
+
+    alert("Setor cadastrado com sucesso!");
+
+  } catch (erro) {
+
+    console.error(erro);
+
+    alert(
+      "Erro ao cadastrar setor."
+    );
+
   }
 
-  setores.push({
-    nome: nomeSetor
-  });
-
-  localStorage.setItem("setores", JSON.stringify(setores));
-
-  nomeSetorInput.value = "";
-
-  carregarSetores();
-
-  alert("Setor cadastrado com sucesso!");
 }
 
-function excluirSetor(index) {
-  let setores = JSON.parse(localStorage.getItem("setores")) || [];
+async function excluirSetor(id) {
 
-  const confirmar = confirm("Deseja realmente excluir este setor?");
+  const confirmar =
+    confirm(
+      "Deseja realmente excluir este setor?"
+    );
 
   if (!confirmar) {
     return;
   }
 
-  setores.splice(index, 1);
+  try {
 
-  localStorage.setItem("setores", JSON.stringify(setores));
+    const resposta =
+      await fetch(
+        `http://localhost:3000/setores/${id}`,
+        {
+          method: "DELETE"
+        }
+      );
 
-  carregarSetores();
+    const mensagem =
+      await resposta.text();
 
-  alert("Setor excluído com sucesso!");
+    if (!resposta.ok) {
+
+      alert(mensagem);
+
+      return;
+    }
+
+    carregarSetores();
+
+    alert("Setor excluído com sucesso!");
+
+  } catch (erro) {
+
+    console.error(erro);
+
+    alert(
+      "Erro ao excluir setor."
+    );
+
+  }
+
 }

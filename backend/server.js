@@ -227,6 +227,7 @@ app.post("/funcionarios", (req, res) => {
     return res.status(400).send("Preencha os campos obrigatórios ❌");
   }
 
+
   const sql = `
     INSERT INTO funcionario
     (nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao)
@@ -238,6 +239,14 @@ app.post("/funcionarios", (req, res) => {
     [nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao],
     (err) => {
       if (err) {
+        if (err) {
+    if (err.code === "ER_DUP_ENTRY") {
+    return res.status(400).send("CPF já cadastrado ❌");
+    }
+
+  console.error(err);
+  return res.status(500).send("Erro ao cadastrar funcionário ❌");
+}
         console.error(err);
         return res.status(500).send("Erro ao cadastrar funcionário ❌");
       }
@@ -265,7 +274,7 @@ app.put("/funcionarios/:id", (req, res) => {
 
   const sql = `
     UPDATE funcionario
-    SET nome=?, cpf=?, rg=?, telefone=?, email=?, rua=?, numero=?, bairro=?, cidade=?, cep=?, data_admissao=?,
+    SET nome=?, cpf=?, rg=?, telefone=?, email=?, rua=?, numero=?, bairro=?, cidade=?, cep=?, data_admissao=?
     WHERE id=?
   `;
 
@@ -286,10 +295,35 @@ app.put("/funcionarios/:id", (req, res) => {
 app.delete("/funcionarios/:id", (req, res) => {
   const { id } = req.params;
 
-  db.query("DELETE FROM funcionario WHERE id=?", [id], (err) => {
-    if (err) return res.status(500).send("Erro ao excluir funcionário ❌");
-    res.send("Funcionário excluído com sucesso ✅");
-  });
+  db.query(
+    "SELECT * FROM usuario WHERE funcionario_id = ?",
+    [id],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao verificar funcionário ❌");
+      }
+
+      if (result.length > 0) {
+        return res.status(400).send(
+          "Este funcionário possui usuário vinculado e não pode ser excluído ❌"
+        );
+      }
+
+      db.query(
+        "DELETE FROM funcionario WHERE id = ?",
+        [id],
+        (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).send("Erro ao excluir funcionário ❌");
+          }
+
+          res.send("Funcionário excluído com sucesso ✅");
+        }
+      );
+    }
+  );
 });
 
 /* =========================
@@ -367,6 +401,449 @@ app.get("/entradas", (req, res) => {
     }
 
     res.json(result);
+  });
+});
+
+/* =========================
+   LOGIN
+========================= */
+
+app.post("/login", (req, res) => {
+
+  const { login, senha } = req.body;
+
+  if (!login || !senha) {
+
+    return res.status(400).json({
+      mensagem: "Login e senha obrigatórios ❌"
+    });
+
+  }
+
+  const sql = `
+    SELECT * FROM usuario
+    WHERE login = ?
+  `;
+
+  db.query(sql, [login], (err, result) => {
+
+    if (err) {
+
+      console.error(err);
+
+      return res.status(500).json({
+        mensagem: "Erro no login ❌"
+      });
+
+    }
+
+    if (result.length === 0) {
+
+      return res.status(401).json({
+        mensagem: "Usuário não encontrado ❌"
+      });
+
+    }
+
+    const usuario = result[0];
+
+    if (usuario.senha !== senha) {
+
+      return res.status(401).json({
+        mensagem: "Senha inválida ❌"
+      });
+
+    }
+
+    if (usuario.situacao === "INATIVO") {
+
+      return res.status(403).json({
+        mensagem: "Usuário inativo ❌"
+      });
+
+    }
+
+    const ultimoAcesso =
+      new Date().toLocaleDateString("pt-BR") +
+      " " +
+      new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+    db.query(
+      `UPDATE usuario SET ultimo_acesso = ? WHERE id = ?`,
+      [ultimoAcesso, usuario.id]
+    );
+
+   db.query(
+  "SELECT permissao FROM usuario_permissao WHERE usuario_id = ?",
+  [usuario.id],
+  (err, permissoesResult) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({
+        mensagem: "Erro ao buscar permissões ❌"
+      });
+    }
+
+    const permissoes = permissoesResult.map(p => p.permissao);
+
+    res.json({
+      id: usuario.id,
+      funcionario_id: usuario.funcionario_id,
+      nomeCompleto: usuario.nome_completo,
+      login: usuario.login,
+      email: usuario.email,
+      situacao: usuario.situacao,
+      ultimoAcesso,
+      permissoes: permissoes
+    });
+  }
+);
+
+  });
+
+});
+
+app.post("/setores", (req, res) => {
+
+  const { nome } = req.body;
+
+  if (!nome) {
+    return res.status(400)
+      .send("Nome obrigatório ❌");
+  }
+
+  const sql =
+    "INSERT INTO setor (nome) VALUES (?)";
+
+  db.query(sql, [nome], (err) => {
+
+    if (err) {
+
+      if (err.code === "ER_DUP_ENTRY") {
+
+        return res.status(400)
+          .send("Setor já cadastrado ❌");
+
+      }
+
+      console.error(err);
+
+      return res.status(500)
+        .send("Erro ao cadastrar setor ❌");
+    }
+
+    res.send("Setor cadastrado ✅");
+
+  });
+
+});
+
+app.get("/setores", (req, res) => {
+
+  db.query(
+    "SELECT * FROM setor ORDER BY nome",
+    (err, result) => {
+
+      if (err) {
+
+        console.error(err);
+
+        return res.status(500)
+          .send("Erro ao buscar setores ❌");
+      }
+
+      res.json(result);
+
+    }
+  );
+
+});
+
+app.delete("/setores/:id", (req, res) => {
+
+  const { id } = req.params;
+
+  db.query(
+    "DELETE FROM setor WHERE id = ?",
+    [id],
+    (err) => {
+
+      if (err) {
+
+        console.error(err);
+
+        return res.status(500)
+          .send("Erro ao excluir setor ❌");
+      }
+
+      res.send("Setor excluído ✅");
+
+    }
+  );
+
+});
+
+/* =========================
+   USUÁRIOS
+========================= */
+
+app.get("/usuarios", (req, res) => {
+
+  const sql = `
+    SELECT
+      usuario.id,
+      usuario.login,
+      usuario.email,
+      usuario.situacao,
+      usuario.ultimo_acesso,
+
+      funcionario.nome AS nome_completo,
+
+      setor.nome AS setor_nome
+
+    FROM usuario
+
+    INNER JOIN funcionario
+      ON usuario.funcionario_id = funcionario.id
+
+    LEFT JOIN setor
+      ON usuario.setor_id = setor.id
+
+    ORDER BY funcionario.nome
+  `;
+
+  db.query(sql, (err, result) => {
+
+    if (err) {
+
+      console.error(err);
+
+      return res.status(500).send(
+        "Erro ao buscar usuários ❌"
+      );
+
+    }
+
+    res.json(result);
+
+  });
+
+});
+
+app.post("/usuarios", (req, res) => {
+  const {
+    funcionario_id,
+    setor_id,
+    login,
+    senha,
+    email,
+    permissoes
+  } = req.body;
+
+  if (!funcionario_id || !login || !senha) {
+    return res.status(400).send("Funcionário, login e senha são obrigatórios ❌");
+  }
+
+  const sqlUsuario = `
+    INSERT INTO usuario
+    (funcionario_id, setor_id, login, senha, email, situacao)
+    VALUES (?, ?, ?, ?, ?, 'ATIVO')
+  `;
+
+  db.query(
+    sqlUsuario,
+    [funcionario_id, setor_id || null, login, senha, email],
+    (err, result) => {
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(400).send("Login já cadastrado ❌");
+        }
+
+        console.error(err);
+        return res.status(500).send("Erro ao cadastrar usuário ❌");
+      }
+
+      const usuarioId = result.insertId;
+
+      if (!permissoes || permissoes.length === 0) {
+        return res.send("Usuário cadastrado com sucesso ✅");
+      }
+
+      const valoresPermissoes = permissoes.map(permissao => [
+        usuarioId,
+        permissao
+      ]);
+
+      db.query(
+        "INSERT INTO usuario_permissao (usuario_id, permissao) VALUES ?",
+        [valoresPermissoes],
+        (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).send("Usuário criado, mas erro ao salvar permissões ❌");
+          }
+
+          res.send("Usuário cadastrado com sucesso ✅");
+        }
+      );
+    }
+  );
+});
+
+app.delete("/usuarios/:id", (req, res) => {
+  const { id } = req.params;
+
+  if (Number(id) === 1) {
+  return res.status(400).send("O usuário administrador não pode ser excluído ❌");
+}
+
+  db.query(
+    "DELETE FROM usuario_permissao WHERE usuario_id = ?",
+    [id],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao excluir permissões ❌");
+      }
+
+      db.query(
+        "DELETE FROM usuario WHERE id = ?",
+        [id],
+        (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).send("Erro ao excluir usuário ❌");
+          }
+
+          res.send("Usuário excluído com sucesso ✅");
+        }
+      );
+    }
+  );
+});
+
+app.put("/usuarios/:id", (req, res) => {
+  const { id } = req.params;
+
+  const {
+    funcionario_id,
+    setor_id,
+    email,
+    situacao,
+    permissoes
+  } = req.body;
+
+  if (!funcionario_id) {
+    return res.status(400).send("Funcionário é obrigatório ❌");
+  }
+
+  const sqlUsuario = `
+    UPDATE usuario
+    SET funcionario_id = ?, setor_id = ?, email = ?, situacao = ?
+    WHERE id = ?
+  `;
+
+  db.query(
+    sqlUsuario,
+    [
+      funcionario_id,
+      setor_id || null,
+      email,
+      situacao || "ATIVO",
+      id
+    ],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao atualizar usuário ❌");
+      }
+
+      db.query(
+        "DELETE FROM usuario_permissao WHERE usuario_id = ?",
+        [id],
+        (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).send("Erro ao limpar permissões ❌");
+          }
+
+          if (!permissoes || permissoes.length === 0) {
+            return res.send("Usuário atualizado com sucesso ✅");
+          }
+
+          const valoresPermissoes = permissoes.map(permissao => [
+            id,
+            permissao
+          ]);
+
+          db.query(
+            "INSERT INTO usuario_permissao (usuario_id, permissao) VALUES ?",
+            [valoresPermissoes],
+            (err) => {
+              if (err) {
+                console.error(err);
+                return res.status(500).send("Erro ao salvar permissões ❌");
+              }
+
+              res.send("Usuário atualizado com sucesso ✅");
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+app.get("/usuarios/:id", (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT
+      usuario.id,
+      usuario.funcionario_id,
+      usuario.setor_id,
+      usuario.login,
+      usuario.senha,
+      usuario.email,
+      usuario.situacao,
+      usuario.ultimo_acesso,
+      funcionario.nome AS nome_completo,
+      setor.nome AS setor_nome
+    FROM usuario
+    INNER JOIN funcionario ON usuario.funcionario_id = funcionario.id
+    LEFT JOIN setor ON usuario.setor_id = setor.id
+    WHERE usuario.id = ?
+  `;
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar usuário ❌");
+    }
+
+    if (result.length === 0) {
+      return res.status(404).send("Usuário não encontrado ❌");
+    }
+
+    const usuario = result[0];
+
+    db.query(
+      "SELECT permissao FROM usuario_permissao WHERE usuario_id = ?",
+      [id],
+      (err, permissoesResult) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send("Erro ao buscar permissões ❌");
+        }
+
+        usuario.permissoes = permissoesResult.map(p => p.permissao);
+
+        res.json(usuario);
+      }
+    );
   });
 });
 

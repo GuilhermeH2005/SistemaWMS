@@ -1,19 +1,48 @@
-<h2 class="titulo-pagina">Controle de Estoque</h2>
+<h2 class="titulo-pagina">
+  Controle de Estoque
+</h2>
 
-<section class="card-lista">
-  <h3 class="subtitulo">Produtos em Estoque</h3>
+<section class="card-lista-estoque">
 
-  <div class="resumo-estoque">
-  <div class="card-estoque">
-    <strong id="totalProdutos">0</strong>
-    <span>Produtos cadastrados</span>
+  <div class="topo-estoque">
+
+    <h3>Produtos em Estoque</h3>
+
+    <input
+      type="text"
+      id="buscarEstoque"
+      placeholder="Buscar produto..."
+      onkeyup="filtrarEstoque()"
+    >
+
   </div>
 
-  <div class="card-estoque">
-    <strong id="totalUnidades">0</strong>
-    <span>Unidades em estoque</span>
-  </div>
-</div>
+  <div class="tabela-estoque-container">
 
-  <ul id="listaEstoque"></ul>
+    <table class="tabela-estoque">
+
+      <thead>
+
+        <tr>
+          <th>SKU</th>
+          <th>Produto</th>
+          <th>Categoria</th>
+          <th>Fornecedor</th>
+          <th>Estoque</th>
+          <th>Mínimo</th>
+          <th>Status</th>
+          <th>Custo</th>
+          <th>Venda</th>
+          <th>Total Estoque Custo</th>
+          <th>Volume Total</th>
+        </tr>
+
+      </thead>
+
+      <tbody id="listaEstoque"></tbody>
+
+    </table>
+
+  </div>
+
 </section>

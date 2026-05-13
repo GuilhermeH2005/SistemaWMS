@@ -195,3 +195,21 @@ tbody tr.selecionada {
 .linha-selecionada {
   background-color: #dbeafe !important;
 }
+
+.regras-senha {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.regras-senha span {
+  font-size: 13px;
+  color: #c0392b;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.regras-senha span.regra-ok {
+  color: #27ae60;
+}

@@ -1,71 +1,91 @@
-.titulo-pagina {
+.card-lista-estoque {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 12px;
+}
+
+.topo-estoque {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
-  color: #0b1f3a;
-}
-
-.subtitulo {
-  margin-bottom: 20px;
-  color: #0b1f3a;
-}
-
-.card-lista {
-  background: #fff;
-  padding: 20px;
-  margin-bottom: 25px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
-
-.resumo-estoque {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
   gap: 15px;
-  margin-bottom: 25px;
 }
 
-.card-estoque {
-  background: #f8f9fa;
-  border-left: 5px solid #2f5fa3;
-  padding: 15px;
+.topo-estoque input {
+  padding: 10px;
+  width: 280px;
+  border: 1px solid #ccc;
   border-radius: 8px;
 }
 
-.card-estoque strong {
-  display: block;
-  font-size: 24px;
-  color: #0b1f3a;
-  margin-bottom: 4px;
+.tabela-estoque-container {
+  overflow-x: auto;
 }
 
-.card-estoque span {
-  font-size: 14px;
-  color: #555;
+.tabela-estoque {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-#listaEstoque {
-  list-style: none;
-  padding: 0;
-}
-
-#listaEstoque li {
-  background: #f8f9fa;
+.tabela-estoque th {
+  background: #003641;
+  color: white;
   padding: 12px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  border-left: 5px solid #2f5fa3;
+  text-align: left;
 }
 
-#listaEstoque strong {
-  color: #0b1f3a;
+.tabela-estoque td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e5e5;
 }
 
-.estoque-baixo {
-  border-left: 5px solid #dc3545 !important;
-  background: #fff5f5 !important;
+.tabela-estoque tr:hover {
+  background: #f5f5f5;
 }
 
-@media (max-width: 600px) {
-  .resumo-estoque {
-    grid-template-columns: 1fr;
+.status-normal {
+  background: #2ecc71;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.status-baixo {
+  background: #f39c12;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.status-sem {
+  background: #e74c3c;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.sem-registro {
+  text-align: center;
+  padding: 20px;
+  font-weight: bold;
+}
+
+@media (max-width: 900px) {
+
+  .topo-estoque {
+    flex-direction: column;
+    align-items: stretch;
   }
+
+  .topo-estoque input {
+    width: 100%;
+  }
+
 }

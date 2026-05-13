@@ -534,6 +534,11 @@ async function iniciarCadastroUsuario() {
     return;
   }
 
+  document.getElementById("campoSituacao").style.display = "block";
+
+  document.getElementById("campoSituacao").style.display = "none";
+  document.getElementById("situacao").value = "ATIVO";
+
   carregarSetoresNoUsuario();
 
   await carregarFuncionariosNoUsuario();

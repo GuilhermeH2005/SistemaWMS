@@ -1,162 +1,75 @@
-const formLogin =
-  document.getElementById("formLogin");
+const formLogin = document.getElementById("formLogin");
+const mensagemErro = document.getElementById("mensagemErro");
 
-const mensagemErro =
-  document.getElementById("mensagemErro");
+const senhaInput = document.getElementById("senha");
+const toggleSenha = document.getElementById("toggleSenha");
 
-formLogin.addEventListener("submit", function(event) {
+// Mostrar / ocultar senha
+toggleSenha.addEventListener("click", () => {
+  if (senhaInput.type === "password") {
+    senhaInput.type = "text";
+    toggleSenha.textContent = "🙈";
+  } else {
+    senhaInput.type = "password";
+    toggleSenha.textContent = "👁️";
+  }
+});
 
+// LOGIN
+formLogin.addEventListener("submit", async function(event) {
   event.preventDefault();
 
-  const usuarioDigitado =
-    document.getElementById("usuario")
-      .value
-      .trim();
+  mensagemErro.textContent = "";
 
-  const senhaDigitada =
-    document.getElementById("senha")
-      .value
-      .trim();
+  const usuarioDigitado = document.getElementById("usuario").value.trim();
+  const senhaDigitada = document.getElementById("senha").value.trim();
 
-  if (
-    usuarioDigitado === "" ||
-    senhaDigitada === ""
-  ) {
-
-    mensagemErro.textContent =
-      "Preencha usuário e senha.";
-
+  if (usuarioDigitado === "" || senhaDigitada === "") {
+    mensagemErro.textContent = "Preencha usuário e senha.";
     return;
-
   }
 
-  if (
-    usuarioDigitado === "admin" &&
-    senhaDigitada === "Admin12@"
-  ) {
+  try {
+    const res = await fetch("http://localhost:3000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        login: usuarioDigitado,
+        senha: senhaDigitada
+      })
+    });
 
-    const admin = {
+    const data = await res.json();
 
-      nomeCompleto: "Administrador",
+    if (!res.ok) {
+      mensagemErro.textContent =
+        data.mensagem || "Usuário ou senha inválidos.";
+      return;
+    }
 
-      login: "admin",
+    const usuarioLogado = {
+  id: data.id,
+  funcionario_id: data.funcionario_id,
+  nomeCompleto: data.nomeCompleto,
+  login: data.login,
+  email: data.email,
+  ultimoAcesso: data.ultimoAcesso,
+  permissoes: data.permissoes || []
+};
 
-      senha: "Admin12@",
-
-      email: "admin@lglogistica.com",
-
-      setor: "Administrativo",
-
-      situacao: "ATIVO",
-
-      ultimoAcesso:
-        new Date().toLocaleDateString("pt-BR") +
-        " " +
-        new Date().toLocaleTimeString("pt-BR", {
-          hour: "2-digit",
-          minute: "2-digit"
-        }),
-
-      permissoes: [
-
-        "dashboard",
-        "fornecedores",
-        "produtos",
-        "entrada_mercadorias",
-        "saida_mercadorias",
-        "movimentacoes",
-        "inventario",
-        "conferencia",
-        "armazenagem",
-        "enderecamento",
-        "cubagem",
-        "fifo",
-        "estoque",
-        "alerta_estoque",
-        "ajustes_estoque",
-        "balanceamento",
-        "picking",
-        "expedicao",
-        "romaneio",
-        "nota_fiscal",
-        "relatorios",
-        "auditoria",
-        "funcionarios",
-        "usuarios",
-        "setores",
-        "configuracoes"
-
-      ]
-
-    };
-
-    localStorage.setItem(
-      "adminUltimoAcesso",
-      admin.ultimoAcesso
-    );
+localStorage.setItem("usuarioLogado", JSON.stringify(usuarioLogado));
 
     localStorage.setItem(
       "usuarioLogado",
-      JSON.stringify(admin)
+      JSON.stringify(usuarioLogado)
     );
 
-    window.location.href =
-      "index.html";
+    window.location.href = "index.html";
 
-    return;
-
+  } catch (err) {
+    console.error("Erro no login:", err);
+    mensagemErro.textContent = "Erro ao conectar com o servidor.";
   }
-
-  const usuarios =
-    JSON.parse(localStorage.getItem("usuarios")) || [];
-
-  const usuarioEncontrado =
-    usuarios.find(usuario => {
-
-      return (
-        usuario.login === usuarioDigitado &&
-        usuario.senha === senhaDigitada
-      );
-
-    });
-
-  if (!usuarioEncontrado) {
-
-    mensagemErro.textContent =
-      "Usuário ou senha inválidos.";
-
-    return;
-
-  }
-
-  if (usuarioEncontrado.situacao === "INATIVO") {
-
-    mensagemErro.textContent =
-      "Usuário inativo.";
-
-    return;
-
-  }
-
-  usuarioEncontrado.ultimoAcesso =
-    new Date().toLocaleDateString("pt-BR") +
-    " " +
-    new Date().toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-
-  localStorage.setItem(
-    "usuarios",
-    JSON.stringify(usuarios)
-  );
-
-  localStorage.setItem(
-    "usuarioLogado",
-    JSON.stringify(usuarioEncontrado)
-  );
-
-  window.location.href =
-    "index.html";
-
 });
