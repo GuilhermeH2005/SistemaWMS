@@ -32,29 +32,39 @@
 
         </div>
 
-        <div class="grupo-form">
+        <div class="senha-container">
+  <input
+    type="password"
+    id="senha"
+    placeholder="Nova Senha"
+    required
+  >
 
-          <label>Nova Senha</label>
+  <button
+    type="button"
+    class="btn-olho"
+    onclick="alternarSenha('senha', this)"
+  >
+    👁️
+  </button>
+</div>
 
-          <input
-            type="password"
-            id="novaSenha"
-            required
-          >
+        <div class="senha-container">
+  <input
+    type="password"
+    id="confirmar_senha"
+    placeholder="Confirme a senha"
+    required
+  >
 
-        </div>
-
-        <div class="grupo-form">
-
-          <label>Confirmar Nova Senha</label>
-
-          <input
-            type="password"
-            id="confirmarSenha"
-            required
-          >
-
-        </div>
+  <button
+    type="button"
+    class="btn-olho"
+    onclick="alternarSenha('confirmar_senha', this)"
+  >
+    👁️
+  </button>
+</div>
 
       </div>
 

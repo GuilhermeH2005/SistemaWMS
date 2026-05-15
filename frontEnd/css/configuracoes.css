@@ -52,3 +52,25 @@
 .btn-salvar:hover {
   background: #003641;
 }
+
+.senha-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.senha-container input {
+  width: 100%;
+  padding-right: 45px;
+}
+
+.btn-olho {
+  position: absolute;
+  right: 8px;
+  width: 35px;
+  height: 35px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}

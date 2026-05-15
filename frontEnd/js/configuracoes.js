@@ -100,3 +100,17 @@ function iniciarConfiguracoes() {
   };
 
 }
+
+function alternarSenha(idCampo, botao) {
+  const campo = document.getElementById(idCampo);
+
+  if (!campo) return;
+
+  if (campo.type === "password") {
+    campo.type = "text";
+    botao.textContent = "🙈";
+  } else {
+    campo.type = "password";
+    botao.textContent = "👁️";
+  }
+}

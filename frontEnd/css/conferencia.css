@@ -1,0 +1,107 @@
+.card-conferencia {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.topo-conferencia {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  gap: 15px;
+}
+
+.topo-conferencia h3 {
+  color: #003641;
+}
+
+.topo-conferencia input {
+  width: 300px;
+  padding: 11px;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+}
+
+.tabela-conferencia-container {
+  overflow-x: auto;
+}
+
+.tabela-conferencia {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-conferencia th {
+  background: #003641;
+  color: white;
+  padding: 12px;
+  text-align: left;
+}
+
+.tabela-conferencia td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.tabela-conferencia tr:hover {
+  background: #f5f7fa;
+}
+
+.status-pendente,
+.status-conferido,
+.status-divergente {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status-pendente {
+  background: #f39c12;
+}
+
+.status-conferido {
+  background: #27ae60;
+}
+
+.status-divergente {
+  background: #c0392b;
+}
+
+.acoes-conferencia {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-conferir,
+.btn-divergente {
+  border: none;
+  padding: 8px 10px;
+  border-radius: 7px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-conferir {
+  background: #27ae60;
+}
+
+.btn-divergente {
+  background: #c0392b;
+}
+
+@media (max-width: 900px) {
+  .topo-conferencia {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topo-conferencia input {
+    width: 100%;
+  }
+}

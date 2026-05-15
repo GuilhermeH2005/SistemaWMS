@@ -1,0 +1,64 @@
+.topo-auditoria {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.descricao-auditoria {
+  color: #777;
+  margin-top: 5px;
+}
+
+.topo-auditoria button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.topo-auditoria button:hover {
+  background: #1d4ed8;
+}
+
+.tabela-container {
+  overflow-x: auto;
+}
+
+.tabela-auditoria {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-auditoria th {
+  background: #111827;
+  color: white;
+  padding: 12px;
+  text-align: left;
+}
+
+.tabela-auditoria td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  vertical-align: top;
+}
+
+.tabela-auditoria tr:hover {
+  background: #f5f5f5;
+}
+
+.badge-acao {
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.descricao {
+  min-width: 350px;
+}

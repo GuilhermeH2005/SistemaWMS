@@ -18,6 +18,19 @@ app.get("/teste-banco", (req, res) => {
   });
 });
 
+async function registrarAuditoria(usuarioId, acao, tabelaAfetada, registroId, descricao) {
+  try {
+    await db.query(
+      `INSERT INTO auditoria 
+      (usuario_id, acao, tabela_afetada, registro_id, descricao)
+      VALUES (?, ?, ?, ?, ?)`,
+      [usuarioId || null, acao, tabelaAfetada, registroId || null, descricao]
+    );
+  } catch (erro) {
+    console.error("Erro ao registrar auditoria:", erro);
+  }
+}
+
 /* =========================
    FORNECEDORES
 ========================= */
@@ -337,7 +350,8 @@ app.post("/entradas", (req, res) => {
     numero_nf,
     data_nf,
     lote,
-    validade
+    validade,
+    usuario_id
   } = req.body;
 
   if (!produto_id || !quantidade || !numero_nf || !data_nf || !lote || !validade) {
@@ -346,13 +360,22 @@ app.post("/entradas", (req, res) => {
 
   const sqlEntrada = `
     INSERT INTO entrada_mercadoria
-    (produto_id, quantidade, numero_nf, data_nf, lote, validade)
-    VALUES (?, ?, ?, ?, ?, ?)
+    (
+      produto_id,
+      quantidade,
+      numero_nf,
+      data_nf,
+      lote,
+      validade,
+      status_conferencia,
+      usuario_id
+    )
+    VALUES (?, ?, ?, ?, ?, ?, 'PENDENTE', ?)
   `;
 
   db.query(
     sqlEntrada,
-    [produto_id, quantidade, numero_nf, data_nf, lote, validade],
+    [produto_id, quantidade, numero_nf, data_nf, lote, validade, usuario_id],
     (err) => {
       if (err) {
         console.error(err);
@@ -373,6 +396,16 @@ app.post("/entradas", (req, res) => {
 
         res.send("Entrada registrada e estoque atualizado ✅");
       });
+
+      if (err) {
+  if (err.code === "ER_DUP_ENTRY") {
+    return res.status(400).send("Número da nota fiscal já cadastrado ❌");
+  }
+
+  console.error(err);
+  return res.status(500).send("Erro ao registrar entrada ❌");
+}
+
     }
   );
 });
@@ -386,11 +419,22 @@ app.get("/entradas", (req, res) => {
       entrada_mercadoria.data_nf,
       entrada_mercadoria.lote,
       entrada_mercadoria.validade,
+      entrada_mercadoria.status_conferencia,
       entrada_mercadoria.data_entrada,
+
       produto.nome AS produto_nome,
-      produto.codigo AS produto_codigo
+      produto.codigo AS produto_codigo,
+
+      usuario.login AS usuario_nome
+
     FROM entrada_mercadoria
-    INNER JOIN produto ON entrada_mercadoria.produto_id = produto.id
+
+    INNER JOIN produto 
+      ON entrada_mercadoria.produto_id = produto.id
+
+    LEFT JOIN usuario 
+      ON entrada_mercadoria.usuario_id = usuario.id
+
     ORDER BY entrada_mercadoria.data_entrada DESC
   `;
 
@@ -845,6 +889,343 @@ app.get("/usuarios/:id", (req, res) => {
       }
     );
   });
+});
+
+/* =========================
+   AJUSTE MANUAL DE ESTOQUE
+========================= */
+
+// Buscar um produto específico
+app.get("/produtos/:id", (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT 
+      id, 
+      nome, 
+      quantidade_estoque 
+    FROM produto 
+    WHERE id = ?
+  `;
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("Erro ao buscar produto:", err);
+      return res.status(500).json({ erro: "Erro ao buscar produto." });
+    }
+
+    if (result.length === 0) {
+      return res.status(404).json({ erro: "Produto não encontrado." });
+    }
+
+    res.json(result[0]);
+  });
+});
+
+// Listar ajustes de estoque
+app.get("/ajustes-estoque", (req, res) => {
+  const sql = `
+    SELECT 
+      ae.id,
+      ae.tipo,
+      ae.quantidade_anterior,
+      ae.quantidade_ajustada,
+      ae.quantidade_nova,
+      ae.motivo,
+      ae.observacao,
+      ae.data_ajuste,
+      p.nome AS produto_nome,
+      u.login AS usuario_login
+    FROM ajuste_estoque ae
+    INNER JOIN produto p ON ae.produto_id = p.id
+    LEFT JOIN usuario u ON ae.usuario_id = u.id
+    ORDER BY ae.data_ajuste DESC
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Erro ao listar ajustes:", err);
+      return res.status(500).json({ erro: "Erro ao listar ajustes de estoque." });
+    }
+
+    res.json(result);
+  });
+});
+
+// Criar ajuste manual de estoque
+app.post("/ajustes-estoque", (req, res) => {
+  const {
+    produto_id,
+    usuario_id,
+    tipo,
+    quantidade,
+    motivo,
+    observacao
+  } = req.body;
+
+  if (!produto_id || !tipo || !quantidade || !motivo) {
+    return res.status(400).json({
+      erro: "Produto, tipo, quantidade e motivo são obrigatórios."
+    });
+  }
+
+  if (tipo !== "ENTRADA" && tipo !== "SAIDA") {
+    return res.status(400).json({
+      erro: "Tipo de ajuste inválido."
+    });
+  }
+
+  if (Number(quantidade) <= 0) {
+    return res.status(400).json({
+      erro: "A quantidade deve ser maior que zero."
+    });
+  }
+
+  const sqlBuscaProduto = `
+    SELECT id, nome, quantidade_estoque
+    FROM produto
+    WHERE id = ?
+  `;
+
+  db.query(sqlBuscaProduto, [produto_id], (err, produtoResult) => {
+    if (err) {
+      console.error("Erro ao buscar produto:", err);
+      return res.status(500).json({ erro: "Erro ao buscar produto." });
+    }
+
+    if (produtoResult.length === 0) {
+      return res.status(404).json({ erro: "Produto não encontrado." });
+    }
+
+    const produto = produtoResult[0];
+    const estoqueAnterior = Number(produto.quantidade_estoque);
+    const quantidadeAjustada = Number(quantidade);
+
+    let novoEstoque;
+
+    if (tipo === "ENTRADA") {
+      novoEstoque = estoqueAnterior + quantidadeAjustada;
+    } else {
+      if (quantidadeAjustada > estoqueAnterior) {
+        return res.status(400).json({
+          erro: "Não é possível realizar saída maior que o estoque atual."
+        });
+      }
+
+      novoEstoque = estoqueAnterior - quantidadeAjustada;
+    }
+
+    const sqlAtualizaProduto = `
+      UPDATE produto
+      SET quantidade_estoque = ?
+      WHERE id = ?
+    `;
+
+    db.query(sqlAtualizaProduto, [novoEstoque, produto_id], (err) => {
+      if (err) {
+        console.error("Erro ao atualizar estoque:", err);
+        return res.status(500).json({ erro: "Erro ao atualizar estoque." });
+      }
+
+      const sqlAjuste = `
+        INSERT INTO ajuste_estoque
+        (
+          produto_id,
+          usuario_id,
+          tipo,
+          quantidade_anterior,
+          quantidade_ajustada,
+          quantidade_nova,
+          motivo,
+          observacao
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.query(
+        sqlAjuste,
+        [
+          produto_id,
+          usuario_id || null,
+          tipo,
+          estoqueAnterior,
+          quantidadeAjustada,
+          novoEstoque,
+          motivo,
+          observacao || null
+        ],
+        (err, ajusteResult) => {
+          if (err) {
+            console.error("Erro ao salvar ajuste:", err);
+            return res.status(500).json({ erro: "Erro ao salvar ajuste." });
+          }
+
+          const ajusteId = ajusteResult.insertId;
+
+          const descricao = `
+            Ajuste manual no produto "${produto.nome}".
+            Tipo: ${tipo}.
+            Estoque anterior: ${estoqueAnterior}.
+            Quantidade ajustada: ${quantidadeAjustada}.
+            Novo estoque: ${novoEstoque}.
+            Motivo: ${motivo}.
+          `;
+
+          const sqlAuditoria = `
+            INSERT INTO auditoria
+            (usuario_id, acao, tabela_afetada, registro_id, descricao)
+            VALUES (?, ?, ?, ?, ?)
+          `;
+
+          db.query(
+            sqlAuditoria,
+            [
+              usuario_id || null,
+              "AJUSTE_ESTOQUE",
+              "ajuste_estoque",
+              ajusteId,
+              descricao
+            ],
+            (err) => {
+              if (err) {
+                console.error("Erro ao registrar auditoria:", err);
+                return res.status(500).json({
+                  erro: "Ajuste salvo, mas erro ao registrar auditoria."
+                });
+              }
+
+              res.status(201).json({
+                mensagem: "Ajuste de estoque realizado com sucesso.",
+                ajuste_id: ajusteId,
+                estoque_anterior: estoqueAnterior,
+                quantidade_ajustada: quantidadeAjustada,
+                estoque_novo: novoEstoque
+              });
+            }
+          );
+        }
+      );
+    });
+  });
+});
+
+/* =========================
+   AUDITORIA
+========================= */
+
+app.get("/auditoria", (req, res) => {
+
+  const sql = `
+    SELECT
+      auditoria.id,
+      auditoria.acao,
+      auditoria.tabela_afetada,
+      auditoria.registro_id,
+      auditoria.descricao,
+      auditoria.data_hora,
+
+      usuario.login AS usuario_login
+
+    FROM auditoria
+
+    LEFT JOIN usuario
+      ON auditoria.usuario_id = usuario.id
+
+    ORDER BY auditoria.data_hora DESC
+  `;
+
+  db.query(sql, (err, result) => {
+
+    if (err) {
+
+      console.error(err);
+
+      return res.status(500).json({
+        erro: "Erro ao buscar auditoria"
+      });
+
+    }
+
+    res.json(result);
+
+  });
+
+});
+
+/* =========================
+   CONFERÊNCIA
+========================= */
+
+app.get("/conferencia", (req, res) => {
+  const sql = `
+    SELECT 
+      entrada_mercadoria.id,
+      entrada_mercadoria.quantidade,
+      entrada_mercadoria.numero_nf,
+      entrada_mercadoria.lote,
+      entrada_mercadoria.validade,
+      entrada_mercadoria.status_conferencia,
+
+      produto.nome AS produto_nome,
+      produto.codigo AS produto_codigo
+
+    FROM entrada_mercadoria
+
+    INNER JOIN produto 
+      ON entrada_mercadoria.produto_id = produto.id
+
+    WHERE entrada_mercadoria.status_conferencia IN ('PENDENTE', 'DIVERGENTE')
+
+    ORDER BY entrada_mercadoria.data_entrada DESC
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar conferências ❌");
+    }
+
+    res.json(result);
+  });
+});
+
+app.put("/conferencia/:id", (req, res) => {
+  const { id } = req.params;
+
+  const {
+    status_conferencia,
+    usuario_edicao_id
+  } = req.body;
+
+  if (!status_conferencia) {
+    return res.status(400).send("Status obrigatório ❌");
+  }
+
+  if (!["CONFERIDO", "DIVERGENTE", "PENDENTE"].includes(status_conferencia)) {
+    return res.status(400).send("Status inválido ❌");
+  }
+
+  const sql = `
+    UPDATE entrada_mercadoria
+    SET 
+      status_conferencia = ?,
+      usuario_edicao_id = ?,
+      data_atualizacao = NOW()
+    WHERE id = ?
+  `;
+
+  db.query(
+    sql,
+    [status_conferencia, usuario_edicao_id || null, id],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao atualizar conferência ❌");
+      }
+
+      res.send("Conferência atualizada com sucesso ✅");
+    }
+  );
 });
 
 app.use((req, res) => {

@@ -1,3 +1,4 @@
+const API_URL_PRODUTO = "http://localhost:3000";
 let editandoProdutoId = null;
 
 function iniciarProduto() {
@@ -5,8 +6,8 @@ function iniciarProduto() {
 
   if (!form) return;
 
-  carregarFornecedores();
-  carregarProdutos();
+  carregarFornecedoresProduto();
+  carregarListaProdutos();
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -24,12 +25,12 @@ function iniciarProduto() {
       categoria: document.getElementById("categoria").value,
       cor: document.getElementById("cor").value,
 
-      altura: altura,
-      largura: largura,
-      profundidade: profundidade,
+      altura,
+      largura,
+      profundidade,
       volume: altura * largura * profundidade,
 
-      custo: custo,
+      custo,
       preco_venda: precoVenda,
       margem_lucro: precoVenda - custo,
 
@@ -40,89 +41,123 @@ function iniciarProduto() {
       let res;
 
       if (editandoProdutoId) {
-        res = await fetch(`http://localhost:3000/produtos/${editandoProdutoId}`, {
+        res = await fetch(`${API_URL_PRODUTO}/produtos/${editandoProdutoId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(produto)
         });
-
-        const msg = await res.text();
-
-        if (!res.ok) {
-          alert(msg);
-          return;
-        }
-
-        alert("Produto atualizado!");
-        editandoProdutoId = null;
       } else {
-        res = await fetch("http://localhost:3000/produtos", {
+        res = await fetch(`${API_URL_PRODUTO}/produtos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(produto)
         });
-
-        const msg = await res.text();
-
-        if (!res.ok) {
-          alert(msg);
-          return;
-        }
-
-        alert("Produto cadastrado!");
       }
 
+      const msg = await res.text();
+
+      if (!res.ok) {
+        alert(msg);
+        return;
+      }
+
+      alert(editandoProdutoId ? "Produto atualizado!" : "Produto cadastrado!");
+
+      editandoProdutoId = null;
       form.reset();
-      carregarProdutos();
+      carregarListaProdutos();
 
     } catch (err) {
-      console.error("Erro:", err);
+      console.error("Erro ao salvar produto:", err);
       alert("Erro ao salvar produto");
     }
   });
 }
 
-async function carregarFornecedores() {
-  const res = await fetch("http://localhost:3000/fornecedores");
-  const fornecedores = await res.json();
+async function carregarFornecedoresProduto() {
+  try {
+    const res = await fetch(`${API_URL_PRODUTO}/fornecedores`);
 
-  const select = document.getElementById("fornecedor");
-  select.innerHTML = `<option value="">Selecione o fornecedor</option>`;
+    if (!res.ok) {
+      alert("Erro ao carregar fornecedores");
+      return;
+    }
 
-  fornecedores.forEach(f => {
-    select.innerHTML += `<option value="${f.id}">${f.nome}</option>`;
-  });
+    const fornecedores = await res.json();
+
+    const select = document.getElementById("fornecedor");
+
+    if (!select) return;
+
+    select.innerHTML = `<option value="">Selecione o fornecedor</option>`;
+
+    fornecedores.forEach(f => {
+      select.innerHTML += `<option value="${f.id}">${f.nome}</option>`;
+    });
+
+  } catch (err) {
+    console.error("Erro ao carregar fornecedores:", err);
+    alert("Erro ao carregar fornecedores");
+  }
 }
 
-async function carregarProdutos() {
-  const res = await fetch("http://localhost:3000/produtos");
-  const produtos = await res.json();
+async function carregarListaProdutos() {
+  try {
+    const res = await fetch(`${API_URL_PRODUTO}/produtos`);
 
-  const lista = document.getElementById("listaProdutos");
-  lista.innerHTML = "";
+    if (!res.ok) {
+      const erro = await res.text();
+      console.error("Erro vindo do backend:", erro);
+      alert("Erro ao carregar produtos: " + erro);
+      return;
+    }
 
-  produtos.forEach(p => {
-    lista.innerHTML += `
-      <li>
-        <strong>${p.nome}</strong> - SKU: ${p.codigo || ""}
-        <br>
-        Categoria: ${p.categoria || ""} | Cor: ${p.cor || ""}
-        <br>
-        Fornecedor: ${p.fornecedor_nome || "Sem fornecedor"}
-        <br>
-        Estoque: ${p.quantidade_estoque || 0} | Mínimo: ${p.estoque_minimo || 0}
-        <br>
-        Medidas: ${p.altura || 0}m x ${p.largura || 0}m x ${p.profundidade || 0}m
-        <br>
-        Volume: ${p.volume || 0} m³
-        <br>
-        Custo: R$ ${p.custo || 0} | Venda: R$ ${p.preco_venda || 0} | Lucro: R$ ${p.margem_lucro || 0}
+    const produtos = await res.json();
 
-        <button onclick='editarProduto(${JSON.stringify(p)})'>✏️ Editar</button>
-        <button onclick="excluirProduto(${p.id})">🗑️ Excluir</button>
-      </li>
-    `;
-  });
+    console.log("Produtos vindos do banco:", produtos);
+
+    const lista = document.getElementById("listaProdutos");
+
+    if (!lista) {
+      console.error("Elemento listaProdutos não encontrado");
+      return;
+    }
+
+    lista.innerHTML = "";
+
+    if (produtos.length === 0) {
+      lista.innerHTML = `<li>Nenhum produto cadastrado.</li>`;
+      return;
+    }
+
+    produtos.forEach(p => {
+      lista.innerHTML += `
+        <li class="item-produto">
+          <strong>${p.nome}</strong> - SKU: ${p.codigo || ""}
+          <br>
+          Categoria: ${p.categoria || ""} | Cor: ${p.cor || ""}
+          <br>
+          Fornecedor: ${p.fornecedor_nome || "Sem fornecedor"}
+          <br>
+          Estoque: ${p.quantidade_estoque ?? 0} | Mínimo: ${p.estoque_minimo ?? 0}
+          <br>
+          Medidas: ${p.altura || 0}m x ${p.largura || 0}m x ${p.profundidade || 0}m
+          <br>
+          Volume: ${p.volume || 0} m³
+          <br>
+          Custo: R$ ${p.custo || 0} | Venda: R$ ${p.preco_venda || 0} | Lucro: R$ ${p.margem_lucro || 0}
+          <br><br>
+
+          <button onclick='editarProduto(${JSON.stringify(p)})'>✏️ Editar</button>
+          <button onclick="excluirProduto(${p.id})">🗑️ Excluir</button>
+        </li>
+      `;
+    });
+
+  } catch (err) {
+    console.error("Erro ao carregar produtos:", err);
+    alert("Erro ao carregar produtos");
+  }
 }
 
 function editarProduto(p) {
@@ -145,16 +180,23 @@ function editarProduto(p) {
 async function excluirProduto(id) {
   if (!confirm("Deseja excluir este produto?")) return;
 
-  const res = await fetch(`http://localhost:3000/produtos/${id}`, {
-    method: "DELETE"
-  });
+  try {
+    const res = await fetch(`${API_URL_PRODUTO}/produtos/${id}`, {
+      method: "DELETE"
+    });
 
-  const msg = await res.text();
+    const msg = await res.text();
 
-  if (!res.ok) {
-    alert(msg);
-    return;
+    if (!res.ok) {
+      alert(msg);
+      return;
+    }
+
+    alert("Produto excluído!");
+    carregarListaProdutos();
+
+  } catch (err) {
+    console.error("Erro ao excluir produto:", err);
+    alert("Erro ao excluir produto");
   }
-
-  carregarProdutos();
 }

@@ -3,7 +3,6 @@
   <h1>Incluir Usuário</h1>
 
   <div class="abas-usuario">
-
     <button type="button" class="aba ativa" onclick="abrirAbaUsuario('dados')">
       Dados Usuário
     </button>
@@ -11,62 +10,74 @@
     <button type="button" class="aba" onclick="abrirAbaUsuario('permissoes')">
       Permissões
     </button>
-
   </div>
 
-  <form id="formUsuario" class="card-cadastro-usuario">
+  <form id="formUsuario" class="card-cadastro-usuario" novalidate>
 
     <div id="abaDadosUsuario" class="conteudo-aba ativo">
 
       <div class="grid-usuario">
 
         <div class="grupo-form">
-          <label>Funcionário</label>
+          <label for="nomeCompleto">Funcionário</label>
           <select id="nomeCompleto" required>
             <option value="">Selecione o Funcionário</option>
           </select>
         </div>
 
         <div class="grupo-form">
-          <label>Usuário</label>
-          <input type="text" id="login" required>
+          <label for="login">Usuário</label>
+          <input type="text" id="login" placeholder="Nome de usuário" required>
         </div>
 
         <div class="grupo-form">
-          <label>E-mail</label>
+          <label for="email">E-mail</label>
           <input type="email" id="email" placeholder="E-mail" readonly>
         </div>
 
-        <div class="grupo-form" id="campoSenha">
-  <label>Senha</label>
-  <input type="password" id="senha" placeholder="Digite a senha" required>
-
-  <div class="regras-senha">
-    <span id="regraTamanho">✔ Mínimo de 8 caracteres</span>
-    <span id="regraMaiuscula">✔ Pelo menos 1 letra maiúscula</span>
-    <span id="regraNumero">✔ Pelo menos 1 número</span>
-    <span id="regraEspecial">✔ Pelo menos 1 caractere especial</span>
-  </div>
-</div>
-
         <div class="grupo-form">
-  <label>Setor</label>
+          <label for="setor">Setor</label>
+          <select id="setor">
+            <option value="">Selecione o Setor</option>
+          </select>
+        </div>
 
-  <select id="setor">
-    <option value="">
-      Selecione o Setor
-    </option>
-  </select>
-</div>
+        <div class="grupo-form campo-senha" id="campoSenha">
+          <label for="senha">Senha</label>
 
-       <div class="grupo-form" id="campoSituacao" style="display: none;">
-  <label>Situação</label>
+          <div class="senha-container">
+            <input
+              type="password"
+              id="senha"
+              name="senha"
+              placeholder="Digite a senha"
+              required
+            >
 
-  <select id="situacao">
-    <option value="ATIVO">ATIVO</option>
-    <option value="INATIVO">INATIVO</option>
-  </select>
-</div>
+            <button
+              type="button"
+              class="btn-olho"
+              onclick="alternarSenha('senha', this)"
+            >
+              👁️
+            </button>
+          </div>
+
+          <div class="regras-senha">
+            <span id="regraTamanho">✔ Mínimo de 8 caracteres</span>
+            <span id="regraMaiuscula">✔ Pelo menos 1 letra maiúscula</span>
+            <span id="regraNumero">✔ Pelo menos 1 número</span>
+            <span id="regraEspecial">✔ Pelo menos 1 caractere especial</span>
+          </div>
+        </div>
+
+        <div class="grupo-form" id="campoSituacao" style="display: none;">
+          <label for="situacao">Situação</label>
+          <select id="situacao">
+            <option value="ATIVO">ATIVO</option>
+            <option value="INATIVO">INATIVO</option>
+          </select>
+        </div>
 
       </div>
 
@@ -79,142 +90,64 @@
         <div class="grupo-permissao">
           <h3>Usuário</h3>
 
-          <label>
-            <input type="checkbox" value="funcionarios">
-            Funcionário
-          </label>
-
-          <label>
-            <input type="checkbox" value="usuarios">
-            Usuário
-          </label>
-
-          <label>
-            <input type="checkbox" value="perfil_acesso">
-            Perfil de Acesso
-          </label>
+          <label><input type="checkbox" value="funcionarios"> Funcionário</label>
+          <label><input type="checkbox" value="usuarios"> Usuário</label>
+          <label><input type="checkbox" value="perfil_acesso"> Perfil de Acesso</label>
         </div>
 
         <div class="grupo-permissao">
           <h3>Recebimento</h3>
 
-          <label>
-            <input type="checkbox" value="fornecedores">
-            Fornecedor
-          </label>
-
-          <label>
-            <input type="checkbox" value="entrada_mercadorias">
-            Entrada de Mercadorias
-          </label>
-
-          <label>
-            <input type="checkbox" value="conferencia">
-            Conferência
-          </label>
+          <label><input type="checkbox" value="fornecedores"> Fornecedor</label>
+          <label><input type="checkbox" value="entrada_mercadorias"> Entrada de Mercadorias</label>
+          <label><input type="checkbox" value="conferencia"> Conferência</label>
         </div>
 
         <div class="grupo-permissao">
           <h3>Armazenagem</h3>
 
-          <label>
-            <input type="checkbox" value="enderecamento">
-            Endereçamento
-          </label>
-
-          <label>
-            <input type="checkbox" value="posicoes">
-            Posições
-          </label>
-
-          <label>
-            <input type="checkbox" value="cubagem">
-            Cubagem
-          </label>
-
-          <label>
-            <input type="checkbox" value="fifo">
-            FIFO
-          </label>
+          <label><input type="checkbox" value="enderecamento"> Endereçamento</label>
+          <label><input type="checkbox" value="posicoes"> Posições</label>
+          <label><input type="checkbox" value="cubagem"> Cubagem</label>
+          <label><input type="checkbox" value="fifo"> FIFO</label>
         </div>
 
         <div class="grupo-permissao">
           <h3>Estoque</h3>
 
-          <label>
-            <input type="checkbox" value="produtos">
-            Produtos
-          </label>
-
-          <label>
-            <input type="checkbox" value="balanceamento">
-            Balanceamento
-          </label>
-
-          <label>
-            <input type="checkbox" value="ajustes_estoque">
-            Ajuste
-          </label>
-
-          <label>
-            <input type="checkbox" value="alerta_estoque">
-            Alerta de Mínimo
-          </label>
+          <label><input type="checkbox" value="produtos"> Produtos</label>
+          <label><input type="checkbox" value="balanceamento"> Balanceamento</label>
+          <label><input type="checkbox" value="ajustes_estoque"> Ajuste</label>
+          <label><input type="checkbox" value="alerta_estoque"> Alerta de Mínimo</label>
         </div>
 
         <div class="grupo-permissao">
           <h3>Picking</h3>
-
-          <label>
-            <input type="checkbox" value="picking">
-            Picking
-          </label>
+          <label><input type="checkbox" value="picking"> Picking</label>
         </div>
 
         <div class="grupo-permissao">
           <h3>Expedição</h3>
 
-          <label>
-            <input type="checkbox" value="nota_fiscal">
-            Nota Fiscal
-          </label>
-
-          <label>
-            <input type="checkbox" value="romaneio">
-            Romaneio
-          </label>
+          <label><input type="checkbox" value="nota_fiscal"> Nota Fiscal</label>
+          <label><input type="checkbox" value="romaneio"> Romaneio</label>
         </div>
 
         <div class="grupo-permissao">
           <h3>Relatórios</h3>
-
-          <label>
-            <input type="checkbox" value="relatorios">
-            Relatórios
-          </label>
+          <label><input type="checkbox" value="relatorios"> Relatórios</label>
         </div>
 
         <div class="grupo-permissao">
           <h3>Auditoria</h3>
-
-          <label>
-            <input type="checkbox" value="auditoria">
-            Auditoria
-          </label>
+          <label><input type="checkbox" value="auditoria"> Auditoria</label>
         </div>
 
         <div class="grupo-permissao">
           <h3>Configuração</h3>
 
-          <label>
-            <input type="checkbox" value="setores">
-            Setor
-          </label>
-
-          <label>
-            <input type="checkbox" value="configuracoes">
-            Trocar Senha
-          </label>
+          <label><input type="checkbox" value="setores"> Setor</label>
+          <label><input type="checkbox" value="configuracoes"> Trocar Senha</label>
         </div>
 
       </div>
@@ -222,7 +155,6 @@
     </div>
 
     <div class="botoes-form">
-
       <button type="submit" class="btn-salvar">
         Salvar Usuário
       </button>
@@ -234,7 +166,6 @@
       >
         Voltar
       </button>
-
     </div>
 
   </form>

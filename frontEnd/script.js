@@ -1,87 +1,80 @@
 // MENU LATERAL
-
-const menuItems = document.querySelectorAll('.has-submenu');
+const menuItems = document.querySelectorAll(".has-submenu");
 
 menuItems.forEach(item => {
-
-  item.addEventListener('click', (e) => {
-
-    if (e.target.closest('.submenu')) {
+  item.addEventListener("click", (e) => {
+    if (e.target.closest(".submenu")) {
       return;
     }
 
-    const isOpen =
-      item.classList.contains('open');
+    const isOpen = item.classList.contains("open");
 
     menuItems.forEach(i => {
-      i.classList.remove('open');
+      i.classList.remove("open");
     });
 
     if (!isOpen) {
-      item.classList.add('open');
+      item.classList.add("open");
     }
-
   });
-
 });
 
 // BOTÃO MENU
+const toggleBtn = document.getElementById("menu-toggle");
+const sidebar = document.querySelector(".sidebar");
 
-const toggleBtn =
-  document.getElementById('menu-toggle');
-
-const sidebar =
-  document.querySelector('.sidebar');
-
-toggleBtn.addEventListener('click', () => {
-
-  sidebar.classList.toggle('collapsed');
-
-});
+if (toggleBtn && sidebar) {
+  toggleBtn.addEventListener("click", () => {
+    sidebar.classList.toggle("collapsed");
+  });
+}
 
 // ATUALIZAR USUÁRIO TOPO
-
 function atualizarUsuarioTopo() {
+  const areaUsuario = document.getElementById("usuarioTopo");
 
-  const areaUsuario =
-    document.getElementById("usuarioTopo");
+  if (!areaUsuario) return;
 
-  if (!areaUsuario) {
-    return;
-  }
+  const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
 
-  const usuarioLogado =
-    JSON.parse(localStorage.getItem("usuarioLogado"));
-
-  if (
-    usuarioLogado &&
-    usuarioLogado.login
-  ) {
-
-    areaUsuario.innerHTML = `
-      👤 ${usuarioLogado.login}
-    `;
-
+  if (usuarioLogado && usuarioLogado.login) {
+    areaUsuario.innerHTML = `👤 ${usuarioLogado.login}`;
     return;
   }
 
   areaUsuario.innerHTML = "👤 Usuário";
 }
 
-// CARREGAR PÁGINA
+// CARREGAR SCRIPT DA PÁGINA
+function carregarScriptPagina(idScript, caminhoScript, funcaoInicializacao) {
+  const scriptAntigo = document.getElementById(idScript);
 
+  if (scriptAntigo) {
+    scriptAntigo.remove();
+  }
+
+  const script = document.createElement("script");
+  script.src = caminhoScript;
+  script.id = idScript;
+
+  script.onload = () => {
+    if (typeof funcaoInicializacao === "function") {
+      funcaoInicializacao();
+    }
+  };
+
+  document.body.appendChild(script);
+}
+
+// CARREGAR PÁGINA
 function carregarPagina(pagina, permissaoNecessaria) {
 
   const usuario =
-    JSON.parse(
-      localStorage.getItem("usuarioLogado")
-    );
+    JSON.parse(localStorage.getItem("usuarioLogado"));
 
   if (!usuario) {
-
     window.location.href = "login.html";
     return;
-
   }
 
   const permissoes =
@@ -97,86 +90,69 @@ function carregarPagina(pagina, permissaoNecessaria) {
     );
 
     return;
-
   }
 
   fetch(pagina)
+
     .then(res => res.text())
-    .then(html => {
-
-      document.querySelector(".content").innerHTML = html;
-
-      if (pagina.includes("fornecedores")) {
-        iniciarFornecedor();
-      }
-
-      if (pagina.includes("produtos")) {
-        iniciarProduto();
-      }
-
-      if (pagina.includes("entrada")) {
-        iniciarEntrada();
-      }
-
-      if (pagina.includes("estoque")) {
-        iniciarEstoque();
-      }
-
-      if (pagina.includes("alerta_min")) {
-        iniciarAlertas();
-      }
-
-      if (pagina.includes("funcionarios")) {
-        iniciarFuncionario();
-      }
-
-      if (pagina.includes("usuarios")) {
-        consultarUsuarios();
-      }
-
-      if (pagina.includes("setores")) {
-        carregarSetores();
-      }
-
-      if (pagina.includes("cadastro-usuario")) {
-        iniciarCadastroUsuario();
-      }
-
-    });
-
-}
-
-// ABRIR PÁGINA
-
-function abrirPagina(pagina) {
-
-  fetch(pagina)
-
-    .then(res => {
-
-      if (!res.ok) {
-        throw new Error(
-          "Erro ao carregar página"
-        );
-      }
-
-      return res.text();
-
-    })
 
     .then(html => {
 
       const content =
         document.querySelector(".content");
 
+      if (!content) {
+        console.error("Elemento .content não encontrado");
+        return;
+      }
+
       content.innerHTML = html;
 
-      // ATUALIZA TOPO
+      // PRODUTOS
+      if (pagina.includes("produtos.html")) {
 
-      atualizarUsuarioTopo();
+        carregarScriptPagina(
+          "script-produtos",
+          "./js/produtos.js",
+          () => iniciarProduto()
+        );
+
+      }
+
+      // AJUSTE ESTOQUE
+      if (pagina.includes("ajuste-estoque.html")) {
+
+        carregarScriptPagina(
+          "script-ajuste-estoque",
+          "./js/ajuste-estoque.js",
+          () => iniciarAjusteEstoque()
+        );
+
+      }
+
+      // AUDITORIA
+      if (pagina.includes("auditoria.html")) {
+
+        carregarScriptPagina(
+          "script-auditoria",
+          "./js/auditoria.js",
+          () => iniciarAuditoria()
+        );
+
+      }
+
+      // CONFERÊNCIA
+      if (pagina.includes("conferencia")) {
+
+        carregarScriptPagina(
+          "script-conferencia",
+          "./js/conferencia.js",
+          () => iniciarConferencia()
+        );
+
+      }
 
       // FORNECEDORES
-
       if (
         pagina.includes("fornecedores") &&
         typeof iniciarFornecedor === "function"
@@ -186,19 +162,7 @@ function abrirPagina(pagina) {
 
       }
 
-      // PRODUTOS
-
-      if (
-        pagina.includes("produtos") &&
-        typeof iniciarProduto === "function"
-      ) {
-
-        iniciarProduto();
-
-      }
-
       // ENTRADA
-
       if (
         pagina.includes("entrada") &&
         typeof iniciarEntrada === "function"
@@ -209,9 +173,9 @@ function abrirPagina(pagina) {
       }
 
       // ESTOQUE
-
       if (
         pagina.includes("estoque") &&
+        !pagina.includes("ajuste-estoque") &&
         typeof iniciarEstoque === "function"
       ) {
 
@@ -220,7 +184,6 @@ function abrirPagina(pagina) {
       }
 
       // ALERTAS
-
       if (
         pagina.includes("alerta_min") &&
         typeof iniciarAlertas === "function"
@@ -231,13 +194,27 @@ function abrirPagina(pagina) {
       }
 
       // FUNCIONÁRIOS
+      if (
+        pagina.includes("funcionarios") &&
+        typeof iniciarFuncionario === "function"
+      ) {
 
-     if (pagina.includes("funcionarios")) {
-  iniciarFuncionario();
-}
+        iniciarFuncionario();
+
+      }
+
+      // USUÁRIOS
+      if (
+        pagina.includes("usuarios.html") &&
+        !pagina.includes("cadastro-usuario") &&
+        typeof consultarUsuarios === "function"
+      ) {
+
+        consultarUsuarios();
+
+      }
 
       // SETORES
-
       if (
         pagina.includes("setores") &&
         typeof carregarSetores === "function"
@@ -247,25 +224,7 @@ function abrirPagina(pagina) {
 
       }
 
-      // USUÁRIOS
-
-      if (
-        pagina.includes("usuarios.html") &&
-        !pagina.includes("cadastro-usuario")
-      ) {
-
-        if (
-          typeof carregarUsuarios === "function"
-        ) {
-
-          carregarUsuarios();
-
-        }
-
-      }
-
       // CADASTRO USUÁRIO
-
       if (
         pagina.includes("cadastro-usuario") &&
         typeof iniciarCadastroUsuario === "function"
@@ -276,7 +235,6 @@ function abrirPagina(pagina) {
       }
 
       // CONFIGURAÇÕES
-
       if (
         pagina.includes("configuracoes") &&
         typeof iniciarConfiguracoes === "function"
@@ -296,115 +254,62 @@ function abrirPagina(pagina) {
       );
 
       document.querySelector(".content").innerHTML = `
-
         <div class="erro-pagina">
-
-          <h1>
-            ❌ Erro ao carregar página
-          </h1>
-
-          <p>
-            Não foi possível carregar
-            o conteúdo solicitado.
-          </p>
-
+          <h1>❌ Erro ao carregar página</h1>
+          <p>Não foi possível carregar o conteúdo solicitado.</p>
         </div>
-
       `;
 
     });
 
 }
 
-// INICIAR SISTEMA
+// ABRIR PÁGINA
+function abrirPagina(pagina) {
+  carregarPagina(pagina);
+}
 
-atualizarUsuarioTopo();
-
+// PERMISSÕES DO MENU
 function aplicarPermissoes() {
-
-  const usuario =
-    JSON.parse(
-      localStorage.getItem("usuarioLogado")
-    );
+  const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
 
   if (!usuario) return;
 
-  const permissoes =
-    usuario.permissoes || [];
+  const permissoes = usuario.permissoes || [];
 
-  // FORNECEDORES
-  if (
-    !permissoes.includes("fornecedores")
-  ) {
-
-    const menu =
-      document.getElementById(
-        "menuFornecedores"
-      );
-
-    if (menu) {
-      menu.style.display = "none";
-    }
-
+  if (!permissoes.includes("fornecedores")) {
+    const menu = document.getElementById("menuFornecedores");
+    if (menu) menu.style.display = "none";
   }
 
-  // PRODUTOS
-  if (
-    !permissoes.includes("produtos")
-  ) {
-
-    const menu =
-      document.getElementById(
-        "menuProdutos"
-      );
-
-    if (menu) {
-      menu.style.display = "none";
-    }
-
+  if (!permissoes.includes("produtos")) {
+    const menu = document.getElementById("menuProdutos");
+    if (menu) menu.style.display = "none";
   }
 
-  // FUNCIONÁRIOS
-  if (
-    !permissoes.includes("funcionarios")
-  ) {
-
-    const menu =
-      document.getElementById(
-        "menuFuncionarios"
-      );
-
-    if (menu) {
-      menu.style.display = "none";
-    }
-
+  if (!permissoes.includes("funcionarios")) {
+    const menu = document.getElementById("menuFuncionarios");
+    if (menu) menu.style.display = "none";
   }
-
 }
 
+// LOGOUT
 function configurarLogout() {
-
-  const btnLogout =
-    document.getElementById("btnLogout");
+  const btnLogout = document.getElementById("btnLogout");
 
   if (!btnLogout) return;
 
   btnLogout.addEventListener("click", () => {
-
-    const confirmar =
-      confirm("Deseja sair do sistema?");
+    const confirmar = confirm("Deseja sair do sistema?");
 
     if (!confirmar) return;
 
     localStorage.removeItem("usuarioLogado");
-
     window.location.href = "login.html";
-
   });
-
 }
 
-configurarLogout();
+// CARREGAR USUÁRIO TOPO
 function carregarUsuarioTopo() {
   const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
 
@@ -420,4 +325,8 @@ function carregarUsuarioTopo() {
   }
 }
 
+// INICIAR SISTEMA
+atualizarUsuarioTopo();
 carregarUsuarioTopo();
+configurarLogout();
+aplicarPermissoes();

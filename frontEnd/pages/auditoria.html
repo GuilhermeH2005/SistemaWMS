@@ -1,0 +1,51 @@
+<h2 class="titulo-pagina">
+  Auditoria do Sistema
+</h2>
+
+<section class="card-lista">
+
+  <div class="topo-auditoria">
+    <div>
+      <h3 class="subtitulo">
+        Histórico de Operações
+      </h3>
+
+      <p class="descricao-auditoria">
+        Registro das ações realizadas no sistema.
+      </p>
+    </div>
+
+    <button onclick="carregarAuditoria()">
+      🔄 Atualizar
+    </button>
+  </div>
+
+  <div class="tabela-container">
+
+    <table class="tabela-auditoria">
+
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Usuário</th>
+          <th>Ação</th>
+          <th>Tabela</th>
+          <th>Registro</th>
+          <th>Descrição</th>
+          <th>Data/Hora</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaAuditoria">
+        <tr>
+          <td colspan="7">
+            Carregando auditoria...
+          </td>
+        </tr>
+      </tbody>
+
+    </table>
+
+  </div>
+
+</section>

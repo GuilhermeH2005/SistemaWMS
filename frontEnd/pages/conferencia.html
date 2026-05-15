@@ -1,0 +1,37 @@
+<h2 class="titulo-pagina">Conferência de Mercadorias</h2>
+
+<section class="card-conferencia">
+
+  <div class="topo-conferencia">
+    <h3>Entradas para Conferência</h3>
+
+    <input
+      type="text"
+      id="buscarConferencia"
+      placeholder="Buscar por NF ou produto..."
+      onkeyup="filtrarConferencia()"
+    >
+  </div>
+
+  <div class="tabela-conferencia-container">
+
+    <table class="tabela-conferencia">
+      <thead>
+        <tr>
+          <th>NF</th>
+          <th>Produto</th>
+          <th>SKU</th>
+          <th>Quantidade</th>
+          <th>Lote</th>
+          <th>Validade</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaConferencia"></tbody>
+    </table>
+
+  </div>
+
+</section>
