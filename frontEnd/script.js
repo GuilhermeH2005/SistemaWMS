@@ -69,6 +69,14 @@ function carregarScriptPagina(idScript, caminhoScript, funcaoInicializacao) {
 // CARREGAR PÁGINA
 function carregarPagina(pagina, permissaoNecessaria) {
 
+  if (pagina.includes("dashboard.html")) {
+  carregarScriptPagina(
+    "script-dashboard",
+    "js/dashboard.js",
+    () => iniciarDashboard()
+  );
+}
+
   const usuario =
     JSON.parse(localStorage.getItem("usuarioLogado"));
 
@@ -76,6 +84,14 @@ function carregarPagina(pagina, permissaoNecessaria) {
     window.location.href = "login.html";
     return;
   }
+
+  if (pagina.includes("posicoes.html")) {
+  carregarScriptPagina(
+    "script-posicoes",
+    "js/posicoes.js",
+    () => iniciarPosicoes()
+  );
+}
 
   const permissoes =
     usuario.permissoes || [];
@@ -202,6 +218,14 @@ function carregarPagina(pagina, permissaoNecessaria) {
         iniciarFuncionario();
 
       }
+
+      if (pagina.includes("enderecamento.html")) {
+        carregarScriptPagina(
+        "script-enderecamento",
+        "js/enderecamento.js",
+        () => iniciarEnderecamento()
+  );
+}
 
       // USUÁRIOS
       if (

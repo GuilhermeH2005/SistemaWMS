@@ -1,0 +1,103 @@
+<h2 class="titulo-pagina">Posições do Armazém</h2>
+
+<section class="card-formulario">
+  <h3 class="subtitulo">Gerar Posições</h3>
+
+  <p>
+    Esta ação gera as posições físicas do armazém com base na planta:
+    24 ruas, 20 colunas e 7 níveis.
+  </p>
+
+  <button id="btnGerarPosicoes">
+    Gerar posições do armazém
+  </button>
+</section>
+
+<section class="cards-resumo-posicoes">
+
+  <div class="card-resumo">
+    <span>Total</span>
+    <strong id="totalPosicoes">0</strong>
+  </div>
+
+  <div class="card-resumo livre">
+    <span>Livres</span>
+    <strong id="posicoesLivres">0</strong>
+  </div>
+
+  <div class="card-resumo ocupada">
+    <span>Ocupadas</span>
+    <strong id="posicoesOcupadas">0</strong>
+  </div>
+
+  <div class="card-resumo bloqueada">
+    <span>Bloqueadas</span>
+    <strong id="posicoesBloqueadas">0</strong>
+  </div>
+
+</section>
+
+<section class="card-lista">
+
+  <div class="topo-lista-posicoes">
+    <h3 class="subtitulo">Mapa de Posições</h3>
+
+    <div class="filtros-posicoes">
+
+      <select id="filtroStatus">
+        <option value="">Todos os status</option>
+        <option value="LIVRE">Livre</option>
+        <option value="OCUPADA">Ocupada</option>
+        <option value="BLOQUEADA">Bloqueada</option>
+      </select>
+
+      <select id="filtroRua">
+        <option value="">Todas as ruas</option>
+      </select>
+
+      <input
+        type="text"
+        id="filtroEndereco"
+        placeholder="Buscar endereço Ex: R20-C001"
+      >
+
+      <input
+        type="text"
+        id="filtroProduto"
+        placeholder="Buscar produto"
+      >
+
+      <button id="btnFiltrarPosicoes">
+        Filtrar
+      </button>
+
+      <button id="btnLimparFiltros">
+        Limpar
+      </button>
+
+    </div>
+  </div>
+
+  <div class="tabela-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Endereço</th>
+          <th>Rua</th>
+          <th>Coluna</th>
+          <th>Nível</th>
+          <th>Status</th>
+          <th>Produto</th>
+          <th>Quantidade</th>
+          <th>Ocupação</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaPosicoes">
+        <tr>
+          <td colspan="8">Carregando...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

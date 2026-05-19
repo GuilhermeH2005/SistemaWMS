@@ -1,0 +1,243 @@
+.titulo-pagina {
+  margin-bottom: 24px;
+
+  color: #003641;
+
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.subtitulo {
+  margin-bottom: 20px;
+
+  color: #003641;
+
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.card-formulario,
+.card-lista {
+  background: #ffffff;
+
+  padding: 28px;
+  margin-bottom: 28px;
+
+  border-radius: 16px;
+
+  border: 1px solid #e5eaf0;
+
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.form-endereco {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 18px;
+}
+
+.form-endereco input,
+.form-endereco select,
+.form-endereco textarea {
+  width: 100%;
+
+  padding: 13px 14px;
+
+  border: 1px solid #d1d9e6;
+
+  border-radius: 10px;
+
+  background: #f9fafb;
+
+  outline: none;
+
+  font-size: 14px;
+
+  color: #1f2937;
+
+  transition: 0.2s;
+}
+
+.form-endereco textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-endereco textarea,
+.form-endereco button {
+  grid-column: 1 / -1;
+}
+
+.form-endereco input:focus,
+.form-endereco select:focus,
+.form-endereco textarea:focus {
+  background: #ffffff;
+
+  border-color: #00ae90;
+
+  box-shadow:
+    0 0 0 3px rgba(0, 174, 144, 0.14);
+}
+
+#endereco {
+  background: #eefbf8 !important;
+
+  border: 2px solid #00ae90 !important;
+
+  font-weight: 800;
+
+  color: #003641;
+
+  letter-spacing: 1px;
+}
+
+.form-endereco button {
+  height: 52px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #00ae90,
+      #003641
+    );
+
+  color: white;
+
+  border: none;
+
+  border-radius: 12px;
+
+  font-size: 15px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition: 0.25s;
+
+  box-shadow:
+    0 10px 24px rgba(0, 54, 65, 0.18);
+}
+
+.form-endereco button:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 14px 30px rgba(0, 54, 65, 0.24);
+}
+
+.tabela-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+thead {
+  background:
+    linear-gradient(
+      135deg,
+      #003641,
+      #0b1f3a
+    );
+
+  color: white;
+}
+
+th {
+  padding: 14px;
+
+  text-align: left;
+
+  font-size: 14px;
+
+  white-space: nowrap;
+}
+
+td {
+  padding: 14px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+
+  font-size: 14px;
+
+  color: #374151;
+}
+
+tbody tr {
+  transition: 0.2s;
+}
+
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+.status-livre {
+  color: #16a34a;
+  font-weight: 800;
+}
+
+.status-ocupado {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.status-bloqueado {
+  color: #f59e0b;
+  font-weight: 800;
+}
+
+table button {
+  background: #dc2626;
+
+  color: white;
+
+  border: none;
+
+  padding: 8px 12px;
+
+  border-radius: 8px;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+table button:hover {
+  background: #991b1b;
+}
+
+@media (max-width: 1100px) {
+
+  .form-endereco {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+}
+
+@media (max-width: 700px) {
+
+  .form-endereco {
+    grid-template-columns: 1fr;
+  }
+
+  .card-formulario,
+  .card-lista {
+    padding: 20px;
+  }
+
+  .titulo-pagina {
+    font-size: 25px;
+  }
+}

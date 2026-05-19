@@ -1,0 +1,87 @@
+<h2 class="titulo-pagina">Endereçamento de Estoque</h2>
+
+<section class="card-formulario">
+  <h3 class="subtitulo">Endereçar Produto</h3>
+
+  <form id="formEndereco" class="form-endereco">
+
+    <select id="produto_id" required>
+      <option value="">Selecione um produto pendente</option>
+    </select>
+
+    <div id="infoProdutoEndereco" class="info-endereco">
+      Selecione um produto para ver o saldo pendente.
+    </div>
+
+    <button type="button" id="btnSugerirEndereco">
+      Sugerir Endereço
+    </button>
+
+    <input type="hidden" id="posicao_id">
+
+    <select id="rua" required>
+      <option value="">Selecione a rua</option>
+    </select>
+
+    <select id="coluna" required>
+      <option value="">Selecione a coluna</option>
+    </select>
+
+    <select id="nivel" required>
+      <option value="">Selecione o nível</option>
+    </select>
+
+    <input
+      type="text"
+      id="endereco"
+      placeholder="Endereço gerado automaticamente"
+      readonly
+    >
+
+    <input
+      type="number"
+      id="quantidade_unidades"
+      min="1"
+      placeholder="Quantidade de unidades"
+      required
+    >
+
+    <textarea
+      id="observacao"
+      placeholder="Observação"
+    ></textarea>
+
+    <button type="submit">
+      Salvar Endereçamento
+    </button>
+
+  </form>
+</section>
+
+<section class="card-lista">
+  <h3 class="subtitulo">Produtos Endereçados</h3>
+
+  <div class="tabela-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Endereço</th>
+          <th>Produto</th>
+          <th>Rua</th>
+          <th>Coluna</th>
+          <th>Nível</th>
+          <th>Qtd. Unidades</th>
+          <th>Capacidade Un.</th>
+          <th>Ocupação m³</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaEnderecos">
+        <tr>
+          <td colspan="9">Carregando...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

@@ -113,11 +113,44 @@ app.delete("/fornecedores/:id", (req, res) => {
    PRODUTOS
 ========================= */
 
+app.get("/produtos", (req, res) => {
+
+  const sql = `
+    SELECT
+      produto.*,
+      fornecedor.nome AS fornecedor_nome
+    FROM produto
+
+    LEFT JOIN fornecedor
+      ON produto.fornecedor_id = fornecedor.id
+
+    ORDER BY produto.nome
+  `;
+
+  db.query(sql, (err, result) => {
+
+    if (err) {
+
+      console.error(err);
+
+      return res.status(500).send(
+        "Erro ao buscar produtos ❌"
+      );
+
+    }
+
+    res.json(result);
+
+  });
+
+});
+
 app.post("/produtos", (req, res) => {
   const {
     nome, fornecedor_id, categoria, cor,
     altura, largura, profundidade, volume,
-    custo, preco_venda, margem_lucro, estoque_minimo
+    custo, preco_venda, margem_lucro, estoque_minimo,
+    giro
   } = req.body;
 
   if (!nome || !fornecedor_id || !categoria || !cor) {
@@ -128,13 +161,18 @@ app.post("/produtos", (req, res) => {
 
   const sql = `
     INSERT INTO produto
-    (nome, codigo, fornecedor_id, categoria, cor, altura, largura, profundidade, volume, custo, preco_venda, margem_lucro, estoque_minimo)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (nome, codigo, fornecedor_id, categoria, cor, altura, largura, profundidade, volume, custo, preco_venda, margem_lucro, estoque_minimo, giro)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
     sql,
-    [nome, codigo, fornecedor_id, categoria, cor, altura, largura, profundidade, volume, custo, preco_venda, margem_lucro, estoque_minimo],
+    [
+      nome, codigo, fornecedor_id, categoria, cor,
+      altura, largura, profundidade, volume,
+      custo, preco_venda, margem_lucro, estoque_minimo,
+      giro || "MEDIO"
+    ],
     (err) => {
       if (err) {
         console.error(err);
@@ -146,57 +184,24 @@ app.post("/produtos", (req, res) => {
   );
 });
 
-app.get("/produtos", (req, res) => {
-  const sql = `
-    SELECT 
-      produto.id,
-      produto.nome,
-      produto.codigo,
-      produto.fornecedor_id,
-      produto.categoria,
-      produto.cor,
-      produto.altura,
-      produto.largura,
-      produto.profundidade,
-      produto.volume,
-      produto.custo,
-      produto.preco_venda,
-      produto.margem_lucro,
-      produto.quantidade_estoque,
-      produto.estoque_minimo,
-      fornecedor.nome AS fornecedor_nome
-    FROM produto
-    LEFT JOIN fornecedor ON produto.fornecedor_id = fornecedor.id
-  `;
-
-  db.query(sql, (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Erro ao buscar produtos ❌");
-    }
-
-    res.json(result);
-  });
-});
-
 app.put("/produtos/:id", (req, res) => {
   const { id } = req.params;
 
   const {
     nome, fornecedor_id, categoria, cor,
     altura, largura, profundidade, volume,
-    custo, preco_venda, margem_lucro, estoque_minimo
+    custo, preco_venda, margem_lucro, estoque_minimo, giro
   } = req.body;
 
   const sql = `
     UPDATE produto
-    SET nome=?, fornecedor_id=?, categoria=?, cor=?, altura=?, largura=?, profundidade=?, volume=?, custo=?, preco_venda=?, margem_lucro=?, estoque_minimo=?
+    SET nome=?, fornecedor_id=?, categoria=?, cor=?, altura=?, largura=?, profundidade=?, volume=?, custo=?, preco_venda=?, margem_lucro=?, estoque_minimo=?, giro=?
     WHERE id=?
   `;
 
   db.query(
     sql,
-    [nome, fornecedor_id, categoria, cor, altura, largura, profundidade, volume, custo, preco_venda, margem_lucro, estoque_minimo, id],
+    [nome, fornecedor_id, categoria, cor, altura, largura, profundidade, volume, custo, preco_venda, margem_lucro, estoque_minimo,  giro || "MEDIO", id],
     (err) => {
       if (err) {
         console.error(err);
@@ -1226,6 +1231,766 @@ app.put("/conferencia/:id", (req, res) => {
       res.send("Conferência atualizada com sucesso ✅");
     }
   );
+});
+
+/* =========================
+   DASHBOARD
+========================= */
+
+app.get("/dashboard", (req, res) => {
+  const sql = `
+    SELECT
+      (SELECT COUNT(*) FROM produto) AS total_produtos,
+      (SELECT COUNT(*) FROM fornecedor) AS total_fornecedores,
+      (SELECT COUNT(*) FROM entrada_mercadoria) AS total_entradas,
+      (SELECT IFNULL(SUM(quantidade_estoque), 0) FROM produto) AS estoque_total,
+      (SELECT COUNT(*) FROM produto WHERE quantidade_estoque <= estoque_minimo) AS produtos_alerta,
+      (SELECT COUNT(*) FROM ajuste_estoque) AS total_ajustes,
+      (SELECT COUNT(*) FROM entrada_mercadoria WHERE status_conferencia = 'PENDENTE') AS conferencias_pendentes,
+      (SELECT COUNT(*) FROM auditoria) AS total_auditorias
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Erro ao buscar dashboard:", err);
+      return res.status(500).json({ erro: "Erro ao buscar dados do dashboard" });
+    }
+
+    res.json(result[0]);
+  });
+});
+
+app.get("/dashboard/auditorias-recentes", (req, res) => {
+  const sql = `
+    SELECT 
+      auditoria.acao,
+      auditoria.descricao,
+      auditoria.data_hora,
+      usuario.login AS usuario_login
+    FROM auditoria
+    LEFT JOIN usuario ON auditoria.usuario_id = usuario.id
+    ORDER BY auditoria.data_hora DESC
+    LIMIT 5
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Erro ao buscar auditorias recentes:", err);
+      return res.status(500).json({ erro: "Erro ao buscar auditorias recentes" });
+    }
+
+    res.json(result);
+  });
+});
+
+/* =========================
+   ENDEREÇAMENTO
+========================= */
+
+app.post("/enderecos", (req, res) => {
+  const {
+    produto_id,
+    posicao_id,
+    rua,
+    coluna,
+    nivel,
+    endereco,
+    quantidade_unidades,
+    observacao
+  } = req.body;
+
+  if (!produto_id || !quantidade_unidades) {
+    return res.status(400).json({
+      erro: "Produto e quantidade são obrigatórios ❌"
+    });
+  }
+
+  if (!posicao_id && (!rua || !coluna || !nivel || !endereco)) {
+    return res.status(400).json({
+      erro: "Informe uma posição sugerida ou preencha rua, coluna e nível manualmente ❌"
+    });
+  }
+
+  const sqlProduto = `
+    SELECT
+      p.id,
+      p.nome,
+      p.volume,
+      p.quantidade_estoque,
+      p.quantidade_estoque - IFNULL(SUM(e.quantidade_unidades), 0) AS quantidade_pendente
+    FROM produto p
+    LEFT JOIN endereco_estoque e ON e.produto_id = p.id
+    WHERE p.id = ?
+    GROUP BY p.id, p.nome, p.volume, p.quantidade_estoque
+  `;
+
+  db.query(sqlProduto, [produto_id], (err, produtoResult) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ erro: "Erro ao buscar produto ❌" });
+    }
+
+    if (produtoResult.length === 0) {
+      return res.status(404).json({ erro: "Produto não encontrado ❌" });
+    }
+
+    const produto = produtoResult[0];
+    const volumeProduto = Number(produto.volume || 0);
+    const quantidadePendente = Number(produto.quantidade_pendente || 0);
+
+    if (quantidadePendente <= 0) {
+      return res.status(400).json({
+        erro: "Este produto já está totalmente endereçado."
+      });
+    }
+
+    if (!volumeProduto || volumeProduto <= 0) {
+      return res.status(400).json({
+        erro: "Produto sem cubagem cadastrada."
+      });
+    }
+
+    function salvarComPosicao(posicao) {
+      const capacidadeM3 = Number(posicao.capacidade_m3 || 1.8);
+      const capacidadeUnidades = Math.floor(capacidadeM3 / volumeProduto);
+      const quantidadeSolicitada = Number(quantidade_unidades);
+
+      let quantidadeArmazenada = quantidadeSolicitada;
+
+      if (quantidadeArmazenada > capacidadeUnidades) {
+        quantidadeArmazenada = capacidadeUnidades;
+      }
+
+      if (quantidadeArmazenada > quantidadePendente) {
+        quantidadeArmazenada = quantidadePendente;
+      }
+
+      const pendenteDepois = quantidadePendente - quantidadeArmazenada;
+      const ocupacaoM3 = quantidadeArmazenada * volumeProduto;
+
+      const sqlInsert = `
+        INSERT INTO endereco_estoque
+        (
+          produto_id,
+          posicao_id,
+          rua,
+          coluna,
+          nivel,
+          endereco,
+          quantidade_unidades,
+          quantidade_paletes,
+          capacidade_m3,
+          capacidade_unidades,
+          ocupacao_m3,
+          status,
+          observacao
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OCUPADO', ?)
+      `;
+
+      db.query(
+        sqlInsert,
+        [
+          produto_id,
+          posicao.id || null,
+          posicao.rua,
+          posicao.coluna,
+          posicao.nivel,
+          posicao.endereco,
+          quantidadeArmazenada,
+          1,
+          capacidadeM3,
+          capacidadeUnidades,
+          ocupacaoM3,
+          observacao || null
+        ],
+        (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({
+              erro: "Erro ao salvar endereçamento ❌"
+            });
+          }
+
+          if (posicao.id) {
+            db.query(
+              "UPDATE posicao_estoque SET status = 'OCUPADA' WHERE id = ?",
+              [posicao.id]
+            );
+          }
+
+          res.status(201).json({
+            mensagem: "Endereçamento realizado com sucesso ✅",
+            produto: produto.nome,
+            endereco: posicao.endereco,
+            capacidade_m3: capacidadeM3,
+            volume_produto: volumeProduto,
+            capacidade_unidades: capacidadeUnidades,
+            quantidade_pendente_antes: quantidadePendente,
+            quantidade_solicitada: quantidadeSolicitada,
+            quantidade_armazenada: quantidadeArmazenada,
+            quantidade_pendente_depois: pendenteDepois
+          });
+        }
+      );
+    }
+
+    if (posicao_id) {
+
+  db.query(
+    "SELECT * FROM posicao_estoque WHERE id = ?",
+    [posicao_id],
+    (err, posicaoResult) => {
+
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          erro: "Erro ao buscar posição ❌"
+        });
+      }
+
+      if (posicaoResult.length === 0) {
+        return res.status(404).json({
+          erro: "Posição não encontrada ❌"
+        });
+      }
+
+      const posicao = posicaoResult[0];
+
+      if (posicao.status !== "LIVRE") {
+        return res.status(400).json({
+          erro: "Esta posição não está livre."
+        });
+      }
+
+      salvarComPosicao(posicao);
+
+    }
+  );
+
+} else {
+
+  const sqlBuscaPosicaoManual = `
+    SELECT *
+    FROM posicao_estoque
+    WHERE endereco = ?
+  `;
+
+  db.query(
+    sqlBuscaPosicaoManual,
+    [endereco],
+    (err, posicaoManualResult) => {
+
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          erro: "Erro ao buscar posição manual ❌"
+        });
+      }
+
+      if (posicaoManualResult.length > 0) {
+
+        const posicao = posicaoManualResult[0];
+
+        if (posicao.status !== "LIVRE") {
+          return res.status(400).json({
+            erro: "Esta posição manual não está livre."
+          });
+        }
+
+        salvarComPosicao(posicao);
+
+      } else {
+
+        salvarComPosicao({
+          id: null,
+          rua,
+          coluna,
+          nivel,
+          endereco,
+          capacidade_m3: 1.8
+        });
+
+      }
+
+    }
+  );
+
+}
+  });
+});
+
+app.get("/enderecos", (req, res) => {
+  const sql = `
+    SELECT
+      e.id,
+      e.produto_id,
+      e.posicao_id,
+      e.rua,
+      e.coluna,
+      e.nivel,
+      e.endereco,
+      e.quantidade_unidades,
+      e.capacidade_m3,
+      e.capacidade_unidades,
+      e.ocupacao_m3,
+      e.status,
+      e.observacao,
+
+      produto.nome AS produto_nome,
+      produto.codigo AS produto_codigo
+
+    FROM endereco_estoque e
+
+    INNER JOIN produto
+      ON e.produto_id = produto.id
+
+    ORDER BY e.rua, e.coluna, e.nivel
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar endereços ❌");
+    }
+
+    res.json(result);
+  });
+});
+
+app.delete("/enderecos/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.query(
+    "SELECT posicao_id FROM endereco_estoque WHERE id = ?",
+    [id],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao buscar endereçamento ❌");
+      }
+
+      if (result.length === 0) {
+        return res.status(404).send("Endereçamento não encontrado ❌");
+      }
+
+      const posicaoId = result[0].posicao_id;
+
+      db.query(
+        "DELETE FROM endereco_estoque WHERE id = ?",
+        [id],
+        (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).send("Erro ao excluir endereçamento ❌");
+          }
+
+          db.query(
+            "UPDATE posicao_estoque SET status = 'LIVRE' WHERE id = ?",
+            [posicaoId],
+            (err) => {
+              if (err) {
+                console.error(err);
+                return res.status(500).send("Endereçamento excluído, mas erro ao liberar posição.");
+              }
+
+              res.send("Endereçamento excluído e posição liberada ✅");
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+app.get("/enderecos/sugerir/:produtoId", (req, res) => {
+  const { produtoId } = req.params;
+
+  const sqlProduto = `
+    SELECT id, nome, volume, giro
+    FROM produto
+    WHERE id = ?
+  `;
+
+  db.query(sqlProduto, [produtoId], (err, produtoResult) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar produto ❌");
+    }
+
+    if (produtoResult.length === 0) {
+      return res.status(404).send("Produto não encontrado ❌");
+    }
+
+    const produto = produtoResult[0];
+
+    let ruas = [];
+    let niveis = [];
+
+    if (produto.giro === "ALTO") {
+      ruas = gerarIntervalo(20, 24);
+    } else if (produto.giro === "MEDIO") {
+      ruas = gerarIntervalo(10, 19);
+    } else {
+      ruas = gerarIntervalo(1, 9);
+    }
+
+    const volume = Number(produto.volume || 0);
+
+    if (volume >= 0.006) {
+      niveis = [1, 2, 3];
+    } else {
+      niveis = [4, 5, 6, 7];
+    }
+
+    const colunas = gerarIntervalo(1, 84);
+
+    const candidatos = [];
+
+    ruas.forEach(rua => {
+      colunas.forEach(coluna => {
+        niveis.forEach(nivel => {
+          const endereco =
+            `R${String(rua).padStart(2, "0")}-C${String(coluna).padStart(3, "0")}-N${String(nivel).padStart(2, "0")}`;
+
+          candidatos.push({
+            rua,
+            coluna,
+            nivel,
+            endereco
+          });
+        });
+      });
+    });
+
+    const enderecosCandidatos =
+      candidatos.map(c => c.endereco);
+
+    const sqlOcupados = `
+      SELECT endereco
+      FROM endereco_estoque
+      WHERE endereco IN (?)
+      AND status IN ('OCUPADO', 'BLOQUEADO')
+    `;
+
+    db.query(sqlOcupados, [enderecosCandidatos], (err, ocupadosResult) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao verificar endereços ❌");
+      }
+
+      const ocupados = ocupadosResult.map(e => e.endereco);
+
+      const enderecoLivre = candidatos.find(c =>
+        !ocupados.includes(c.endereco)
+      );
+
+      if (!enderecoLivre) {
+        return res.status(404).send("Nenhum endereço disponível para este produto ❌");
+      }
+
+      res.json({
+        produto: produto.nome,
+        giro: produto.giro,
+        volume: produto.volume,
+        sugestao: enderecoLivre
+      });
+    });
+  });
+});
+
+function gerarIntervalo(inicio, fim) {
+  const lista = [];
+
+  for (let i = inicio; i <= fim; i++) {
+    lista.push(i);
+  }
+
+  return lista;
+}
+
+/* =========================
+   POSIÇÕES DE ESTOQUE
+========================= */
+
+app.post("/posicoes/gerar", (req, res) => {
+  const valores = [];
+
+  for (let rua = 1; rua <= 24; rua++) {
+    for (let coluna = 1; coluna <= 20; coluna++) {
+      for (let nivel = 1; nivel <= 7; nivel++) {
+        const endereco =
+          `R${String(rua).padStart(2, "0")}-C${String(coluna).padStart(3, "0")}-N${String(nivel).padStart(2, "0")}`;
+
+        valores.push([
+          rua,
+          coluna,
+          nivel,
+          endereco,
+          1.8,
+          "LIVRE"
+        ]);
+      }
+    }
+  }
+
+const filtros = [];
+
+if (status) {
+  filtros.push("p.status = ?");
+  valores.push(status);
+}
+
+if (rua) {
+  filtros.push("p.rua = ?");
+  valores.push(rua);
+}
+
+if (filtros.length > 0) {
+  sql += " WHERE " + filtros.join(" AND ");
+}
+
+sql += " LIMIT 200";
+
+  const sql = `
+    INSERT IGNORE INTO posicao_estoque
+    (rua, coluna, nivel, endereco, capacidade_m3, status)
+    VALUES ?
+  `;
+
+  db.query(sql, [valores], (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao gerar posições ❌");
+    }
+
+    res.send("Posições geradas com sucesso ✅");
+  });
+});
+
+app.get("/posicoes/resumo", (req, res) => {
+  const sql = `
+    SELECT
+      COUNT(*) AS total,
+      SUM(status = 'LIVRE') AS livres,
+      SUM(status = 'OCUPADA') AS ocupadas,
+      SUM(status = 'BLOQUEADA') AS bloqueadas
+    FROM posicao_estoque
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar resumo das posições ❌");
+    }
+
+    res.json(result[0]);
+  });
+});
+
+app.get("/posicoes", (req, res) => {
+  const { status, rua, endereco, produto } = req.query;
+
+  let sql = `
+    SELECT
+      p.id,
+      p.rua,
+      p.coluna,
+      p.nivel,
+      p.endereco,
+      p.capacidade_m3,
+      p.status,
+      e.quantidade_unidades,
+      e.ocupacao_m3,
+      produto.nome AS produto_nome,
+      produto.codigo AS produto_codigo
+    FROM posicao_estoque p
+    LEFT JOIN endereco_estoque e
+      ON e.posicao_id = p.id
+    LEFT JOIN produto
+      ON e.produto_id = produto.id
+  `;
+
+  const filtros = [];
+  const valoresFiltro = [];
+
+  if (status) {
+    filtros.push("p.status = ?");
+    valoresFiltro.push(status);
+  }
+
+  if (rua) {
+    filtros.push("p.rua = ?");
+    valoresFiltro.push(rua);
+  }
+
+  if (endereco) {
+    filtros.push("p.endereco LIKE ?");
+    valoresFiltro.push(`%${endereco}%`);
+  }
+
+  if (produto) {
+    filtros.push("produto.nome LIKE ?");
+    valoresFiltro.push(`%${produto}%`);
+  }
+
+  if (filtros.length > 0) {
+    sql += " WHERE " + filtros.join(" AND ");
+  }
+
+  sql += `
+    ORDER BY p.rua, p.coluna, p.nivel
+    LIMIT 200
+  `;
+
+  db.query(sql, valoresFiltro, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar posições ❌");
+    }
+
+    res.json(result);
+  });
+});
+
+app.get("/produtos-pendentes-enderecamento", (req, res) => {
+  const sql = `
+    SELECT
+      p.id,
+      p.nome,
+      p.codigo,
+      p.volume,
+      p.giro,
+      p.quantidade_estoque,
+
+      IFNULL(SUM(e.quantidade_unidades), 0) AS quantidade_enderecada,
+
+      p.quantidade_estoque - IFNULL(SUM(e.quantidade_unidades), 0) AS quantidade_pendente
+
+    FROM produto p
+
+    LEFT JOIN endereco_estoque e
+      ON e.produto_id = p.id
+
+    GROUP BY
+      p.id,
+      p.nome,
+      p.codigo,
+      p.volume,
+      p.giro,
+      p.quantidade_estoque
+
+    HAVING quantidade_pendente > 0
+
+    ORDER BY p.nome
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar produtos pendentes ❌");
+    }
+
+    res.json(result);
+  });
+});
+
+app.get("/posicoes/sugerir/:produtoId", (req, res) => {
+  const { produtoId } = req.params;
+
+  const sqlProduto = `
+    SELECT id, nome, volume, giro
+    FROM produto
+    WHERE id = ?
+  `;
+
+  db.query(sqlProduto, [produtoId], (err, produtoResult) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar produto ❌");
+    }
+
+    if (produtoResult.length === 0) {
+      return res.status(404).send("Produto não encontrado ❌");
+    }
+
+    const produto = produtoResult[0];
+
+    let ruaInicio = 1;
+    let ruaFim = 9;
+
+    if (produto.giro === "ALTO") {
+      ruaInicio = 20;
+      ruaFim = 24;
+    } else if (produto.giro === "MEDIO") {
+      ruaInicio = 10;
+      ruaFim = 19;
+    }
+
+    const volume = Number(produto.volume || 0);
+
+    let nivelInicio = 4;
+    let nivelFim = 7;
+
+    if (volume >= 0.006) {
+      nivelInicio = 1;
+      nivelFim = 3;
+    }
+
+    const sqlPosicao = `
+      SELECT *
+      FROM posicao_estoque
+      WHERE status = 'LIVRE'
+      AND rua BETWEEN ? AND ?
+      AND nivel BETWEEN ? AND ?
+      ORDER BY rua, coluna, nivel
+      LIMIT 1
+    `;
+
+    db.query(
+      sqlPosicao,
+      [ruaInicio, ruaFim, nivelInicio, nivelFim],
+      (err, posicaoResult) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send("Erro ao sugerir posição ❌");
+        }
+
+        if (posicaoResult.length === 0) {
+          return res.status(404).send("Nenhuma posição livre encontrada ❌");
+        }
+
+        res.json({
+          produto: produto.nome,
+          giro: produto.giro,
+          volume: produto.volume,
+          posicao: posicaoResult[0]
+        });
+      }
+    );
+  });
+});
+
+app.get("/posicoes/resumo", (req, res) => {
+  const sql = `
+    SELECT
+      COUNT(*) AS total,
+      SUM(status = 'LIVRE') AS livres,
+      SUM(status = 'OCUPADA') AS ocupadas,
+      SUM(status = 'BLOQUEADA') AS bloqueadas
+    FROM posicao_estoque
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar resumo das posições ❌");
+    }
+
+    res.json(result[0]);
+  });
 });
 
 app.use((req, res) => {

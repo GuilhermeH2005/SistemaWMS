@@ -1,0 +1,140 @@
+.dashboard-container {
+  padding: 30px;
+}
+
+.dashboard-topo {
+  margin-bottom: 28px;
+}
+
+.dashboard-topo h1 {
+  font-size: 34px;
+  color: #003641;
+  font-weight: 800;
+}
+
+.dashboard-topo p {
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+.cards-dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.card-dashboard {
+  background: white;
+  border-radius: 16px;
+  padding: 22px;
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  transition: 0.2s;
+}
+
+.card-dashboard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+}
+
+.card-dashboard span {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+
+  background: linear-gradient(135deg, #00ae90, #003641);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 24px;
+}
+
+.card-dashboard h3 {
+  font-size: 28px;
+  color: #003641;
+}
+
+.card-dashboard p {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.card-dashboard.alerta span {
+  background: linear-gradient(135deg, #f59e0b, #dc2626);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 22px;
+}
+
+.card-info {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.card-info h2 {
+  color: #003641;
+  margin-bottom: 18px;
+  font-size: 22px;
+}
+
+.card-info ul {
+  padding-left: 18px;
+  color: #374151;
+  line-height: 2;
+}
+
+.auditoria-item {
+  padding: 14px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border-left: 5px solid #00ae90;
+  margin-bottom: 12px;
+}
+
+.auditoria-item strong {
+  color: #003641;
+}
+
+.auditoria-item p {
+  margin-top: 4px;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.auditoria-item small {
+  color: #6b7280;
+}
+
+@media (max-width: 1100px) {
+  .cards-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .cards-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-container {
+    padding: 18px;
+  }
+}

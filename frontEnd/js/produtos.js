@@ -28,13 +28,14 @@ function iniciarProduto() {
       altura,
       largura,
       profundidade,
-      volume: altura * largura * profundidade,
+     volume: (altura * largura * profundidade) / 1000000,
 
       custo,
       preco_venda: precoVenda,
       margem_lucro: precoVenda - custo,
 
-      estoque_minimo: document.getElementById("estoque_minimo").value
+      estoque_minimo: document.getElementById("estoque_minimo").value,
+      giro: document.getElementById("giro").value,
     };
 
     try {
@@ -143,9 +144,12 @@ async function carregarListaProdutos() {
           <br>
           Medidas: ${p.altura || 0}m x ${p.largura || 0}m x ${p.profundidade || 0}m
           <br>
-          Volume: ${p.volume || 0} m³
+         Volume: ${Number(p.volume || 0).toFixed(4)} m³
+          <br>
           <br>
           Custo: R$ ${p.custo || 0} | Venda: R$ ${p.preco_venda || 0} | Lucro: R$ ${p.margem_lucro || 0}
+          <br>
+          Giro: ${p.giro || "MEDIO"}
           <br><br>
 
           <button onclick='editarProduto(${JSON.stringify(p)})'>✏️ Editar</button>
@@ -173,6 +177,7 @@ function editarProduto(p) {
   document.getElementById("custo").value = p.custo || "";
   document.getElementById("preco_venda").value = p.preco_venda || "";
   document.getElementById("estoque_minimo").value = p.estoque_minimo || "";
+  document.getElementById("giro").value = p.giro || "MEDIO";
 
   editandoProdutoId = p.id;
 }

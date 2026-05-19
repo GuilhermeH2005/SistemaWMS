@@ -21,6 +21,9 @@
   <link rel="stylesheet" href="css/configuracoes.css">
   <link rel="stylesheet" href="css/ajuste-estoque.css">
   <link rel="stylesheet" href="css/conferencia.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/enderecamento.css">
+  <link rel="stylesheet" href="css/posicoes.css">
 </head>
 
 <body>
@@ -37,18 +40,11 @@
 
         <!-- DASHBOARD -->
 
-        <li class="menu-item active">
-
+        <li class="menu-item active" onclick="carregarPagina('pages/dashboard.html')">
           <div class="icon-text">
-
-            <span class="icon">🏠</span>
-
-            <span class="text">
-              Dashboard
-            </span>
-
-          </div>
-
+          <span class="icon">🏠</span>
+          <span class="text">Dashboard</span>
+        </div>
         </li>
 
         <!-- USUÁRIOS -->
@@ -148,8 +144,11 @@
               Endereçamento
             </li>
 
-            <li>
-              Posições
+            <li onclick="carregarPagina(
+              'pages/posicoes.html',
+              'posicoes'
+              )">
+                 Posições
             </li>
 
             <li onclick="carregarPagina(
