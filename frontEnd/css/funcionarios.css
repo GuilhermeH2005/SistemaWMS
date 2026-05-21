@@ -1,112 +1,219 @@
 .titulo-pagina {
-  margin-bottom: 20px;
-  color: #0b1f3a;
+  margin-bottom: 24px;
+  color: #003641;
+  font-size: 30px;
+  font-weight: 800;
 }
 
 .subtitulo {
   margin-bottom: 20px;
-  color: #0b1f3a;
+  color: #003641;
+  font-size: 21px;
+  font-weight: 700;
 }
+
+/* CARDS */
 
 .card-formulario,
 .card-lista {
-  background: #fff;
-  padding: 20px;
-  margin-bottom: 25px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  background: #ffffff;
+
+  padding: 28px;
+  margin-bottom: 28px;
+
+  border-radius: 16px;
+
+  border: 1px solid #e5eaf0;
+
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
+
+/* FORM */
 
 .form-funcionario {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 18px;
 }
+
+/* CAMPOS */
 
 .form-funcionario input,
 .form-funcionario select {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  height: 48px;
+
+  padding: 12px 14px;
+
+  border: 1px solid #d1d9e6;
+  border-radius: 10px;
+
+  background: #f9fafb;
+
   outline: none;
+
+  font-size: 14px;
+
+  transition: 0.2s;
 }
 
 .form-funcionario input:focus,
 .form-funcionario select:focus {
-  border-color: #2f5fa3;
-  box-shadow: 0 0 3px rgba(47,95,163,0.3);
+  background: #ffffff;
+
+  border-color: #00ae90;
+
+  box-shadow: 0 0 0 3px rgba(0, 174, 144, 0.14);
 }
+
+/* BOTÃO */
 
 .form-funcionario button {
   grid-column: 1 / -1;
-  padding: 12px;
-  background: #2f5fa3;
+
+  height: 52px;
+
+  background: linear-gradient(135deg, #00ae90, #003641);
+
   color: white;
+
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
+  border-radius: 12px;
+
+  font-size: 15px;
+  font-weight: 800;
+
   cursor: pointer;
+
+  transition: 0.25s;
 }
 
 .form-funcionario button:hover {
-  background: #1e3a5f;
+  transform: translateY(-2px);
 }
 
-#listaFuncionarios {
-  list-style: none;
-  padding: 0;
-}
-
-#listaFuncionarios li {
-  background: #f8f9fa;
-  padding: 12px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  border-left: 5px solid #2f5fa3;
-}
-
-#listaFuncionarios button {
-  margin-top: 8px;
-  margin-right: 5px;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-#listaFuncionarios button:first-of-type {
-  background: #ffc107;
-}
-
-#listaFuncionarios button:last-of-type {
-  background: #dc3545;
-  color: white;
-}
+/* DESCRIÇÃO CARGO */
 
 .descricao-cargo {
   grid-column: 1 / -1;
 
-  background: #f8f9fa;
+  background: #f4fdfb;
 
-  padding: 12px;
+  padding: 16px;
 
-  border-left: 4px solid #2f5fa3;
+  border-left: 5px solid #00ae90;
 
-  border-radius: 6px;
+  border-radius: 12px;
 
   font-size: 14px;
+  line-height: 1.6;
+
+  color: #003641;
 }
 
-@media (max-width: 900px) {
+/* LISTA */
+
+#listaFuncionarios li {
+  background: #ffffff;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #e5eaf0;
+  border-left: 4px solid #00ae90;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05);
+  transition: 0.2s;
+}
+
+#listaFuncionarios li:hover {
+  transform: translateY(-2px);
+}
+
+.funcionario-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.funcionario-topo strong {
+  color: #003641;
+  font-size: 16px;
+}
+
+.funcionario-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.funcionario-grid div {
+  background: #f9fafb;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.funcionario-grid span {
+  display: block;
+  font-size: 10px;
+  color: #6b7280;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.funcionario-grid strong {
+  color: #111827;
+  font-size: 13px;
+}
+
+.acoes-funcionario {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.acoes-funcionario button {
+  border: none;
+  padding: 7px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.acoes-funcionario button:first-child {
+  background: #facc15;
+  color: #111827;
+}
+
+.acoes-funcionario button:last-child {
+  background: #dc2626;
+  color: white;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 1000px) {
+
   .form-funcionario {
     grid-template-columns: repeat(2, 1fr);
   }
+
 }
 
-@media (max-width: 600px) {
+@media (max-width: 650px) {
+
   .form-funcionario {
     grid-template-columns: 1fr;
   }
+
+  .card-formulario,
+  .card-lista {
+    padding: 20px;
+  }
+
+  .titulo-pagina {
+    font-size: 25px;
+  }
+
 }

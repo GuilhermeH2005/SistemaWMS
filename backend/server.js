@@ -35,10 +35,22 @@ async function registrarAuditoria(usuarioId, acao, tabelaAfetada, registroId, de
    FORNECEDORES
 ========================= */
 
+/* =========================
+   FORNECEDORES
+========================= */
+
 app.post("/fornecedores", (req, res) => {
   const {
-    nome, cnpj, telefone, email,
-    rua, numero, bairro, cidade, cep, inscricao_estadual
+    nome,
+    cnpj,
+    telefone,
+    email,
+    rua,
+    numero,
+    bairro,
+    cidade,
+    cep,
+    inscricao_estadual
   } = req.body;
 
   if (!nome || !cnpj || !telefone || !email) {
@@ -46,67 +58,157 @@ app.post("/fornecedores", (req, res) => {
   }
 
   const sql = `
-    INSERT INTO fornecedor 
-    (nome, cnpj, telefone, email, rua, numero, bairro, cidade, cep, inscricao_estadual)
+    INSERT INTO fornecedor
+    (
+      nome,
+      cnpj,
+      telefone,
+      email,
+      rua,
+      numero,
+      bairro,
+      cidade,
+      cep,
+      inscricao_estadual
+    )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(sql, [nome, cnpj, telefone, email, rua, numero, bairro, cidade, cep, inscricao_estadual], (err) => {
-    if (err) {
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(400).send("CNPJ já cadastrado ❌");
+  db.query(
+    sql,
+    [
+      nome,
+      cnpj,
+      telefone,
+      email,
+      rua,
+      numero,
+      bairro,
+      cidade,
+      cep,
+      inscricao_estadual || null
+    ],
+    (err) => {
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+          return res
+            .status(400)
+            .send("CNPJ ou Inscrição Estadual já cadastrado ❌");
+        }
+
+        console.error(err);
+        return res.status(500).send("Erro ao cadastrar fornecedor ❌");
       }
 
-      console.error(err);
-      return res.status(500).send("Erro ao cadastrar fornecedor ❌");
+      res.send("Fornecedor cadastrado com sucesso ✅");
     }
-
-    res.send("Fornecedor cadastrado com sucesso ✅");
-  });
+  );
 });
 
 app.get("/fornecedores", (req, res) => {
-  db.query("SELECT * FROM fornecedor", (err, result) => {
-    if (err) return res.status(500).send("Erro ao buscar fornecedores ❌");
-    res.json(result);
-  });
+  db.query(
+    "SELECT * FROM fornecedor ORDER BY nome",
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao buscar fornecedores ❌");
+      }
+
+      res.json(result);
+    }
+  );
 });
 
 app.put("/fornecedores/:id", (req, res) => {
   const { id } = req.params;
 
   const {
-    nome, cnpj, telefone, email,
-    rua, numero, bairro, cidade, cep, inscricao_estadual
+    nome,
+    cnpj,
+    telefone,
+    email,
+    rua,
+    numero,
+    bairro,
+    cidade,
+    cep,
+    inscricao_estadual
   } = req.body;
 
+  if (!nome || !cnpj || !telefone || !email) {
+    return res.status(400).send("Preencha os campos obrigatórios ❌");
+  }
+
   const sql = `
-    UPDATE fornecedor 
-    SET nome=?, cnpj=?, telefone=?, email=?, rua=?, numero=?, bairro=?, cidade=?, cep=?, inscricao_estadual=?
-    WHERE id=?
+    UPDATE fornecedor
+    SET
+      nome = ?,
+      cnpj = ?,
+      telefone = ?,
+      email = ?,
+      rua = ?,
+      numero = ?,
+      bairro = ?,
+      cidade = ?,
+      cep = ?,
+      inscricao_estadual = ?
+    WHERE id = ?
   `;
 
-  db.query(sql, [nome, cnpj, telefone, email, rua, numero, bairro, cidade, cep, inscricao_estadual, id], (err) => {
-    if (err) {
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(400).send("CNPJ já cadastrado ❌");
+  db.query(
+    sql,
+    [
+      nome,
+      cnpj,
+      telefone,
+      email,
+      rua,
+      numero,
+      bairro,
+      cidade,
+      cep,
+      inscricao_estadual || null,
+      id
+    ],
+    (err) => {
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+          return res
+            .status(400)
+            .send("CNPJ ou Inscrição Estadual já cadastrado ❌");
+        }
+
+        console.error(err);
+        return res.status(500).send("Erro ao atualizar fornecedor ❌");
       }
 
-      console.error(err);
-      return res.status(500).send("Erro ao atualizar fornecedor ❌");
+      res.send("Fornecedor atualizado com sucesso ✅");
     }
-
-    res.send("Fornecedor atualizado com sucesso ✅");
-  });
+  );
 });
 
 app.delete("/fornecedores/:id", (req, res) => {
   const { id } = req.params;
 
-  db.query("DELETE FROM fornecedor WHERE id=?", [id], (err) => {
-    if (err) return res.status(500).send("Erro ao excluir fornecedor ❌");
-    res.send("Fornecedor excluído com sucesso ✅");
-  });
+  db.query(
+    "DELETE FROM fornecedor WHERE id = ?",
+    [id],
+    (err) => {
+      if (err) {
+        console.error(err);
+
+        if (err.code === "ER_ROW_IS_REFERENCED_2") {
+          return res
+            .status(400)
+            .send("Este fornecedor está vinculado a produtos e não pode ser excluído ❌");
+        }
+
+        return res.status(500).send("Erro ao excluir fornecedor ❌");
+      }
+
+      res.send("Fornecedor excluído com sucesso ✅");
+    }
+  );
 });
 
 /* =========================
@@ -1350,90 +1452,165 @@ app.post("/enderecos", (req, res) => {
       });
     }
 
-    function salvarComPosicao(posicao) {
-      const capacidadeM3 = Number(posicao.capacidade_m3 || 1.8);
-      const capacidadeUnidades = Math.floor(capacidadeM3 / volumeProduto);
-      const quantidadeSolicitada = Number(quantidade_unidades);
+function salvarComPosicao(posicao) {
+  const capacidadeM3 = Number(posicao.capacidade_m3 || 1.8);
+  const capacidadeUnidades = Math.floor(capacidadeM3 / volumeProduto);
+  const quantidadeSolicitada = Number(quantidade_unidades);
 
-      let quantidadeArmazenada = quantidadeSolicitada;
+  let quantidadeArmazenada = quantidadeSolicitada;
 
-      if (quantidadeArmazenada > capacidadeUnidades) {
-        quantidadeArmazenada = capacidadeUnidades;
+  if (quantidadeArmazenada > capacidadeUnidades) {
+    quantidadeArmazenada = capacidadeUnidades;
+  }
+
+  if (quantidadeArmazenada > quantidadePendente) {
+    quantidadeArmazenada = quantidadePendente;
+  }
+
+  const pendenteDepois = quantidadePendente - quantidadeArmazenada;
+  const ocupacaoM3 = quantidadeArmazenada * volumeProduto;
+
+  const sqlVerificaEndereco = `
+    SELECT *
+    FROM endereco_estoque
+    WHERE endereco = ?
+  `;
+
+  db.query(sqlVerificaEndereco, [posicao.endereco], (err, enderecoResult) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({
+        erro: "Erro ao verificar endereço ❌"
+      });
+    }
+
+    if (enderecoResult.length > 0) {
+      const enderecoAtual = enderecoResult[0];
+
+      if (Number(enderecoAtual.produto_id) !== Number(produto_id)) {
+        return res.status(400).json({
+          erro: "Esta posição já está ocupada por outro produto ❌"
+        });
       }
 
-      if (quantidadeArmazenada > quantidadePendente) {
-        quantidadeArmazenada = quantidadePendente;
+      const novaQuantidade =
+        Number(enderecoAtual.quantidade_unidades) + quantidadeArmazenada;
+
+      if (novaQuantidade > capacidadeUnidades) {
+        return res.status(400).json({
+          erro: `Capacidade excedida. Esta posição comporta ${capacidadeUnidades} un. Atualmente possui ${enderecoAtual.quantidade_unidades} un.`
+        });
       }
 
-      const pendenteDepois = quantidadePendente - quantidadeArmazenada;
-      const ocupacaoM3 = quantidadeArmazenada * volumeProduto;
+      const novaOcupacao = novaQuantidade * volumeProduto;
+      const novoPendenteDepois = quantidadePendente - quantidadeArmazenada;
 
-      const sqlInsert = `
-        INSERT INTO endereco_estoque
-        (
-          produto_id,
-          posicao_id,
-          rua,
-          coluna,
-          nivel,
-          endereco,
-          quantidade_unidades,
-          quantidade_paletes,
-          capacidade_m3,
-          capacidade_unidades,
-          ocupacao_m3,
-          status,
-          observacao
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OCUPADO', ?)
+      const sqlUpdate = `
+        UPDATE endereco_estoque
+        SET
+          quantidade_unidades = ?,
+          ocupacao_m3 = ?
+        WHERE id = ?
       `;
 
-      db.query(
-        sqlInsert,
+      return db.query(
+        sqlUpdate,
         [
-          produto_id,
-          posicao.id || null,
-          posicao.rua,
-          posicao.coluna,
-          posicao.nivel,
-          posicao.endereco,
-          quantidadeArmazenada,
-          1,
-          capacidadeM3,
-          capacidadeUnidades,
-          ocupacaoM3,
-          observacao || null
+          novaQuantidade,
+          novaOcupacao,
+          enderecoAtual.id
         ],
         (err) => {
           if (err) {
             console.error(err);
             return res.status(500).json({
-              erro: "Erro ao salvar endereçamento ❌"
+              erro: "Erro ao atualizar quantidade no endereço ❌"
             });
           }
 
-          if (posicao.id) {
-            db.query(
-              "UPDATE posicao_estoque SET status = 'OCUPADA' WHERE id = ?",
-              [posicao.id]
-            );
-          }
-
-          res.status(201).json({
-            mensagem: "Endereçamento realizado com sucesso ✅",
+          return res.status(200).json({
+            mensagem: "Quantidade somada ao endereço existente ✅",
             produto: produto.nome,
             endereco: posicao.endereco,
             capacidade_m3: capacidadeM3,
             volume_produto: volumeProduto,
             capacidade_unidades: capacidadeUnidades,
-            quantidade_pendente_antes: quantidadePendente,
             quantidade_solicitada: quantidadeSolicitada,
             quantidade_armazenada: quantidadeArmazenada,
-            quantidade_pendente_depois: pendenteDepois
+            quantidade_total_endereco: novaQuantidade,
+            quantidade_pendente_depois: novoPendenteDepois
           });
         }
       );
     }
+
+    const sqlInsert = `
+      INSERT INTO endereco_estoque
+      (
+        produto_id,
+        posicao_id,
+        rua,
+        coluna,
+        nivel,
+        endereco,
+        quantidade_unidades,
+        quantidade_paletes,
+        capacidade_m3,
+        capacidade_unidades,
+        ocupacao_m3,
+        status,
+        observacao
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OCUPADO', ?)
+    `;
+
+    db.query(
+      sqlInsert,
+      [
+        produto_id,
+        posicao.id || null,
+        posicao.rua,
+        posicao.coluna,
+        posicao.nivel,
+        posicao.endereco,
+        quantidadeArmazenada,
+        1,
+        capacidadeM3,
+        capacidadeUnidades,
+        ocupacaoM3,
+        observacao || null
+      ],
+      (err) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            erro: "Erro ao salvar endereçamento ❌"
+          });
+        }
+
+        if (posicao.id) {
+          db.query(
+            "UPDATE posicao_estoque SET status = 'OCUPADA' WHERE id = ?",
+            [posicao.id]
+          );
+        }
+
+        res.status(201).json({
+          mensagem: "Endereçamento realizado com sucesso ✅",
+          produto: produto.nome,
+          endereco: posicao.endereco,
+          capacidade_m3: capacidadeM3,
+          volume_produto: volumeProduto,
+          capacidade_unidades: capacidadeUnidades,
+          quantidade_pendente_antes: quantidadePendente,
+          quantidade_solicitada: quantidadeSolicitada,
+          quantidade_armazenada: quantidadeArmazenada,
+          quantidade_pendente_depois: pendenteDepois
+        });
+      }
+    );
+  });
+}
 
     if (posicao_id) {
 
@@ -1457,12 +1634,6 @@ app.post("/enderecos", (req, res) => {
       }
 
       const posicao = posicaoResult[0];
-
-      if (posicao.status !== "LIVRE") {
-        return res.status(400).json({
-          erro: "Esta posição não está livre."
-        });
-      }
 
       salvarComPosicao(posicao);
 
@@ -1493,13 +1664,7 @@ app.post("/enderecos", (req, res) => {
       if (posicaoManualResult.length > 0) {
 
         const posicao = posicaoManualResult[0];
-
-        if (posicao.status !== "LIVRE") {
-          return res.status(400).json({
-            erro: "Esta posição manual não está livre."
-          });
-        }
-
+        
         salvarComPosicao(posicao);
 
       } else {

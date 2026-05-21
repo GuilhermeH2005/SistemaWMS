@@ -5,9 +5,17 @@
 
   <form id="formEntrada" class="form-entrada">
 
-    <select id="produto_id" required>
-      <option value="">Selecione o produto</option>
-    </select>
+    <input
+      type="text"
+      id="produtoBusca"
+      list="listaProdutosEntrada"
+      placeholder="Digite o nome ou SKU do produto"
+      autocomplete="off"
+      required>
+
+<datalist id="listaProdutosEntrada"></datalist>
+
+<input type="hidden" id="produto_id">
 
     <input type="number" id="quantidade" placeholder="Quantidade Recebida" required>
 

@@ -23,33 +23,44 @@ function iniciarFornecedor() {
       inscricao_estadual: document.getElementById("inscricao_estadual").value
     };
 
-    try {
-      if (editandoId) {
-        await fetch(`http://localhost:3000/fornecedores/${editandoId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(fornecedor)
-        });
+   try {
+  let res;
 
-        alert("Fornecedor atualizado!");
-        editandoId = null;
-      } else {
-        await fetch("http://localhost:3000/fornecedores", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(fornecedor)
-        });
+  if (editandoId) {
+    res = await fetch(`http://localhost:3000/fornecedores/${editandoId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(fornecedor)
+    });
+  } else {
+    res = await fetch("http://localhost:3000/fornecedores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(fornecedor)
+    });
+  }
 
-        alert("Fornecedor cadastrado!");
-      }
+  const msg = await res.text();
 
-      form.reset();
-      carregarLista();
+  if (!res.ok) {
+    alert(msg);
+    return;
+  }
 
-    } catch (err) {
-      console.error("Erro:", err);
-      alert("Erro ao salvar fornecedor");
-    }
+  if (editandoId) {
+    alert("Fornecedor atualizado!");
+    editandoId = null;
+  } else {
+    alert("Fornecedor cadastrado!");
+  }
+
+  form.reset();
+  carregarLista();
+
+} catch (err) {
+  console.error("Erro:", err);
+  alert("Erro ao salvar fornecedor");
+}
   });
 
   carregarLista();
@@ -65,17 +76,67 @@ async function carregarLista() {
   dados.forEach(f => {
     lista.innerHTML += `
       <li>
-        ${f.nome} - ${f.telefone || ""}
-        <br>
-        CNPJ: ${f.cnpj || ""} | Cidade: ${f.cidade || ""}
+        <div class="fornecedor-topo">
+          <strong>${f.nome}</strong>
+          <span>CNPJ: ${f.cnpj || "-"}</span>
+        </div>
 
-        <button onclick='editarFornecedor(${JSON.stringify(f)})'>✏️ Editar</button>
-        <button onclick="excluir(${f.id})">❌ Excluir</button>
+        <div class="fornecedor-grid">
+          <div>
+            <span>Telefone</span>
+            <strong>${f.telefone || "-"}</strong>
+          </div>
+
+          <div>
+            <span>Email</span>
+            <strong>${f.email || "-"}</strong>
+          </div>
+
+          <div>
+            <span>Inscrição Estadual</span>
+            <strong>${f.inscricao_estadual || "-"}</strong>
+          </div>
+
+          <div>
+            <span>CEP</span>
+            <strong>${f.cep || "-"}</strong>
+          </div>
+
+          <div>
+            <span>Rua</span>
+            <strong>${f.rua || "-"}</strong>
+          </div>
+
+          <div>
+            <span>Número</span>
+            <strong>${f.numero || "-"}</strong>
+          </div>
+
+          <div>
+            <span>Bairro</span>
+            <strong>${f.bairro || "-"}</strong>
+          </div>
+
+          <div>
+            <span>Cidade</span>
+            <strong>${f.cidade || "-"}</strong>
+          </div>
+        </div>
+
+        <div class="acoes-fornecedor">
+          <button onclick='editarFornecedor(${JSON.stringify(f)})'>
+            ✏️ Editar
+          </button>
+
+          <button onclick="excluir(${f.id})">
+            🗑️ Excluir
+          </button>
+        </div>
       </li>
-      <hr>
     `;
   });
 }
+
 function editarFornecedor(f) {
   document.getElementById("nome").value = f.nome || "";
   document.getElementById("cnpj").value = f.cnpj || "";

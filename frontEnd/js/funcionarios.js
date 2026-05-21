@@ -111,48 +111,30 @@ async function carregarFuncionarios() {
   funcionarios.forEach(f => {
 
     lista.innerHTML += `
-      <li>
+  <li>
+    <div class="funcionario-topo">
+      <strong>${f.nome}</strong>
+      <span>ID: ${f.id}</span>
+    </div>
 
-        <strong>${f.nome}</strong>
+    <div class="funcionario-grid">
+      <div><span>CPF</span><strong>${f.cpf || "-"}</strong></div>
+      <div><span>RG</span><strong>${f.rg || "-"}</strong></div>
+      <div><span>Telefone</span><strong>${f.telefone || "-"}</strong></div>
+      <div><span>Email</span><strong>${f.email || "-"}</strong></div>
 
-        <br>
+      <div><span>Rua</span><strong>${f.rua || "-"}</strong></div>
+      <div><span>Número</span><strong>${f.numero || "-"}</strong></div>
+      <div><span>Bairro</span><strong>${f.bairro || "-"}</strong></div>
+      <div><span>Cidade</span><strong>${f.cidade || "-"}</strong></div>
+    </div>
 
-        CPF: ${f.cpf || ""}
-        | RG: ${f.rg || ""}
-
-        <br>
-
-        Telefone: ${f.telefone || ""}
-        | E-mail: ${f.email || ""}
-
-        <br>
-
-        Endereço:
-        ${f.rua || ""},
-        ${f.numero || ""}
-        -
-        ${f.bairro || ""},
-        ${f.cidade || ""}
-
-        <br>
-
-        CEP: ${f.cep || ""}
-
-        <br>
-
-        Admissão:
-        ${formatarData(f.data_admissao)}
-
-        <button onclick='editarFuncionario(${JSON.stringify(f)})'>
-          ✏️ Editar
-        </button>
-
-        <button onclick="excluirFuncionario(${f.id})">
-          🗑️ Excluir
-        </button>
-
-      </li>
-    `;
+    <div class="acoes-funcionario">
+      <button onclick='editarFuncionario(${JSON.stringify(f)})'>✏️ Editar</button>
+      <button onclick="excluirFuncionario(${f.id})">🗑️ Excluir</button>
+    </div>
+  </li>
+`;
   });
 }
 

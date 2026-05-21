@@ -28,7 +28,7 @@ function iniciarProduto() {
       altura,
       largura,
       profundidade,
-     volume: (altura * largura * profundidade) / 1000000,
+     volume: Number(((altura * largura * profundidade) / 1000000).toFixed(6)),
 
       custo,
       preco_venda: precoVenda,
@@ -132,31 +132,88 @@ async function carregarListaProdutos() {
     }
 
     produtos.forEach(p => {
-      lista.innerHTML += `
-        <li class="item-produto">
-          <strong>${p.nome}</strong> - SKU: ${p.codigo || ""}
-          <br>
-          Categoria: ${p.categoria || ""} | Cor: ${p.cor || ""}
-          <br>
-          Fornecedor: ${p.fornecedor_nome || "Sem fornecedor"}
-          <br>
-          Estoque: ${p.quantidade_estoque ?? 0} | Mínimo: ${p.estoque_minimo ?? 0}
-          <br>
-          Medidas: ${p.altura || 0}m x ${p.largura || 0}m x ${p.profundidade || 0}m
-          <br>
-         Volume: ${Number(p.volume || 0).toFixed(4)} m³
-          <br>
-          <br>
-          Custo: R$ ${p.custo || 0} | Venda: R$ ${p.preco_venda || 0} | Lucro: R$ ${p.margem_lucro || 0}
-          <br>
-          Giro: ${p.giro || "MEDIO"}
-          <br><br>
+  lista.innerHTML += `
+    <tr class="linha-produto" onclick="abrirDetalhesProduto(${p.id})">
+      <td>${p.id}</td>
+      <td><strong>${p.nome}</strong></td>
+      <td>${p.codigo || "-"}</td>
+      <td>${p.quantidade_estoque || 0}</td>
+      <td>${p.estoque_minimo || 0}</td>
+      <td>R$ ${Number(p.custo || 0).toFixed(2)}</td>
+      <td>R$ ${Number(p.preco_venda || 0).toFixed(2)}</td>
+      <td onclick="event.stopPropagation()">
+        <button onclick='editarProduto(${JSON.stringify(p)})'>
+          ✏️
+        </button>
 
-          <button onclick='editarProduto(${JSON.stringify(p)})'>✏️ Editar</button>
-          <button onclick="excluirProduto(${p.id})">🗑️ Excluir</button>
-        </li>
-      `;
-    });
+        <button onclick="excluirProduto(${p.id})">
+          🗑️
+        </button>
+      </td>
+    </tr>
+
+    <tr id="detalhes-produto-${p.id}" class="detalhes-produto">
+      <td colspan="8">
+        <div class="detalhes-produto-box">
+          <div>
+            <span>Fornecedor</span>
+            <strong>${p.fornecedor_nome || "Sem fornecedor"}</strong>
+          </div>
+
+          <div>
+            <span>Categoria</span>
+            <strong>${p.categoria || "-"}</strong>
+          </div>
+
+          <div>
+            <span>Cor</span>
+            <strong>${p.cor || "-"}</strong>
+          </div>
+
+          <div>
+            <span>Giro</span>
+            <strong>${p.giro || "MEDIO"}</strong>
+          </div>
+
+          <div>
+            <span>Altura</span>
+            <strong>${p.altura || 0} cm</strong>
+          </div>
+
+          <div>
+            <span>Largura</span>
+            <strong>${p.largura || 0} cm</strong>
+          </div>
+
+          <div>
+            <span>Profundidade</span>
+            <strong>${p.profundidade || 0} cm</strong>
+          </div>
+
+          <div>
+            <span>Volume</span>
+            <strong>${Number(p.volume || 0).toFixed(4)} m³</strong>
+          </div>
+
+          <div>
+  <span>Custo</span>
+  <strong>R$ ${Number(p.custo || 0).toFixed(2)}</strong>
+</div>
+
+<div>
+  <span>Venda</span>
+  <strong>R$ ${Number(p.preco_venda || 0).toFixed(2)}</strong>
+</div>
+
+          <div>
+            <span>Lucro</span>
+            <strong>R$ ${Number(p.margem_lucro || 0).toFixed(2)}</strong>
+          </div>
+        </div>
+      </td>
+    </tr>
+  `;
+});
 
   } catch (err) {
     console.error("Erro ao carregar produtos:", err);
@@ -204,4 +261,12 @@ async function excluirProduto(id) {
     console.error("Erro ao excluir produto:", err);
     alert("Erro ao excluir produto");
   }
+}
+
+function abrirDetalhesProduto(id) {
+  const linha = document.getElementById(`detalhes-produto-${id}`);
+
+  if (!linha) return;
+
+  linha.classList.toggle("ativo");
 }

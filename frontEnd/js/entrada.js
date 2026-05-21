@@ -1,7 +1,24 @@
+let produtosEntrada = [];
+
 function iniciarEntrada() {
   const form = document.getElementById("formEntrada");
 
   if (!form) return;
+
+  const produtoBusca = document.getElementById("produtoBusca");
+  const produtoId = document.getElementById("produto_id");
+
+  if (produtoBusca) {
+    produtoBusca.addEventListener("input", () => {
+      const valor = produtoBusca.value;
+
+      const produtoSelecionado = produtosEntrada.find(p =>
+        valor === `${p.nome} | SKU: ${p.codigo || "-"} | Estoque: ${p.quantidade_estoque || 0}`
+      );
+
+      produtoId.value = produtoSelecionado ? produtoSelecionado.id : "";
+    });
+  }
 
   aplicarMascarasEntrada();
   carregarProdutosEntrada();
@@ -9,6 +26,11 @@ function iniciarEntrada() {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    if (!document.getElementById("produto_id").value) {
+      alert("Selecione um produto válido da lista.");
+      return;
+    }
 
     const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
 
@@ -41,6 +63,7 @@ function iniciarEntrada() {
       alert("Entrada registrada com sucesso!");
 
       form.reset();
+      document.getElementById("produto_id").value = "";
 
       carregarProdutosEntrada();
       carregarEntradas();
@@ -52,21 +75,28 @@ function iniciarEntrada() {
   });
 }
 
+function renderizarProdutosEntrada(produtos) {
+  const datalist = document.getElementById("listaProdutosEntrada");
+
+  datalist.innerHTML = "";
+
+  produtos.forEach(p => {
+    datalist.innerHTML += `
+      <option 
+        value="${p.nome} | SKU: ${p.codigo || "-"} | Estoque: ${p.quantidade_estoque || 0}"
+        data-id="${p.id}">
+      </option>
+    `;
+  });
+}
+
 async function carregarProdutosEntrada() {
   const res = await fetch("http://localhost:3000/produtos");
   const produtos = await res.json();
 
-  const select = document.getElementById("produto_id");
+  produtosEntrada = produtos;
 
-  select.innerHTML = `<option value="">Selecione o produto</option>`;
-
-  produtos.forEach(p => {
-    select.innerHTML += `
-      <option value="${p.id}">
-        ${p.nome} | SKU: ${p.codigo} | Estoque: ${p.quantidade_estoque || 0}
-      </option>
-    `;
-  });
+  renderizarProdutosEntrada(produtosEntrada);
 }
 
 async function carregarEntradas() {
@@ -84,47 +114,61 @@ async function carregarEntradas() {
 
   entradas.forEach(e => {
     lista.innerHTML += `
-      <li class="entrada-item">
+<div class="entrada-item">
 
-        <strong>${e.produto_nome}</strong>
+  <div class="entrada-topo">
+    <strong>${e.produto_nome}</strong>
 
-        <br>
+    <span class="${classeStatus(e.status_conferencia)}">
+      ${e.status_conferencia || "PENDENTE"}
+    </span>
+  </div>
 
-        SKU: ${e.produto_codigo || "-"}
+  <div class="entrada-grid">
 
-        <br>
+    <div>
+      <span>SKU</span>
+      <strong>${e.produto_codigo || "-"}</strong>
+    </div>
 
-        NF: ${e.numero_nf || "-"} |
-        Data NF: ${formatarData(e.data_nf)}
+    <div>
+      <span>NF</span>
+      <strong>${e.numero_nf || "-"}</strong>
+    </div>
 
-        <br>
+    <div>
+      <span>Data NF</span>
+      <strong>${formatarData(e.data_nf)}</strong>
+    </div>
 
-        Quantidade Recebida:
-        <strong>${e.quantidade}</strong>
+    <div>
+      <span>Quantidade</span>
+      <strong>${e.quantidade}</strong>
+    </div>
 
-        <br>
+    <div>
+      <span>Lote</span>
+      <strong>${e.lote || "-"}</strong>
+    </div>
 
-        Lote: ${e.lote || "-"} |
-        Validade: ${formatarData(e.validade)}
+    <div>
+      <span>Validade</span>
+      <strong>${formatarData(e.validade)}</strong>
+    </div>
 
-        <br>
+    <div>
+      <span>Responsável</span>
+      <strong>${e.usuario_nome || "-"}</strong>
+    </div>
 
-        Status:
-        <span class="${classeStatus(e.status_conferencia)}">
-          ${e.status_conferencia || "PENDENTE"}
-        </span>
+    <div>
+      <span>Entrada</span>
+      <strong>${formatarDataHora(e.data_entrada)}</strong>
+    </div>
 
-        <br>
+  </div>
 
-        Responsável:
-        ${e.usuario_nome || "Não informado"}
-
-        <br>
-
-        Entrada:
-        ${formatarDataHora(e.data_entrada)}
-
-      </li>
+</div>
     `;
   });
 }
