@@ -95,6 +95,97 @@
   background: #c0392b;
 }
 
+.lista-conferencia {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.card-nf-conferencia {
+  background: #ffffff;
+  border-radius: 14px;
+  border-left: 5px solid #00ae90;
+  padding: 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.topo-nf-conferencia {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.topo-nf-conferencia strong {
+  font-size: 20px;
+  color: #003641;
+}
+
+.topo-nf-conferencia p {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.tabela-itens-conferencia {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-itens-conferencia thead {
+  background: linear-gradient(135deg, #003641, #0b1f3a);
+  color: white;
+}
+
+.tabela-itens-conferencia th,
+.tabela-itens-conferencia td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  font-size: 14px;
+}
+
+.tabela-itens-conferencia tbody tr:hover {
+  background: #f8fafc;
+}
+
+.btn-conferir {
+  background: #16a34a;
+  color: white;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-divergente {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-conferir:hover,
+.btn-divergente:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 900px) {
+
+  .topo-nf-conferencia {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tabela-container {
+    overflow-x: auto;
+  }
+}
+
 @media (max-width: 900px) {
   .topo-conferencia {
     flex-direction: column;

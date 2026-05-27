@@ -1,0 +1,121 @@
+.titulo-pagina {
+  margin-bottom: 24px;
+  color: #003641;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.subtitulo {
+  margin-bottom: 18px;
+  color: #003641;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.grid-config-gerais {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.card-formulario,
+.card-lista {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  margin-bottom: 24px;
+}
+
+.card-formulario {
+  border-top: 4px solid #2f5fa3;
+}
+
+.form-config-simples {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+}
+
+.form-config-simples input {
+  height: 46px;
+  padding: 12px 14px;
+  border: 1px solid #d1d9e6;
+  border-radius: 10px;
+  background: #f9fafb;
+  outline: none;
+  font-size: 14px;
+  color: #1f2937;
+  transition: 0.2s;
+}
+
+.form-config-simples input:focus {
+  background: #ffffff;
+  border-color: #2f5fa3;
+  box-shadow: 0 0 0 3px rgba(47, 95, 163, 0.14);
+}
+
+.form-config-simples button {
+  height: 46px;
+  padding: 0 18px;
+  background: linear-gradient(135deg, #2f5fa3, #0b1f3a);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.form-config-simples button:hover {
+  transform: translateY(-2px);
+}
+
+.lista-config {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.lista-config li {
+  background: #f9fafb;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e5eaf0;
+  border-left: 4px solid #2f5fa3;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lista-config li span {
+  color: #003641;
+  font-weight: 700;
+}
+
+.lista-config button {
+  border: none;
+  background: #dc2626;
+  color: white;
+  padding: 7px 11px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lista-config button:hover {
+  background: #b91c1c;
+}
+
+@media (max-width: 900px) {
+  .grid-config-gerais {
+    grid-template-columns: 1fr;
+  }
+
+  .form-config-simples {
+    grid-template-columns: 1fr;
+  }
+}

@@ -6,6 +6,7 @@ function iniciarFuncionario() {
   if (!form) return;
 
   aplicarMascarasFuncionario();
+  carregarCargosFuncionario();
 
 
   form.addEventListener("submit", async (e) => {
@@ -17,6 +18,7 @@ function iniciarFuncionario() {
       rg: document.getElementById("rg").value,
       telefone: document.getElementById("telefone").value,
       email: document.getElementById("email").value,
+      cargo_id: document.getElementById("cargo_id").value || null,
 
       rua: document.getElementById("rua").value,
       numero: document.getElementById("numero").value,
@@ -96,6 +98,25 @@ function iniciarFuncionario() {
   carregarFuncionarios();
 }
 
+async function carregarCargosFuncionario() {
+  const select = document.getElementById("cargo_id");
+
+  if (!select) return;
+
+  const res = await fetch("http://localhost:3000/cargos");
+  const cargos = await res.json();
+
+  select.innerHTML = `<option value="">Selecione o cargo</option>`;
+
+  cargos.forEach(c => {
+    select.innerHTML += `
+      <option value="${c.id}">
+        ${c.nome}
+      </option>
+    `;
+  });
+}
+
 async function carregarFuncionarios() {
 
   const res =
@@ -122,6 +143,7 @@ async function carregarFuncionarios() {
       <div><span>RG</span><strong>${f.rg || "-"}</strong></div>
       <div><span>Telefone</span><strong>${f.telefone || "-"}</strong></div>
       <div><span>Email</span><strong>${f.email || "-"}</strong></div>
+      <div><span>Cargo</span><strong>${f.cargo_nome || "-"}</strong></div>
 
       <div><span>Rua</span><strong>${f.rua || "-"}</strong></div>
       <div><span>Número</span><strong>${f.numero || "-"}</strong></div>
@@ -135,6 +157,28 @@ async function carregarFuncionarios() {
     </div>
   </li>
 `;
+  });
+}
+
+async function carregarCargosFuncionario() {
+  const res = await fetch("http://localhost:3000/cargos");
+
+  const cargos = await res.json();
+
+  const select = document.getElementById("cargo_id");
+
+  select.innerHTML = `
+    <option value="">
+      Selecione o cargo
+    </option>
+  `;
+
+  cargos.forEach(c => {
+    select.innerHTML += `
+      <option value="${c.id}">
+        ${c.nome}
+      </option>
+    `;
   });
 }
 
@@ -154,6 +198,9 @@ function editarFuncionario(f) {
 
   document.getElementById("email").value =
     f.email || "";
+
+  document.getElementById("cargo_id").value =
+   f.cargo_id || "";
 
   document.getElementById("rua").value =
     f.rua || "";

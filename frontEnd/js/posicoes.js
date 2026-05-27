@@ -79,6 +79,18 @@ async function carregarResumoPosicoes() {
 
     const resumo = await resposta.json();
 
+    const btnGerar =
+  document.getElementById("btnGerarPosicoes");
+
+if (btnGerar && resumo.total > 0) {
+
+  btnGerar.disabled = true;
+
+  btnGerar.textContent =
+    "Posições já geradas";
+
+}
+
     document.getElementById("totalPosicoes").textContent =
       resumo.total || 0;
 
@@ -132,7 +144,7 @@ async function carregarPosicoes() {
     if (posicoes.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="8">Nenhuma posição encontrada.</td>
+          <td colspan="11">Nenhuma posição encontrada.</td>
         </tr>
       `;
       return;
@@ -146,23 +158,45 @@ async function carregarPosicoes() {
             ? "status-bloqueado"
             : "status-ocupado";
 
-      tbody.innerHTML += `
-        <tr>
-          <td><strong>${p.endereco}</strong></td>
-          <td>${p.rua}</td>
-          <td>${p.coluna}</td>
-          <td>${p.nivel}</td>
-          <td class="${classe}">${p.status}</td>
-          <td>${p.produto_nome || "-"}</td>
-          <td>${p.quantidade_unidades || "-"}</td>
-          <td>
-            ${p.ocupacao_m3
-              ? Number(p.ocupacao_m3).toFixed(3) + " m³"
-              : "-"
-            }
-          </td>
-        </tr>
-      `;
+tbody.innerHTML += `
+  <tr>
+    <td><strong>${p.endereco}</strong></td>
+    <td>${p.rua}</td>
+    <td>${p.coluna}</td>
+    <td>${p.nivel}</td>
+
+    <td>
+      ${Number(p.altura || 0).toFixed(2)}m ×
+      ${Number(p.largura || 0).toFixed(2)}m ×
+      ${Number(p.profundidade || 0).toFixed(2)}m
+    </td>
+
+    <td>
+      ${Number(p.capacidade_m3 || 0).toFixed(3)} m³
+    </td>
+
+    <td class="${classe}">
+      ${p.status}
+    </td>
+
+    <td>${p.produto_nome || "-"}</td>
+
+    <td>${p.quantidade_unidades || "-"}</td>
+
+    <td>
+      ${p.ocupacao_m3
+        ? Number(p.ocupacao_m3).toFixed(3) + " m³"
+        : "-"
+      }
+    </td>
+
+    <td>
+      <button onclick="editarDimensoesPosicao(${p.id}, ${p.altura || 1.5}, ${p.largura || 1.2}, ${p.profundidade || 1})">
+        Editar
+      </button>
+    </td>
+  </tr>
+`;
     });
 
   } catch (erro) {
@@ -178,4 +212,39 @@ function limparFiltros() {
   document.getElementById("filtroProduto").value = "";
 
   carregarPosicoes();
+}
+
+async function editarDimensoesPosicao(id, alturaAtual, larguraAtual, profundidadeAtual) {
+  const altura = prompt("Altura da posição em metros:", alturaAtual);
+  if (!altura) return;
+
+  const largura = prompt("Largura da posição em metros:", larguraAtual);
+  if (!largura) return;
+
+  const profundidade = prompt("Profundidade da posição em metros:", profundidadeAtual);
+  if (!profundidade) return;
+
+  const res = await fetch(`${API_URL_POSICOES}/posicoes/${id}/dimensoes`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      altura,
+      largura,
+      profundidade
+    })
+  });
+
+  const msg = await res.text();
+
+  if (!res.ok) {
+    alert(msg);
+    return;
+  }
+
+  alert(msg);
+
+  carregarPosicoes();
+  carregarResumoPosicoes();
 }

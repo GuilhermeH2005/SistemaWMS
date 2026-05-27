@@ -1,13 +1,37 @@
 const API_URL_PRODUTO = "http://localhost:3000";
 let editandoProdutoId = null;
+let produtosCache = [];
 
 function iniciarProduto() {
   const form = document.getElementById("formProduto");
 
   if (!form) return;
 
+  const campoPrecoVenda = document.getElementById("preco_venda");
+const campoMargem = document.getElementById("margem_lucro_percentual");
+
+campoMargem.addEventListener("input", () => {
+  const custo = obterCustoAtualProdutoSelecionado();
+  const margem = Number(campoMargem.value || 0);
+
+  if (custo > 0) {
+    campoPrecoVenda.value = (custo + (custo * margem / 100)).toFixed(2);
+  }
+});
+
+campoPrecoVenda.addEventListener("input", () => {
+  const custo = obterCustoAtualProdutoSelecionado();
+  const venda = Number(campoPrecoVenda.value || 0);
+
+  if (custo > 0 && venda > 0) {
+    campoMargem.value = (((venda - custo) / custo) * 100).toFixed(2);
+  }
+});
+
   carregarFornecedoresProduto();
   carregarListaProdutos();
+  carregarCategoriasProduto();
+  carregarCoresProduto();
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -15,28 +39,23 @@ function iniciarProduto() {
     const altura = Number(document.getElementById("altura").value);
     const largura = Number(document.getElementById("largura").value);
     const profundidade = Number(document.getElementById("profundidade").value);
-
-    const custo = Number(document.getElementById("custo").value);
     const precoVenda = Number(document.getElementById("preco_venda").value);
 
     const produto = {
-      nome: document.getElementById("nome").value,
-      fornecedor_id: document.getElementById("fornecedor").value,
-      categoria: document.getElementById("categoria").value,
-      cor: document.getElementById("cor").value,
+  nome: document.getElementById("nome").value,
+  categoria_id: document.getElementById("categoria_id").value,
+  cor_id: document.getElementById("cor_id").value,
 
-      altura,
-      largura,
-      profundidade,
-     volume: Number(((altura * largura * profundidade) / 1000000).toFixed(6)),
+  altura,
+  largura,
+  profundidade,
+  volume: Number(((altura * largura * profundidade) / 1000000).toFixed(6)),
 
-      custo,
-      preco_venda: precoVenda,
-      margem_lucro: precoVenda - custo,
-
-      estoque_minimo: document.getElementById("estoque_minimo").value,
-      giro: document.getElementById("giro").value,
-    };
+  preco_venda: precoVenda,
+  estoque_minimo: document.getElementById("estoque_minimo").value,
+  giro: document.getElementById("giro").value,
+  margem_lucro_percentual: document.getElementById("margem_lucro_percentual").value || 0
+};
 
     try {
       let res;
@@ -72,6 +91,40 @@ function iniciarProduto() {
       console.error("Erro ao salvar produto:", err);
       alert("Erro ao salvar produto");
     }
+  });
+}
+
+async function carregarCategoriasProduto() {
+  const res = await fetch("http://localhost:3000/categorias-produto");
+  const categorias = await res.json();
+
+  const select = document.getElementById("categoria_id");
+
+  select.innerHTML = `<option value="">Selecione a categoria</option>`;
+
+  categorias.forEach(c => {
+    select.innerHTML += `
+      <option value="${c.id}">
+        ${c.nome}
+      </option>
+    `;
+  });
+}
+
+async function carregarCoresProduto() {
+  const res = await fetch("http://localhost:3000/cores-produto");
+  const cores = await res.json();
+
+  const select = document.getElementById("cor_id");
+
+  select.innerHTML = `<option value="">Selecione a cor</option>`;
+
+  cores.forEach(c => {
+    select.innerHTML += `
+      <option value="${c.id}">
+        ${c.nome}
+      </option>
+    `;
   });
 }
 
@@ -114,6 +167,7 @@ async function carregarListaProdutos() {
     }
 
     const produtos = await res.json();
+    produtosCache = produtos;
 
     console.log("Produtos vindos do banco:", produtos);
 
@@ -139,7 +193,7 @@ async function carregarListaProdutos() {
       <td>${p.codigo || "-"}</td>
       <td>${p.quantidade_estoque || 0}</td>
       <td>${p.estoque_minimo || 0}</td>
-      <td>R$ ${Number(p.custo || 0).toFixed(2)}</td>
+     <td>R$ ${Number(p.ultimo_custo_com_imposto || 0).toFixed(2)}</td>
       <td>R$ ${Number(p.preco_venda || 0).toFixed(2)}</td>
       <td onclick="event.stopPropagation()">
         <button onclick='editarProduto(${JSON.stringify(p)})'>
@@ -162,12 +216,12 @@ async function carregarListaProdutos() {
 
           <div>
             <span>Categoria</span>
-            <strong>${p.categoria || "-"}</strong>
+            <strong>${p.categoria_nome || "-"}</strong>
           </div>
 
           <div>
             <span>Cor</span>
-            <strong>${p.cor || "-"}</strong>
+            <strong>${p.cor_nome || "-"}</strong>
           </div>
 
           <div>
@@ -196,19 +250,32 @@ async function carregarListaProdutos() {
           </div>
 
           <div>
-  <span>Custo</span>
-  <strong>R$ ${Number(p.custo || 0).toFixed(2)}</strong>
-</div>
+ <div class="grupo-custos-produto">
+  <div>
+    <span>Último custo s/ imposto</span>
+    <strong>R$ ${Number(p.ultimo_custo_sem_imposto || 0).toFixed(2)}</strong>
+  </div>
 
-<div>
-  <span>Venda</span>
-  <strong>R$ ${Number(p.preco_venda || 0).toFixed(2)}</strong>
-</div>
+  <div>
+    <span>Último custo c/ imposto</span>
+    <strong>R$ ${Number(p.ultimo_custo_com_imposto || 0).toFixed(2)}</strong>
+  </div>
 
-          <div>
-            <span>Lucro</span>
-            <strong>R$ ${Number(p.margem_lucro || 0).toFixed(2)}</strong>
-          </div>
+  <div>
+    <span>Custo médio</span>
+    <strong>R$ ${Number(p.custo_medio || 0).toFixed(2)}</strong>
+  </div>
+
+  <div>
+    <span>Margem</span>
+    <strong>${Number(p.margem_lucro_percentual || 0).toFixed(2)}%</strong>
+  </div>
+
+  <div>
+    <span>Venda</span>
+    <strong>R$ ${Number(p.preco_venda || 0).toFixed(2)}</strong>
+  </div>
+</div>
         </div>
       </td>
     </tr>
@@ -223,20 +290,34 @@ async function carregarListaProdutos() {
 
 function editarProduto(p) {
   document.getElementById("nome").value = p.nome || "";
-  document.getElementById("fornecedor").value = p.fornecedor_id || "";
-  document.getElementById("categoria").value = p.categoria || "";
-  document.getElementById("cor").value = p.cor || "";
+
+  const categoria = document.getElementById("categoria_id");
+  const cor = document.getElementById("cor_id");
+
+  if (categoria) {
+    categoria.value = p.categoria_id || "";
+  }
+
+  if (cor) {
+    cor.value = p.cor_id || "";
+  }
 
   document.getElementById("altura").value = p.altura || "";
   document.getElementById("largura").value = p.largura || "";
   document.getElementById("profundidade").value = p.profundidade || "";
 
-  document.getElementById("custo").value = p.custo || "";
   document.getElementById("preco_venda").value = p.preco_venda || "";
   document.getElementById("estoque_minimo").value = p.estoque_minimo || "";
   document.getElementById("giro").value = p.giro || "MEDIO";
+  document.getElementById("margem_lucro_percentual").value =
+  p.margem_lucro_percentual || "";
 
   editandoProdutoId = p.id;
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
 async function excluirProduto(id) {
@@ -269,4 +350,12 @@ function abrirDetalhesProduto(id) {
   if (!linha) return;
 
   linha.classList.toggle("ativo");
+}
+
+function obterCustoAtualProdutoSelecionado() {
+  if (!editandoProdutoId) return 0;
+
+  const produto = produtosCache.find(p => Number(p.id) === Number(editandoProdutoId));
+
+  return Number(produto?.ultimo_custo_com_imposto || 0);
 }

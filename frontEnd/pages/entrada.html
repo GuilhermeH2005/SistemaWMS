@@ -1,9 +1,19 @@
-<h2 class="titulo-pagina">Entrada de Mercadorias</h2>
+<h2 class="titulo-pagina">Entrada de Nota Fiscal</h2>
 
 <section class="card-formulario">
-  <h3 class="subtitulo">Nova Entrada</h3>
+  <h3 class="subtitulo">Nova Entrada de NF</h3>
 
   <form id="formEntrada" class="form-entrada">
+
+    <select id="fornecedor_id" required>
+      <option value="">Selecione o fornecedor</option>
+    </select>
+
+    <input type="text" id="numero_nf" placeholder="Número da NF" required>
+
+    <input type="text" id="serie_nf" placeholder="Série da NF">
+
+    <input type="text" id="data_nf" placeholder="Data da NF dd/mm/aaaa" maxlength="10" required>
 
     <input
       type="text"
@@ -11,28 +21,75 @@
       list="listaProdutosEntrada"
       placeholder="Digite o nome ou SKU do produto"
       autocomplete="off"
-      required>
+    >
 
-<datalist id="listaProdutosEntrada"></datalist>
+    <datalist id="listaProdutosEntrada"></datalist>
 
-<input type="hidden" id="produto_id">
+    <input type="hidden" id="produto_id">
 
-    <input type="number" id="quantidade" placeholder="Quantidade Recebida" required>
+    <input type="number" id="quantidade" placeholder="Quantidade">
 
-    <input type="text" id="numero_nf" placeholder="Número da NF" required>
+    <input type="number" step="0.01" id="custo_unitario_sem_imposto" placeholder="Custo unitário sem imposto">
 
-    <input type="text" id="data_nf" placeholder="Data da NF dd/mm/aaaa" maxlength="10" required>
+    <input type="text" id="lote" placeholder="Lote">
 
-    <input type="text" id="lote" placeholder="Lote" required>
+    <input type="text" id="validade" placeholder="Validade dd/mm/aaaa" maxlength="10">
 
-    <input type="text" id="validade" placeholder="Validade dd/mm/aaaa" maxlength="10" required>
 
-    <button type="submit">Registrar Entrada</button>
+    <input type="number" step="0.01" id="icms_percentual" placeholder="ICMS %">
+
+    <input type="number" step="0.01" id="ipi_percentual" placeholder="IPI %">
+
+    <input type="number" step="0.01" id="pis_percentual" placeholder="PIS %">
+
+    <input type="number" step="0.01" id="cofins_percentual" placeholder="COFINS %">
+
+    <button type="button" id="btnGerarImpostos">
+      Gerar Impostos Simulados
+    </button>
+
+    <input type="text" id="subtotal" placeholder="Subtotal" readonly>
+
+    <input type="text" id="valor_impostos" placeholder="Valor dos impostos" readonly>
+
+    <input type="text" id="custo_total_com_imposto" placeholder="Custo total com imposto" readonly>
+
+    <input type="text" id="custo_unitario_com_imposto" placeholder="Custo unitário com imposto" readonly>
+    <button type="button" id="btnAdicionarItemNF">
+  Adicionar Produto na NF
+    </button>
+
+    <button type="submit">Registrar Entrada de NF</button>
 
   </form>
 </section>
 
 <section class="card-lista">
-  <h3 class="subtitulo">Entradas Registradas</h3>
-  <ul id="listaEntradas"></ul>
+  <h3 class="subtitulo">Itens da NF</h3>
+
+  <div class="tabela-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Qtd</th>
+          <th>Custo Un.</th>
+          <th>Custo c/ Imp.</th>
+          <th>Lote</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaItensNF">
+        <tr>
+          <td colspan="6">Nenhum item adicionado.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card-lista">
+  <h3 class="subtitulo">Notas Fiscais Registradas</h3>
+  <div id="listaEntradas"></div>
 </section>

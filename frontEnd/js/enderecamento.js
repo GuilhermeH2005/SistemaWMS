@@ -187,23 +187,22 @@ async function sugerirEndereco() {
     }
 
     const dados = await resposta.json();
-
     const sugestao = dados.sugestao;
 
-    document.getElementById("posicao_id").value = "";
+    document.getElementById("posicao_id").value = sugestao.id;
 
     document.getElementById("rua").value = sugestao.rua;
     document.getElementById("coluna").value = sugestao.coluna;
     document.getElementById("nivel").value = sugestao.nivel;
     document.getElementById("endereco").value = sugestao.endereco;
 
-    gerarEnderecoManual();
     mostrarInfoProduto();
 
     alert(
       `Endereço sugerido: ${sugestao.endereco}\n\n` +
       `Giro: ${dados.giro}\n` +
-      `Volume: ${dados.volume} m³`
+      `Volume produto: ${dados.volume} m³\n` +
+      `Capacidade posição: ${sugestao.capacidade_m3} m³`
     );
 
   } catch (erro) {

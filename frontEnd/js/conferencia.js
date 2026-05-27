@@ -35,30 +35,104 @@ function renderizarConferencia(entradas) {
     return;
   }
 
+  const notasAgrupadas = {};
+
   entradas.forEach(e => {
+    const chave = `${e.numero_nf}-${e.serie_nf || ""}-${e.fornecedor_id}`;
+
+    if (!notasAgrupadas[chave]) {
+      notasAgrupadas[chave] = {
+        numero_nf: e.numero_nf,
+        serie_nf: e.serie_nf,
+        fornecedor_nome: e.fornecedor_nome,
+        data_nf: e.data_nf,
+        status_conferencia: e.status_conferencia,
+        itens: []
+      };
+    }
+
+    notasAgrupadas[chave].itens.push(e);
+  });
+
+  Object.values(notasAgrupadas).forEach(nf => {
+    const itensHtml = nf.itens.map(item => {
+      return `
+        <tr>
+          <td>${item.produto_nome || "-"}</td>
+          <td>${item.produto_codigo || "-"}</td>
+          <td>${item.quantidade || 0}</td>
+          <td>${item.lote || "-"}</td>
+          <td>${formatarDataConferencia(item.validade)}</td>
+
+          <td>
+            <span class="${classeStatusConferencia(item.status_conferencia)}">
+              ${item.status_conferencia || "PENDENTE"}
+            </span>
+          </td>
+
+          <td class="acoes-conferencia">
+            <button
+              class="btn-conferir"
+              onclick="atualizarStatusConferencia(${item.id}, 'CONFERIDO')"
+            >
+              Conferir
+            </button>
+
+            <button
+              class="btn-divergente"
+              onclick="atualizarStatusConferencia(${item.id}, 'DIVERGENTE')"
+            >
+              Divergente
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
     lista.innerHTML += `
-      <tr>
-        <td>${e.numero_nf || "-"}</td>
-        <td>${e.produto_nome || "-"}</td>
-        <td>${e.produto_codigo || "-"}</td>
-        <td>${e.quantidade || 0}</td>
-        <td>${e.lote || "-"}</td>
-        <td>${formatarDataConferencia(e.validade)}</td>
+      <tr class="linha-nf-conferencia">
+        <td colspan="8">
+          <div class="card-nf-conferencia">
 
-        <td>
-          <span class="${classeStatusConferencia(e.status_conferencia)}">
-            ${e.status_conferencia || "PENDENTE"}
-          </span>
-        </td>
+            <div class="topo-nf-conferencia">
+              <div>
+                <strong>
+                  NF ${nf.numero_nf || "-"}
+                  ${nf.serie_nf ? " - Série " + nf.serie_nf : ""}
+                </strong>
 
-        <td class="acoes-conferencia">
-          <button class="btn-conferir" onclick="atualizarStatusConferencia(${e.id}, 'CONFERIDO')">
-            Conferir
-          </button>
+                <p>
+                  Fornecedor: ${nf.fornecedor_nome || "-"} |
+                  Data NF: ${formatarDataConferencia(nf.data_nf)}
+                </p>
+              </div>
 
-          <button class="btn-divergente" onclick="atualizarStatusConferencia(${e.id}, 'DIVERGENTE')">
-            Divergente
-          </button>
+              <span class="${classeStatusConferencia(nf.status_conferencia)}">
+                ${nf.status_conferencia || "PENDENTE"}
+              </span>
+            </div>
+
+            <div class="tabela-container">
+              <table class="tabela-itens-conferencia">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>SKU</th>
+                    <th>Qtd</th>
+                    <th>Lote</th>
+                    <th>Validade</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  ${itensHtml}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
         </td>
       </tr>
     `;

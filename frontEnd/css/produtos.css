@@ -159,6 +159,16 @@
   border-radius: 10px;
 }
 
+.grupo-custos-produto {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
 .detalhes-produto-box div {
   background: white;
   padding: 10px;

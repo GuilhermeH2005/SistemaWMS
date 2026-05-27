@@ -259,14 +259,24 @@ function carregarPagina(pagina, permissaoNecessaria) {
       }
 
       // CONFIGURAÇÕES
-      if (
-        pagina.includes("configuracoes") &&
-        typeof iniciarConfiguracoes === "function"
-      ) {
 
-        iniciarConfiguracoes();
+      if (pagina.includes("configuracoes-gerais.html")) {
+  carregarScriptPagina(
+    "script-configuracoes-gerais",
+    "js/configuracoes-gerais.js",
+    () => iniciarConfiguracoesGerais()
+  );
+  return;
+}
 
-      }
+if (pagina.includes("configuracoes.html")) {
+  carregarScriptPagina(
+    "script-configuracoes",
+    "js/configuracoes.js",
+    () => iniciarConfiguracoes()
+  );
+  return;
+}
 
     })
 

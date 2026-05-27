@@ -18,16 +18,13 @@ async function carregarEstoque() {
 }
 
 function renderizarEstoque(produtos) {
-
-  const lista =
-    document.getElementById("listaEstoque");
+  const lista = document.getElementById("listaEstoque");
 
   if (!lista) return;
 
   lista.innerHTML = "";
 
   if (produtos.length === 0) {
-
     lista.innerHTML = `
       <tr>
         <td colspan="11" class="sem-registro">
@@ -35,65 +32,40 @@ function renderizarEstoque(produtos) {
         </td>
       </tr>
     `;
-
     return;
-
   }
 
   produtos.forEach(produto => {
+    const estoque = Number(produto.quantidade_estoque || 0);
+    const minimo = Number(produto.estoque_minimo || 0);
 
-    const estoque =
-      Number(produto.quantidade_estoque || 0);
+    const custo = Number(produto.ultimo_custo_com_imposto || 0);
+    const venda = Number(produto.preco_venda || 0);
 
-    const minimo =
-      Number(produto.estoque_minimo || 0);
+    const volume = Number(produto.volume || 0);
 
-    const custo =
-      Number(produto.custo || 0);
-
-    const venda =
-      Number(produto.preco_venda || 0);
-
-    const volume =
-      Number(produto.volume || 0);
-
-    const valorTotal =
-      estoque * custo;
-
-    const volumeTotal =
-      estoque * volume;
+    const valorTotal = estoque * custo;
+    const volumeTotal = estoque * volume;
 
     let status = "NORMAL";
     let classeStatus = "status-normal";
 
     if (estoque <= 0) {
-
       status = "SEM ESTOQUE";
       classeStatus = "status-sem";
-
-    }
-
-    else if (estoque <= minimo) {
-
+    } else if (estoque <= minimo) {
       status = "BAIXO";
       classeStatus = "status-baixo";
-
     }
 
     lista.innerHTML += `
-
       <tr>
-
         <td>${produto.codigo || "-"}</td>
-
         <td>${produto.nome || "-"}</td>
-
-        <td>${produto.categoria || "-"}</td>
-
+        <td>${produto.categoria_nome || "-"}</td>
         <td>${produto.fornecedor_nome || "-"}</td>
-
+        <td>${produto.cor_nome || "-"}</td>
         <td>${estoque}</td>
-
         <td>${minimo}</td>
 
         <td>
@@ -102,74 +74,36 @@ function renderizarEstoque(produtos) {
           </span>
         </td>
 
-        <td>
-          ${formatarMoeda(custo)}
-        </td>
-
-        <td>
-          ${formatarMoeda(venda)}
-        </td>
-
-        <td>
-          ${formatarMoeda(valorTotal)}
-        </td>
-
-        <td>
-          ${volumeTotal.toFixed(3)} m³
-        </td>
-
+        <td>${formatarMoeda(custo)}</td>
+        <td>${formatarMoeda(venda)}</td>
+        <td>${formatarMoeda(valorTotal)}</td>
+        <td>${volumeTotal.toFixed(3)} m³</td>
       </tr>
-
     `;
-
   });
-
 }
 
 function filtrarEstoque() {
+  const texto = document
+    .getElementById("buscarEstoque")
+    .value
+    .toLowerCase();
 
-  const texto =
-    document.getElementById("buscarEstoque")
-      .value
-      .toLowerCase();
-
-  const filtrados =
-    produtosEstoque.filter(produto => {
-
-      return (
-
-        produto.nome
-          .toLowerCase()
-          .includes(texto)
-
-        ||
-
-        produto.codigo
-          .toLowerCase()
-          .includes(texto)
-
-        ||
-
-        produto.categoria
-          .toLowerCase()
-          .includes(texto)
-
-      );
-
-    });
+  const filtrados = produtosEstoque.filter(produto => {
+    return (
+      String(produto.nome || "").toLowerCase().includes(texto) ||
+      String(produto.codigo || "").toLowerCase().includes(texto) ||
+      String(produto.categoria_nome || "").toLowerCase().includes(texto) ||
+      String(produto.cor_nome || "").toLowerCase().includes(texto)
+    );
+  });
 
   renderizarEstoque(filtrados);
-
 }
 
 function formatarMoeda(valor) {
-
-  return Number(valor).toLocaleString(
-    "pt-BR",
-    {
-      style: "currency",
-      currency: "BRL"
-    }
-  );
-
+  return Number(valor).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
 }

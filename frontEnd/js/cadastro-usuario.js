@@ -38,6 +38,7 @@ async function carregarSetoresNoUsuario() {
 async function carregarFuncionariosNoUsuario() {
   const selectFuncionario = document.getElementById("nomeCompleto");
   const inputEmail = document.getElementById("email");
+  const inputCargo = document.getElementById("cargoFuncionario");
 
   if (!selectFuncionario) return;
 
@@ -56,6 +57,7 @@ async function carregarFuncionariosNoUsuario() {
         <option
           value="${funcionario.id}"
           data-email="${funcionario.email || ""}"
+          data-cargo="${funcionario.cargo || ""}"
         >
           ${funcionario.nome}
         </option>
@@ -69,6 +71,10 @@ async function carregarFuncionariosNoUsuario() {
       if (inputEmail) {
         inputEmail.value = opcao.dataset.email || "";
       }
+
+      if (inputCargo) {
+        inputCargo.value = opcao.dataset.cargo || "";
+      }
     };
 
   } catch (err) {
@@ -76,7 +82,6 @@ async function carregarFuncionariosNoUsuario() {
     alert("Erro ao carregar funcionários.");
   }
 }
-
 /* =========================
    INICIAR CADASTRO
 ========================= */
@@ -131,6 +136,8 @@ async function iniciarCadastroUsuario() {
 
       document.getElementById("nomeCompleto").value =
         usuario.funcionario_id || "";
+
+      document.getElementById("nomeCompleto").dispatchEvent(new Event("change"));
 
       document.getElementById("login").value =
         usuario.login || "";

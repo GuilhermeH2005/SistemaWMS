@@ -35,10 +35,6 @@ async function registrarAuditoria(usuarioId, acao, tabelaAfetada, registroId, de
    FORNECEDORES
 ========================= */
 
-/* =========================
-   FORNECEDORES
-========================= */
-
 app.post("/fornecedores", (req, res) => {
   const {
     nome,
@@ -212,50 +208,209 @@ app.delete("/fornecedores/:id", (req, res) => {
 });
 
 /* =========================
+   Cargo
+========================= */
+
+app.post("/cargos", (req, res) => {
+  const { nome } = req.body;
+
+  if (!nome) {
+    return res.status(400).send("Nome obrigatório ❌");
+  }
+
+  db.query(
+    "INSERT INTO cargo (nome) VALUES (?)",
+    [nome],
+    (err) => {
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(400).send("Cargo já cadastrado ❌");
+        }
+
+        return res.status(500).send("Erro ao cadastrar cargo ❌");
+      }
+
+      res.send("Cargo cadastrado ✅");
+    }
+  );
+});
+
+app.get("/cargos", (req, res) => {
+  db.query("SELECT * FROM cargo ORDER BY nome", (err, result) => {
+    if (err) return res.status(500).send("Erro ao buscar cargos ❌");
+    res.json(result);
+  });
+});
+
+app.delete("/cargos/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.query("DELETE FROM cargo WHERE id = ?", [id], (err) => {
+    if (err) return res.status(500).send("Erro ao excluir cargo ❌");
+    res.send("Cargo excluído ✅");
+  });
+});
+
+
+/* =========================
+   CATEGORIAS DE PRODUTO
+========================= */
+
+app.post("/categorias-produto", (req, res) => {
+  const { nome } = req.body;
+
+  if (!nome) {
+    return res.status(400).send("Nome da categoria obrigatório ❌");
+  }
+
+  db.query(
+    "INSERT INTO categoria_produto (nome) VALUES (?)",
+    [nome],
+    (err) => {
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(400).send("Categoria já cadastrada ❌");
+        }
+
+        console.error(err);
+        return res.status(500).send("Erro ao cadastrar categoria ❌");
+      }
+
+      res.send("Categoria cadastrada com sucesso ✅");
+    }
+  );
+});
+
+app.get("/categorias-produto", (req, res) => {
+  db.query(
+    "SELECT * FROM categoria_produto ORDER BY nome",
+    (err, result) => {
+      if (err) return res.status(500).send("Erro ao buscar categorias ❌");
+      res.json(result);
+    }
+  );
+});
+
+app.delete("/categorias-produto/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.query("DELETE FROM categoria_produto WHERE id = ?", [id], (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao excluir categoria ❌");
+    }
+
+    res.send("Categoria excluída ✅");
+  });
+});
+
+/* =========================
+   CORES DE PRODUTO
+========================= */
+
+app.post("/cores-produto", (req, res) => {
+  const { nome } = req.body;
+
+  if (!nome) {
+    return res.status(400).send("Nome da cor obrigatório ❌");
+  }
+
+  db.query(
+    "INSERT INTO cor_produto (nome) VALUES (?)",
+    [nome],
+    (err) => {
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(400).send("Cor já cadastrada ❌");
+        }
+
+        console.error(err);
+        return res.status(500).send("Erro ao cadastrar cor ❌");
+      }
+
+      res.send("Cor cadastrada com sucesso ✅");
+    }
+  );
+});
+
+app.get("/cores-produto", (req, res) => {
+  db.query(
+    "SELECT * FROM cor_produto ORDER BY nome",
+    (err, result) => {
+      if (err) return res.status(500).send("Erro ao buscar cores ❌");
+      res.json(result);
+    }
+  );
+});
+
+app.delete("/cores-produto/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.query("DELETE FROM cor_produto WHERE id = ?", [id], (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao excluir cor ❌");
+    }
+
+    res.send("Cor excluída ✅");
+  });
+});
+
+/* =========================
    PRODUTOS
 ========================= */
 
 app.get("/produtos", (req, res) => {
-
   const sql = `
     SELECT
-      produto.*,
-      fornecedor.nome AS fornecedor_nome
-    FROM produto
+  produto.*,
+  categoria_produto.nome AS categoria_nome,
+  cor_produto.nome AS cor_nome,
 
-    LEFT JOIN fornecedor
-      ON produto.fornecedor_id = fornecedor.id
+  (
+    SELECT fornecedor.nome
+    FROM entrada_mercadoria e
+    INNER JOIN fornecedor ON e.fornecedor_id = fornecedor.id
+    WHERE e.produto_id = produto.id
+    ORDER BY e.data_entrada DESC
+    LIMIT 1
+  ) AS fornecedor_nome
 
-    ORDER BY produto.nome
+FROM produto
+LEFT JOIN categoria_produto
+  ON produto.categoria_id = categoria_produto.id
+LEFT JOIN cor_produto
+  ON produto.cor_id = cor_produto.id
+ORDER BY produto.nome
   `;
 
   db.query(sql, (err, result) => {
-
     if (err) {
-
       console.error(err);
-
-      return res.status(500).send(
-        "Erro ao buscar produtos ❌"
-      );
-
+      return res.status(500).send("Erro ao buscar produtos ❌");
     }
 
     res.json(result);
-
   });
-
 });
 
 app.post("/produtos", (req, res) => {
   const {
-    nome, fornecedor_id, categoria, cor,
-    altura, largura, profundidade, volume,
-    custo, preco_venda, margem_lucro, estoque_minimo,
-    giro
+    nome,
+    fornecedor_id,
+    categoria_id,
+    cor_id,
+    altura,
+    largura,
+    profundidade,
+    volume,
+    preco_venda,
+    estoque_minimo,
+    giro,
+    margem_lucro_percentual
   } = req.body;
 
-  if (!nome || !fornecedor_id || !categoria || !cor) {
+  if (!nome || !fornecedor_id || !categoria_id || !cor_id) {
     return res.status(400).send("Preencha os campos obrigatórios do produto ❌");
   }
 
@@ -263,17 +418,40 @@ app.post("/produtos", (req, res) => {
 
   const sql = `
     INSERT INTO produto
-    (nome, codigo, fornecedor_id, categoria, cor, altura, largura, profundidade, volume, custo, preco_venda, margem_lucro, estoque_minimo, giro)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (
+      nome,
+      codigo,
+      fornecedor_id,
+      categoria_id,
+      cor_id,
+      altura,
+      largura,
+      profundidade,
+      volume,
+      preco_venda,
+      estoque_minimo,
+      giro,
+      margem_lucro_percentual
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
     sql,
     [
-      nome, codigo, fornecedor_id, categoria, cor,
-      altura, largura, profundidade, volume,
-      custo, preco_venda, margem_lucro, estoque_minimo,
-      giro || "MEDIO"
+      nome,
+      codigo,
+      fornecedor_id,
+      categoria_id,
+      cor_id,
+      altura,
+      largura,
+      profundidade,
+      volume,
+      preco_venda || 0,
+      estoque_minimo,
+      giro || "MEDIO",
+      margem_lucro_percentual || 0
     ],
     (err) => {
       if (err) {
@@ -290,20 +468,59 @@ app.put("/produtos/:id", (req, res) => {
   const { id } = req.params;
 
   const {
-    nome, fornecedor_id, categoria, cor,
-    altura, largura, profundidade, volume,
-    custo, preco_venda, margem_lucro, estoque_minimo, giro
+    nome,
+    fornecedor_id,
+    categoria_id,
+    cor_id,
+    altura,
+    largura,
+    profundidade,
+    volume,
+    preco_venda,
+    estoque_minimo,
+    giro,
+    margem_lucro_percentual
   } = req.body;
+
+  if (!nome || !fornecedor_id || !categoria_id || !cor_id) {
+    return res.status(400).send("Preencha os campos obrigatórios do produto ❌");
+  }
 
   const sql = `
     UPDATE produto
-    SET nome=?, fornecedor_id=?, categoria=?, cor=?, altura=?, largura=?, profundidade=?, volume=?, custo=?, preco_venda=?, margem_lucro=?, estoque_minimo=?, giro=?
-    WHERE id=?
+    SET
+      nome = ?,
+      fornecedor_id = ?,
+      categoria_id = ?,
+      cor_id = ?,
+      altura = ?,
+      largura = ?,
+      profundidade = ?,
+      volume = ?,
+      preco_venda = ?,
+      estoque_minimo = ?,
+      giro = ?,
+      margem_lucro_percentual = ?
+    WHERE id = ?
   `;
 
   db.query(
     sql,
-    [nome, fornecedor_id, categoria, cor, altura, largura, profundidade, volume, custo, preco_venda, margem_lucro, estoque_minimo,  giro || "MEDIO", id],
+    [
+      nome,
+      fornecedor_id,
+      categoria_id,
+      cor_id,
+      altura,
+      largura,
+      profundidade,
+      volume,
+      preco_venda || 0,
+      estoque_minimo,
+      giro || "MEDIO",
+      margem_lucro_percentual || 0,
+      id
+    ],
     (err) => {
       if (err) {
         console.error(err);
@@ -318,7 +535,7 @@ app.put("/produtos/:id", (req, res) => {
 app.delete("/produtos/:id", (req, res) => {
   const { id } = req.params;
 
-  db.query("DELETE FROM produto WHERE id=?", [id], (err) => {
+  db.query("DELETE FROM produto WHERE id = ?", [id], (err) => {
     if (err) {
       if (err.code === "ER_ROW_IS_REFERENCED_2") {
         return res.status(400).send("Este produto possui movimentações e não pode ser excluído ❌");
@@ -339,7 +556,7 @@ app.delete("/produtos/:id", (req, res) => {
 app.post("/funcionarios", (req, res) => {
   const {
     nome, cpf, rg, telefone, email,
-    rua, numero, bairro, cidade, cep,
+    rua, numero, bairro, cidade, cep, cargo,
     data_admissao, 
   } = req.body;
 
@@ -350,13 +567,13 @@ app.post("/funcionarios", (req, res) => {
 
   const sql = `
     INSERT INTO funcionario
-    (nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao, cargo)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
     sql,
-    [nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao],
+    [nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao, cargo],
     (err) => {
       if (err) {
         if (err) {
@@ -377,8 +594,22 @@ app.post("/funcionarios", (req, res) => {
 });
 
 app.get("/funcionarios", (req, res) => {
-  db.query("SELECT * FROM funcionario", (err, result) => {
-    if (err) return res.status(500).send("Erro ao buscar funcionários ❌");
+  const sql = `
+    SELECT
+      funcionario.*,
+      cargo.nome AS cargo_nome
+    FROM funcionario
+    LEFT JOIN cargo
+      ON funcionario.cargo_id = cargo.id
+    ORDER BY funcionario.nome
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar funcionários ❌");
+    }
+
     res.json(result);
   });
 });
@@ -388,19 +619,19 @@ app.put("/funcionarios/:id", (req, res) => {
 
   const {
     nome, cpf, rg, telefone, email,
-    rua, numero, bairro, cidade, cep,
+    rua, numero, bairro, cidade, cep, cargo,
     data_admissao
   } = req.body;
 
   const sql = `
     UPDATE funcionario
-    SET nome=?, cpf=?, rg=?, telefone=?, email=?, rua=?, numero=?, bairro=?, cidade=?, cep=?, data_admissao=?
+    SET nome=?, cpf=?, rg=?, telefone=?, email=?, rua=?, numero=?, bairro=?, cidade=?, cep=?, data_admissao=?, cargo=?
     WHERE id=?
   `;
 
   db.query(
     sql,
-    [nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao, id],
+    [nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao, cargo, id],
     (err) => {
       if (err) {
         console.error(err);
@@ -452,103 +683,182 @@ app.delete("/funcionarios/:id", (req, res) => {
 
 app.post("/entradas", (req, res) => {
   const {
-    produto_id,
-    quantidade,
+    fornecedor_id,
     numero_nf,
+    serie_nf,
     data_nf,
-    lote,
-    validade,
-    usuario_id
+    usuario_id,
+    itens
   } = req.body;
 
-  if (!produto_id || !quantidade || !numero_nf || !data_nf || !lote || !validade) {
-    return res.status(400).send("Preencha todos os campos da entrada ❌");
+  if (
+    !fornecedor_id ||
+    !numero_nf ||
+    !data_nf ||
+    !itens ||
+    itens.length === 0
+  ) {
+    return res.status(400).send("Preencha os dados da NF ❌");
   }
 
-  const sqlEntrada = `
-    INSERT INTO entrada_mercadoria
-    (
-      produto_id,
-      quantidade,
-      numero_nf,
-      data_nf,
-      lote,
-      validade,
-      status_conferencia,
-      usuario_id
-    )
-    VALUES (?, ?, ?, ?, ?, ?, 'PENDENTE', ?)
-  `;
+  let processados = 0;
+  let erroEncontrado = false;
 
-  db.query(
-    sqlEntrada,
-    [produto_id, quantidade, numero_nf, data_nf, lote, validade, usuario_id],
-    (err) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Erro ao registrar entrada ❌");
-      }
+  itens.forEach(item => {
 
-      const sqlAtualizaEstoque = `
-        UPDATE produto
-        SET quantidade_estoque = quantidade_estoque + ?
-        WHERE id = ?
-      `;
+    const sqlEntrada = `
+      INSERT INTO entrada_mercadoria
+      (
+        fornecedor_id,
+        produto_id,
+        quantidade,
+        quantidade_disponivel,
+        numero_nf,
+        serie_nf,
+        data_nf,
+        lote,
+        validade,
+        custo_unitario_sem_imposto,
+        icms_percentual,
+        ipi_percentual,
+        pis_percentual,
+        cofins_percentual,
+        subtotal,
+        valor_impostos,
+        custo_total_com_imposto,
+        custo_unitario_com_imposto,
+        status_conferencia,
+        usuario_id
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDENTE', ?)
+    `;
 
-      db.query(sqlAtualizaEstoque, [quantidade, produto_id], (err) => {
+    db.query(
+      sqlEntrada,
+      [
+        fornecedor_id,
+        item.produto_id,
+        item.quantidade,
+        item.quantidade,
+        numero_nf,
+        serie_nf || null,
+        data_nf,
+        item.lote || null,
+        item.validade || null,
+        item.custo_unitario_sem_imposto,
+        item.icms_percentual,
+        item.ipi_percentual,
+        item.pis_percentual,
+        item.cofins_percentual,
+        item.subtotal,
+        item.valor_impostos,
+        item.custo_total_com_imposto,
+        item.custo_unitario_com_imposto,
+        usuario_id || null
+      ],
+      (err) => {
+
+        if (erroEncontrado) return;
+
         if (err) {
+          erroEncontrado = true;
+
           console.error(err);
-          return res.status(500).send("Entrada salva, mas erro ao atualizar estoque ❌");
+
+          return res.status(500).send("Erro ao registrar item da NF ❌");
         }
 
-        res.send("Entrada registrada e estoque atualizado ✅");
-      });
+        const sqlProduto = `
+          UPDATE produto
+          SET
+            quantidade_estoque =
+              quantidade_estoque + ?,
 
-      if (err) {
-  if (err.code === "ER_DUP_ENTRY") {
-    return res.status(400).send("Número da nota fiscal já cadastrado ❌");
-  }
+            ultimo_custo_sem_imposto = ?,
 
-  console.error(err);
-  return res.status(500).send("Erro ao registrar entrada ❌");
-}
+            ultimo_custo_com_imposto = ?,
 
-    }
-  );
+            custo_medio = ?,
+
+            margem_lucro_percentual =
+              CASE
+                WHEN preco_venda > 0 AND ? > 0
+                THEN (
+                  (preco_venda - ?) / ?
+                ) * 100
+                ELSE 0
+              END
+
+          WHERE id = ?
+        `;
+
+        db.query(
+          sqlProduto,
+          [
+            item.quantidade,
+
+            item.custo_unitario_sem_imposto,
+
+            item.custo_unitario_com_imposto,
+
+            item.custo_unitario_com_imposto,
+
+            item.custo_unitario_com_imposto,
+            item.custo_unitario_com_imposto,
+            item.custo_unitario_com_imposto,
+
+            item.produto_id
+          ],
+          (err) => {
+
+            if (erroEncontrado) return;
+
+            if (err) {
+              erroEncontrado = true;
+
+              console.error(err);
+
+              return res.status(500).send("Erro ao atualizar produto ❌");
+            }
+
+            processados++;
+
+            if (processados === itens.length) {
+              return res.send("Entrada de NF registrada com sucesso ✅");
+            }
+          }
+        );
+      }
+    );
+  });
 });
 
 app.get("/entradas", (req, res) => {
   const sql = `
-    SELECT 
-      entrada_mercadoria.id,
-      entrada_mercadoria.quantidade,
-      entrada_mercadoria.numero_nf,
-      entrada_mercadoria.data_nf,
-      entrada_mercadoria.lote,
-      entrada_mercadoria.validade,
-      entrada_mercadoria.status_conferencia,
-      entrada_mercadoria.data_entrada,
+    SELECT
+      e.*,
+      p.nome AS produto_nome,
+      p.codigo AS produto_codigo,
+      f.nome AS fornecedor_nome,
+      u.login AS usuario_nome
+    FROM entrada_mercadoria e
 
-      produto.nome AS produto_nome,
-      produto.codigo AS produto_codigo,
+    INNER JOIN produto p
+      ON e.produto_id = p.id
 
-      usuario.login AS usuario_nome
+    LEFT JOIN fornecedor f
+      ON e.fornecedor_id = f.id
 
-    FROM entrada_mercadoria
+    LEFT JOIN usuario u
+      ON e.usuario_id = u.id
 
-    INNER JOIN produto 
-      ON entrada_mercadoria.produto_id = produto.id
-
-    LEFT JOIN usuario 
-      ON entrada_mercadoria.usuario_id = usuario.id
-
-    ORDER BY entrada_mercadoria.data_entrada DESC
+    ORDER BY e.data_entrada DESC
   `;
 
   db.query(sql, (err, result) => {
     if (err) {
       console.error(err);
-      return res.status(500).send("Erro ao buscar entradas ❌");
+      return res.status(500).send("Erro ao buscar entradas de NF ❌");
     }
 
     res.json(result);
@@ -745,15 +1055,14 @@ app.get("/usuarios", (req, res) => {
 
   const sql = `
     SELECT
-      usuario.id,
-      usuario.login,
-      usuario.email,
-      usuario.situacao,
-      usuario.ultimo_acesso,
-
-      funcionario.nome AS nome_completo,
-
-      setor.nome AS setor_nome
+  usuario.id,
+  usuario.login,
+  usuario.email,
+  usuario.situacao,
+  usuario.ultimo_acesso,
+  funcionario.nome AS nome_completo,
+  funcionario.cargo AS cargo,
+  setor.nome AS setor_nome
 
     FROM usuario
 
@@ -962,6 +1271,7 @@ app.get("/usuarios/:id", (req, res) => {
       usuario.situacao,
       usuario.ultimo_acesso,
       funcionario.nome AS nome_completo,
+      funcionario.cargo AS cargo,
       setor.nome AS setor_nome
     FROM usuario
     INNER JOIN funcionario ON usuario.funcionario_id = funcionario.id
@@ -1389,6 +1699,45 @@ app.get("/dashboard/auditorias-recentes", (req, res) => {
    ENDEREÇAMENTO
 ========================= */
 
+app.get("/produtos-pendentes-enderecamento", (req, res) => {
+  const sql = `
+    SELECT
+      p.id,
+      p.nome,
+      p.codigo,
+      p.volume,
+      p.quantidade_estoque,
+      IFNULL(SUM(e.quantidade_unidades), 0) AS quantidade_enderecada,
+      (
+        p.quantidade_estoque - IFNULL(SUM(e.quantidade_unidades), 0)
+      ) AS quantidade_pendente
+    FROM produto p
+
+    LEFT JOIN endereco_estoque e
+      ON e.produto_id = p.id
+
+    GROUP BY
+      p.id,
+      p.nome,
+      p.codigo,
+      p.volume,
+      p.quantidade_estoque
+
+    HAVING quantidade_pendente > 0
+
+    ORDER BY p.nome
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar produtos pendentes ❌");
+    }
+
+    res.json(result);
+  });
+});
+
 app.post("/enderecos", (req, res) => {
   const {
     produto_id,
@@ -1790,79 +2139,61 @@ app.get("/enderecos/sugerir/:produtoId", (req, res) => {
     }
 
     const produto = produtoResult[0];
+    const volumeProduto = Number(produto.volume || 0);
 
-    let ruas = [];
-    let niveis = [];
+    if (!volumeProduto || volumeProduto <= 0) {
+      return res.status(400).send("Produto sem cubagem cadastrada ❌");
+    }
+
+    let ruaInicio = 1;
+    let ruaFim = 9;
 
     if (produto.giro === "ALTO") {
-      ruas = gerarIntervalo(20, 24);
+      ruaInicio = 20;
+      ruaFim = 24;
     } else if (produto.giro === "MEDIO") {
-      ruas = gerarIntervalo(10, 19);
-    } else {
-      ruas = gerarIntervalo(1, 9);
+      ruaInicio = 10;
+      ruaFim = 19;
     }
 
-    const volume = Number(produto.volume || 0);
-
-    if (volume >= 0.006) {
-      niveis = [1, 2, 3];
-    } else {
-      niveis = [4, 5, 6, 7];
-    }
-
-    const colunas = gerarIntervalo(1, 84);
-
-    const candidatos = [];
-
-    ruas.forEach(rua => {
-      colunas.forEach(coluna => {
-        niveis.forEach(nivel => {
-          const endereco =
-            `R${String(rua).padStart(2, "0")}-C${String(coluna).padStart(3, "0")}-N${String(nivel).padStart(2, "0")}`;
-
-          candidatos.push({
-            rua,
-            coluna,
-            nivel,
-            endereco
-          });
-        });
-      });
-    });
-
-    const enderecosCandidatos =
-      candidatos.map(c => c.endereco);
-
-    const sqlOcupados = `
-      SELECT endereco
-      FROM endereco_estoque
-      WHERE endereco IN (?)
-      AND status IN ('OCUPADO', 'BLOQUEADO')
+    const sqlSugestao = `
+      SELECT
+        p.id,
+        p.rua,
+        p.coluna,
+        p.nivel,
+        p.endereco,
+        p.capacidade_m3,
+        p.status
+      FROM posicao_estoque p
+      WHERE p.status = 'LIVRE'
+      AND p.rua BETWEEN ? AND ?
+      AND p.capacidade_m3 >= ?
+      ORDER BY p.rua, p.coluna, p.nivel
+      LIMIT 1
     `;
 
-    db.query(sqlOcupados, [enderecosCandidatos], (err, ocupadosResult) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Erro ao verificar endereços ❌");
+    db.query(
+      sqlSugestao,
+      [ruaInicio, ruaFim, volumeProduto],
+      (err, posicaoResult) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send("Erro ao sugerir posição ❌");
+        }
+
+        if (posicaoResult.length === 0) {
+          return res.status(404).send("Nenhuma posição disponível com capacidade suficiente ❌");
+        }
+
+        res.json({
+          produto: produto.nome,
+          giro: produto.giro,
+          volume: produto.volume,
+          sugestao: posicaoResult[0]
+        });
       }
-
-      const ocupados = ocupadosResult.map(e => e.endereco);
-
-      const enderecoLivre = candidatos.find(c =>
-        !ocupados.includes(c.endereco)
-      );
-
-      if (!enderecoLivre) {
-        return res.status(404).send("Nenhum endereço disponível para este produto ❌");
-      }
-
-      res.json({
-        produto: produto.nome,
-        giro: produto.giro,
-        volume: produto.volume,
-        sugestao: enderecoLivre
-      });
-    });
+    );
   });
 });
 
@@ -1877,7 +2208,7 @@ function gerarIntervalo(inicio, fim) {
 }
 
 /* =========================
-   POSIÇÕES DE ESTOQUE
+   POSIÇÕES DO ARMAZÉM
 ========================= */
 
 app.post("/posicoes/gerar", (req, res) => {
@@ -1889,39 +2220,39 @@ app.post("/posicoes/gerar", (req, res) => {
         const endereco =
           `R${String(rua).padStart(2, "0")}-C${String(coluna).padStart(3, "0")}-N${String(nivel).padStart(2, "0")}`;
 
+        const altura = 1.5;
+        const largura = 1.2;
+        const profundidade = 1.0;
+        const capacidadeM3 = altura * largura * profundidade;
+
         valores.push([
           rua,
           coluna,
           nivel,
           endereco,
-          1.8,
+          altura,
+          largura,
+          profundidade,
+          capacidadeM3,
           "LIVRE"
         ]);
       }
     }
   }
 
-const filtros = [];
-
-if (status) {
-  filtros.push("p.status = ?");
-  valores.push(status);
-}
-
-if (rua) {
-  filtros.push("p.rua = ?");
-  valores.push(rua);
-}
-
-if (filtros.length > 0) {
-  sql += " WHERE " + filtros.join(" AND ");
-}
-
-sql += " LIMIT 200";
-
   const sql = `
     INSERT IGNORE INTO posicao_estoque
-    (rua, coluna, nivel, endereco, capacidade_m3, status)
+    (
+      rua,
+      coluna,
+      nivel,
+      endereco,
+      altura,
+      largura,
+      profundidade,
+      capacidade_m3,
+      status
+    )
     VALUES ?
   `;
 
@@ -1965,6 +2296,9 @@ app.get("/posicoes", (req, res) => {
       p.coluna,
       p.nivel,
       p.endereco,
+      p.altura,
+      p.largura,
+      p.profundidade,
       p.capacidade_m3,
       p.status,
       e.quantidade_unidades,
@@ -1972,8 +2306,10 @@ app.get("/posicoes", (req, res) => {
       produto.nome AS produto_nome,
       produto.codigo AS produto_codigo
     FROM posicao_estoque p
+
     LEFT JOIN endereco_estoque e
       ON e.posicao_id = p.id
+
     LEFT JOIN produto
       ON e.produto_id = produto.id
   `;
@@ -2020,142 +2356,50 @@ app.get("/posicoes", (req, res) => {
   });
 });
 
-app.get("/produtos-pendentes-enderecamento", (req, res) => {
+app.put("/posicoes/:id/dimensoes", (req, res) => {
+  const { id } = req.params;
+
+  const {
+    altura,
+    largura,
+    profundidade
+  } = req.body;
+
+  if (!altura || !largura || !profundidade) {
+    return res.status(400).send("Informe altura, largura e profundidade ❌");
+  }
+
+  const capacidadeM3 =
+    Number(altura) * Number(largura) * Number(profundidade);
+
   const sql = `
-    SELECT
-      p.id,
-      p.nome,
-      p.codigo,
-      p.volume,
-      p.giro,
-      p.quantidade_estoque,
-
-      IFNULL(SUM(e.quantidade_unidades), 0) AS quantidade_enderecada,
-
-      p.quantidade_estoque - IFNULL(SUM(e.quantidade_unidades), 0) AS quantidade_pendente
-
-    FROM produto p
-
-    LEFT JOIN endereco_estoque e
-      ON e.produto_id = p.id
-
-    GROUP BY
-      p.id,
-      p.nome,
-      p.codigo,
-      p.volume,
-      p.giro,
-      p.quantidade_estoque
-
-    HAVING quantidade_pendente > 0
-
-    ORDER BY p.nome
-  `;
-
-  db.query(sql, (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Erro ao buscar produtos pendentes ❌");
-    }
-
-    res.json(result);
-  });
-});
-
-app.get("/posicoes/sugerir/:produtoId", (req, res) => {
-  const { produtoId } = req.params;
-
-  const sqlProduto = `
-    SELECT id, nome, volume, giro
-    FROM produto
+    UPDATE posicao_estoque
+    SET
+      altura = ?,
+      largura = ?,
+      profundidade = ?,
+      capacidade_m3 = ?
     WHERE id = ?
   `;
 
-  db.query(sqlProduto, [produtoId], (err, produtoResult) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Erro ao buscar produto ❌");
-    }
-
-    if (produtoResult.length === 0) {
-      return res.status(404).send("Produto não encontrado ❌");
-    }
-
-    const produto = produtoResult[0];
-
-    let ruaInicio = 1;
-    let ruaFim = 9;
-
-    if (produto.giro === "ALTO") {
-      ruaInicio = 20;
-      ruaFim = 24;
-    } else if (produto.giro === "MEDIO") {
-      ruaInicio = 10;
-      ruaFim = 19;
-    }
-
-    const volume = Number(produto.volume || 0);
-
-    let nivelInicio = 4;
-    let nivelFim = 7;
-
-    if (volume >= 0.006) {
-      nivelInicio = 1;
-      nivelFim = 3;
-    }
-
-    const sqlPosicao = `
-      SELECT *
-      FROM posicao_estoque
-      WHERE status = 'LIVRE'
-      AND rua BETWEEN ? AND ?
-      AND nivel BETWEEN ? AND ?
-      ORDER BY rua, coluna, nivel
-      LIMIT 1
-    `;
-
-    db.query(
-      sqlPosicao,
-      [ruaInicio, ruaFim, nivelInicio, nivelFim],
-      (err, posicaoResult) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).send("Erro ao sugerir posição ❌");
-        }
-
-        if (posicaoResult.length === 0) {
-          return res.status(404).send("Nenhuma posição livre encontrada ❌");
-        }
-
-        res.json({
-          produto: produto.nome,
-          giro: produto.giro,
-          volume: produto.volume,
-          posicao: posicaoResult[0]
-        });
+  db.query(
+    sql,
+    [
+      altura,
+      largura,
+      profundidade,
+      capacidadeM3,
+      id
+    ],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao atualizar dimensões ❌");
       }
-    );
-  });
-});
 
-app.get("/posicoes/resumo", (req, res) => {
-  const sql = `
-    SELECT
-      COUNT(*) AS total,
-      SUM(status = 'LIVRE') AS livres,
-      SUM(status = 'OCUPADA') AS ocupadas,
-      SUM(status = 'BLOQUEADA') AS bloqueadas
-    FROM posicao_estoque
-  `;
-
-  db.query(sql, (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Erro ao buscar resumo das posições ❌");
+      res.send("Dimensões da posição atualizadas ✅");
     }
-
-    res.json(result[0]);
-  });
+  );
 });
 
 app.use((req, res) => {
