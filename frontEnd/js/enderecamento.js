@@ -1,6 +1,6 @@
-const API_URL_ENDERECO = "http://localhost:3000";
+var API_URL_ENDERECO = "http://localhost:3000";
 
-let produtosPendentes = [];
+var produtosPendentes = [];
 
 function iniciarEnderecamento() {
   carregarProdutosEndereco();
@@ -245,7 +245,10 @@ async function salvarEndereco(event) {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(dados)
+       body: JSON.stringify({
+    ...dados,
+    ...getUsuarioAuditoria()
+  })
     });
 
     const retorno = await resposta.json();
@@ -337,7 +340,15 @@ async function excluirEndereco(id) {
 
   try {
     const resposta = await fetch(`${API_URL_ENDERECO}/enderecos/${id}`, {
-      method: "DELETE"
+      method: "DELETE",
+
+      headers: {
+    "Content-Type": "application/json"
+  },
+
+  body: JSON.stringify({
+    ...getUsuarioAuditoria()
+  })
     });
 
     const mensagem = await resposta.text();

@@ -88,6 +88,39 @@ tbody tr:hover {
   cursor: not-allowed;
 }
 
+.form-posicao {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.form-posicao input,
+.form-posicao select {
+  height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #d1d9e6;
+  border-radius: 9px;
+  background: #f9fafb;
+  outline: none;
+}
+
+.form-posicao button {
+  grid-column: 1 / -1;
+  height: 48px;
+  background: linear-gradient(135deg, #2f5fa3, #0b1f3a);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (max-width: 800px) {
+  .form-posicao {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 700px) {
   .card-formulario,
   .card-lista {

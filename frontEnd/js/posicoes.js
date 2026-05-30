@@ -1,4 +1,4 @@
-const API_URL_POSICOES = "http://localhost:3000";
+var API_URL_POSICOES = "http://localhost:3000";
 
 function iniciarPosicoes() {
   carregarRuasFiltro();
@@ -8,6 +8,14 @@ function iniciarPosicoes() {
   const btnGerar = document.getElementById("btnGerarPosicoes");
   const btnFiltrar = document.getElementById("btnFiltrarPosicoes");
   const btnLimpar = document.getElementById("btnLimparFiltros");
+
+  carregarRuasNovaPosicao();
+
+const formNovaPosicao = document.getElementById("formNovaPosicao");
+
+if (formNovaPosicao) {
+  formNovaPosicao.addEventListener("submit", cadastrarNovaPosicao);
+}
 
   if (btnGerar) {
     btnGerar.addEventListener("click", gerarPosicoes);
@@ -47,8 +55,14 @@ async function gerarPosicoes() {
 
   try {
     const resposta = await fetch(`${API_URL_POSICOES}/posicoes/gerar`, {
-      method: "POST"
-    });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    ...getUsuarioAuditoria()
+  })
+});
 
     const mensagem = await resposta.text();
 
@@ -224,17 +238,19 @@ async function editarDimensoesPosicao(id, alturaAtual, larguraAtual, profundidad
   const profundidade = prompt("Profundidade da posição em metros:", profundidadeAtual);
   if (!profundidade) return;
 
-  const res = await fetch(`${API_URL_POSICOES}/posicoes/${id}/dimensoes`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      altura,
-      largura,
-      profundidade
-    })
-  });
+ const res = await fetch(`${API_URL_POSICOES}/posicoes/${id}/dimensoes`, {
+  method: "PUT",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    altura,
+    largura,
+    profundidade,
+
+    ...getUsuarioAuditoria()
+  })
+});
 
   const msg = await res.text();
 
@@ -247,4 +263,59 @@ async function editarDimensoesPosicao(id, alturaAtual, larguraAtual, profundidad
 
   carregarPosicoes();
   carregarResumoPosicoes();
+}
+
+function carregarRuasNovaPosicao() {
+  const select = document.getElementById("novaRua");
+
+  if (!select) return;
+
+  select.innerHTML = `<option value="">Rua</option>`;
+
+  for (let i = 1; i <= 24; i++) {
+    select.innerHTML += `
+      <option value="${i}">
+        Rua ${String(i).padStart(2, "0")}
+      </option>
+    `;
+  }
+}
+
+async function cadastrarNovaPosicao(event) {
+  event.preventDefault();
+
+  const dados = {
+    rua: document.getElementById("novaRua").value,
+    coluna: document.getElementById("novaColuna").value,
+    nivel: document.getElementById("novoNivel").value,
+    altura: document.getElementById("novaAltura").value,
+    largura: document.getElementById("novaLargura").value,
+    profundidade: document.getElementById("novaProfundidade").value
+  };
+
+  const res = await fetch(`${API_URL_POSICOES}/posicoes`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    ...dados,
+
+    ...getUsuarioAuditoria()
+  })
+});
+
+  const msg = await res.text();
+
+  if (!res.ok) {
+    alert(msg);
+    return;
+  }
+
+  alert(msg);
+
+  document.getElementById("formNovaPosicao").reset();
+
+  carregarResumoPosicoes();
+  carregarPosicoes();
 }

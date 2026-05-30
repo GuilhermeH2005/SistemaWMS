@@ -1,6 +1,6 @@
-const API_URL_PRODUTO = "http://localhost:3000";
-let editandoProdutoId = null;
-let produtosCache = [];
+var API_URL_PRODUTO = "http://localhost:3000";
+var editandoProdutoId = null;
+var produtosCache = [];
 
 function iniciarProduto() {
   const form = document.getElementById("formProduto");
@@ -62,16 +62,26 @@ campoPrecoVenda.addEventListener("input", () => {
 
       if (editandoProdutoId) {
         res = await fetch(`${API_URL_PRODUTO}/produtos/${editandoProdutoId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(produto)
-        });
+  method: "PUT",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    ...produto,
+    ...getUsuarioAuditoria()
+  })
+});
       } else {
-        res = await fetch(`${API_URL_PRODUTO}/produtos`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(produto)
-        });
+      res = await fetch(`${API_URL_PRODUTO}/produtos`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    ...produto,
+    ...getUsuarioAuditoria()
+  })
+});
       }
 
       const msg = await res.text();
@@ -248,8 +258,7 @@ async function carregarListaProdutos() {
             <span>Volume</span>
             <strong>${Number(p.volume || 0).toFixed(4)} m³</strong>
           </div>
-
-          <div>
+          
  <div class="grupo-custos-produto">
   <div>
     <span>Último custo s/ imposto</span>
@@ -325,8 +334,16 @@ async function excluirProduto(id) {
 
   try {
     const res = await fetch(`${API_URL_PRODUTO}/produtos/${id}`, {
-      method: "DELETE"
-    });
+      method: "DELETE",
+
+      headers: {
+    "Content-Type": "application/json"
+  },
+
+  body: JSON.stringify({
+    ...getUsuarioAuditoria()
+  })
+  });
 
     const msg = await res.text();
 

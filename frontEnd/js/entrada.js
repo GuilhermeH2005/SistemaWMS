@@ -1,5 +1,5 @@
-let produtosEntrada = [];
-let itensNF = [];
+var produtosEntrada = [];
+var itensNF = [];
 
 function iniciarEntrada() {
   const form = document.getElementById("formEntrada");
@@ -63,6 +63,7 @@ function iniciarEntrada() {
   serie_nf: document.getElementById("serie_nf").value,
   data_nf: converterDataParaBanco(document.getElementById("data_nf").value),
   usuario_id: usuarioLogado ? usuarioLogado.id : null,
+  usuario_nome: usuarioLogado?.nome || usuarioLogado?.login || null,
   itens: itensNF
 };
 
@@ -72,7 +73,11 @@ function iniciarEntrada() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(entrada)
+         body: JSON.stringify({
+    ...entrada,
+    ...getUsuarioAuditoria()
+  })
+
       });
 
       const msg = await res.text();

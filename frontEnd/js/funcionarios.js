@@ -1,4 +1,4 @@
-let editandoFuncionarioId = null;
+var editandoFuncionarioId = null;
 
 function iniciarFuncionario() {
   const form = document.getElementById("formFuncionario");
@@ -43,7 +43,12 @@ function iniciarFuncionario() {
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify(funcionario)
+             body: JSON.stringify({
+    ...funcionario,
+    ...getUsuarioAuditoria()
+  })
+
+
           }
         );
 
@@ -67,7 +72,11 @@ function iniciarFuncionario() {
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify(funcionario)
+              body: JSON.stringify({
+    ...funcionario,
+    ...getUsuarioAuditoria()
+  })
+
           }
         );
 
@@ -232,9 +241,16 @@ async function excluirFuncionario(id) {
   const res = await fetch(
     `http://localhost:3000/funcionarios/${id}`,
     {
-      method: "DELETE"
-    }
-  );
+      method: "DELETE",
+
+       headers: {
+    "Content-Type": "application/json"
+  },
+
+   body: JSON.stringify({
+    ...getUsuarioAuditoria()
+  })
+  });
 
   const msg = await res.text();
 

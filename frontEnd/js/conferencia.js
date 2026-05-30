@@ -1,4 +1,4 @@
-let entradasConferencia = [];
+var entradasConferencia = [];
 
 function iniciarConferencia() {
   carregarConferencia();
@@ -153,9 +153,11 @@ async function atualizarStatusConferencia(id, status) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        status_conferencia: status,
-        usuario_edicao_id: usuarioLogado ? usuarioLogado.id : null
-      })
+  status_conferencia: status,
+  usuario_edicao_id: getUsuarioAuditoria().usuario_id,
+
+  ...getUsuarioAuditoria()
+})
     });
 
     const msg = await res.text();

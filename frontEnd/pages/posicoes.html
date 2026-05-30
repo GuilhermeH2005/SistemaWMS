@@ -13,6 +13,30 @@
   </button>
 </section>
 
+<hr style="margin: 22px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+<h3 class="subtitulo">Cadastrar Nova Posição</h3>
+
+<form id="formNovaPosicao" class="form-posicao">
+  <select id="novaRua" required>
+    <option value="">Rua</option>
+  </select>
+
+  <input type="number" id="novaColuna" min="1" placeholder="Coluna" required>
+
+  <input type="number" id="novoNivel" min="1" placeholder="Nível" required>
+
+  <input type="number" step="0.01" id="novaAltura" placeholder="Altura (m)" required>
+
+  <input type="number" step="0.01" id="novaLargura" placeholder="Largura (m)" required>
+
+  <input type="number" step="0.01" id="novaProfundidade" placeholder="Profundidade (m)" required>
+
+  <button type="submit">
+    Cadastrar Posição
+  </button>
+</form>
+
 <section class="cards-resumo-posicoes">
 
   <div class="card-resumo">

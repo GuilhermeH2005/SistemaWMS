@@ -18,17 +18,43 @@ app.get("/teste-banco", (req, res) => {
   });
 });
 
-async function registrarAuditoria(usuarioId, acao, tabelaAfetada, registroId, descricao) {
-  try {
-    await db.query(
-      `INSERT INTO auditoria 
-      (usuario_id, acao, tabela_afetada, registro_id, descricao)
-      VALUES (?, ?, ?, ?, ?)`,
-      [usuarioId || null, acao, tabelaAfetada, registroId || null, descricao]
-    );
-  } catch (erro) {
-    console.error("Erro ao registrar auditoria:", erro);
-  }
+function registrarAuditoria(
+  usuarioId,
+  usuarioNome,
+  acao,
+  tabela,
+  registroId,
+  descricao
+) {
+  const sql = `
+    INSERT INTO auditoria
+    (
+      usuario_id,
+      usuario_nome,
+      acao,
+      tabela_afetada,
+      registro_id,
+      descricao
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(
+    sql,
+    [
+      usuarioId || null,
+      usuarioNome || "Sistema",
+      acao || "AÇÃO",
+      tabela || "-",
+      registroId || null,
+      descricao || "Sem descrição"
+    ],
+    (err) => {
+      if (err) {
+        console.error("Erro ao registrar auditoria:", err);
+      }
+    }
+  );
 }
 
 /* =========================
@@ -363,25 +389,29 @@ app.delete("/cores-produto/:id", (req, res) => {
 app.get("/produtos", (req, res) => {
   const sql = `
     SELECT
-  produto.*,
-  categoria_produto.nome AS categoria_nome,
-  cor_produto.nome AS cor_nome,
+      produto.*,
+      categoria_produto.nome AS categoria_nome,
+      cor_produto.nome AS cor_nome,
 
-  (
-    SELECT fornecedor.nome
-    FROM entrada_mercadoria e
-    INNER JOIN fornecedor ON e.fornecedor_id = fornecedor.id
-    WHERE e.produto_id = produto.id
-    ORDER BY e.data_entrada DESC
-    LIMIT 1
-  ) AS fornecedor_nome
+      (
+        SELECT fornecedor.nome
+        FROM entrada_mercadoria e
+        INNER JOIN fornecedor
+          ON e.fornecedor_id = fornecedor.id
+        WHERE e.produto_id = produto.id
+        ORDER BY e.data_entrada DESC
+        LIMIT 1
+      ) AS fornecedor_nome
 
-FROM produto
-LEFT JOIN categoria_produto
-  ON produto.categoria_id = categoria_produto.id
-LEFT JOIN cor_produto
-  ON produto.cor_id = cor_produto.id
-ORDER BY produto.nome
+    FROM produto
+
+    LEFT JOIN categoria_produto
+      ON produto.categoria_id = categoria_produto.id
+
+    LEFT JOIN cor_produto
+      ON produto.cor_id = cor_produto.id
+
+    ORDER BY produto.nome
   `;
 
   db.query(sql, (err, result) => {
@@ -397,7 +427,6 @@ ORDER BY produto.nome
 app.post("/produtos", (req, res) => {
   const {
     nome,
-    fornecedor_id,
     categoria_id,
     cor_id,
     altura,
@@ -407,11 +436,13 @@ app.post("/produtos", (req, res) => {
     preco_venda,
     estoque_minimo,
     giro,
-    margem_lucro_percentual
+    margem_lucro_percentual,
+    usuario_id,
+    usuario_nome
   } = req.body;
 
-  if (!nome || !fornecedor_id || !categoria_id || !cor_id) {
-    return res.status(400).send("Preencha os campos obrigatórios do produto ❌");
+  if (!nome || !categoria_id || !cor_id) {
+    return res.status(400).send("Preencha nome, categoria e cor do produto ❌");
   }
 
   const codigo = "SKU" + Date.now();
@@ -421,7 +452,6 @@ app.post("/produtos", (req, res) => {
     (
       nome,
       codigo,
-      fornecedor_id,
       categoria_id,
       cor_id,
       altura,
@@ -433,7 +463,7 @@ app.post("/produtos", (req, res) => {
       giro,
       margem_lucro_percentual
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
@@ -441,23 +471,31 @@ app.post("/produtos", (req, res) => {
     [
       nome,
       codigo,
-      fornecedor_id,
       categoria_id,
       cor_id,
-      altura,
-      largura,
-      profundidade,
-      volume,
+      altura || 0,
+      largura || 0,
+      profundidade || 0,
+      volume || 0,
       preco_venda || 0,
-      estoque_minimo,
+      estoque_minimo || 0,
       giro || "MEDIO",
       margem_lucro_percentual || 0
     ],
-    (err) => {
+    (err, result) => {
       if (err) {
         console.error(err);
         return res.status(500).send("Erro ao cadastrar produto ❌");
       }
+
+     registrarAuditoria(
+  usuario_id,
+  usuario_nome,
+  "CADASTRO",
+  "produto",
+  result.insertId,
+  `Produto ${nome} cadastrado`
+);
 
       res.send("Produto cadastrado com sucesso ✅");
     }
@@ -469,7 +507,6 @@ app.put("/produtos/:id", (req, res) => {
 
   const {
     nome,
-    fornecedor_id,
     categoria_id,
     cor_id,
     altura,
@@ -479,18 +516,19 @@ app.put("/produtos/:id", (req, res) => {
     preco_venda,
     estoque_minimo,
     giro,
-    margem_lucro_percentual
+    margem_lucro_percentual,
+    usuario_id,
+    usuario_nome
   } = req.body;
 
-  if (!nome || !fornecedor_id || !categoria_id || !cor_id) {
-    return res.status(400).send("Preencha os campos obrigatórios do produto ❌");
+  if (!nome || !categoria_id || !cor_id) {
+    return res.status(400).send("Preencha nome, categoria e cor do produto ❌");
   }
 
   const sql = `
     UPDATE produto
     SET
       nome = ?,
-      fornecedor_id = ?,
       categoria_id = ?,
       cor_id = ?,
       altura = ?,
@@ -508,15 +546,14 @@ app.put("/produtos/:id", (req, res) => {
     sql,
     [
       nome,
-      fornecedor_id,
       categoria_id,
       cor_id,
-      altura,
-      largura,
-      profundidade,
-      volume,
+      altura || 0,
+      largura || 0,
+      profundidade || 0,
+      volume || 0,
       preco_venda || 0,
-      estoque_minimo,
+      estoque_minimo || 0,
       giro || "MEDIO",
       margem_lucro_percentual || 0,
       id
@@ -527,6 +564,15 @@ app.put("/produtos/:id", (req, res) => {
         return res.status(500).send("Erro ao atualizar produto ❌");
       }
 
+     registrarAuditoria(
+  usuario_id,
+  usuario_nome,
+  "EDIÇÃO",
+  "produto",
+  id,
+  `Produto ${nome} editado`
+);
+
       res.send("Produto atualizado com sucesso ✅");
     }
   );
@@ -534,19 +580,46 @@ app.put("/produtos/:id", (req, res) => {
 
 app.delete("/produtos/:id", (req, res) => {
   const { id } = req.params;
+  const { usuario_id, usuario_nome } = req.body;
 
-  db.query("DELETE FROM produto WHERE id = ?", [id], (err) => {
-    if (err) {
-      if (err.code === "ER_ROW_IS_REFERENCED_2") {
-        return res.status(400).send("Este produto possui movimentações e não pode ser excluído ❌");
+  db.query(
+    "SELECT nome FROM produto WHERE id = ?",
+    [id],
+    (err, produtoResult) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao buscar produto ❌");
       }
 
-      console.error(err);
-      return res.status(500).send("Erro ao excluir produto ❌");
-    }
+      if (produtoResult.length === 0) {
+        return res.status(404).send("Produto não encontrado ❌");
+      }
 
-    res.send("Produto excluído com sucesso ✅");
-  });
+      const nomeProduto = produtoResult[0].nome;
+
+      db.query("DELETE FROM produto WHERE id = ?", [id], (err) => {
+        if (err) {
+          if (err.code === "ER_ROW_IS_REFERENCED_2") {
+            return res.status(400).send("Este produto possui movimentações e não pode ser excluído ❌");
+          }
+
+          console.error(err);
+          return res.status(500).send("Erro ao excluir produto ❌");
+        }
+
+        registrarAuditoria(
+          usuario_id,
+          usuario_nome,
+          "EXCLUSÃO",
+          "produto",
+          id,
+          `Produto ${nomeProduto} excluído`
+        );
+
+        res.send("Produto excluído com sucesso ✅");
+      });
+    }
+  );
 });
 
 /* =========================
@@ -688,6 +761,7 @@ app.post("/entradas", (req, res) => {
     serie_nf,
     data_nf,
     usuario_id,
+     usuario_nome,
     itens
   } = req.body;
 
@@ -768,46 +842,53 @@ app.post("/entradas", (req, res) => {
           return res.status(500).send("Erro ao registrar item da NF ❌");
         }
 
-        const sqlProduto = `
-          UPDATE produto
-          SET
-            quantidade_estoque =
-              quantidade_estoque + ?,
+       const sqlProduto = `
+  UPDATE produto
+  SET
+    custo_medio =
+      CASE
+        WHEN quantidade_estoque > 0
+        THEN (
+          (quantidade_estoque * IFNULL(custo_medio, 0)) + (? * ?)
+        ) / (quantidade_estoque + ?)
+        ELSE ?
+      END,
 
-            ultimo_custo_sem_imposto = ?,
+    quantidade_estoque =
+      quantidade_estoque + ?,
 
-            ultimo_custo_com_imposto = ?,
+    ultimo_custo_sem_imposto = ?,
+    ultimo_custo_com_imposto = ?,
 
-            custo_medio = ?,
+    margem_lucro_percentual =
+      CASE
+        WHEN preco_venda > 0 AND ? > 0
+        THEN ((preco_venda - ?) / ?) * 100
+        ELSE 0
+      END
 
-            margem_lucro_percentual =
-              CASE
-                WHEN preco_venda > 0 AND ? > 0
-                THEN (
-                  (preco_venda - ?) / ?
-                ) * 100
-                ELSE 0
-              END
+  WHERE id = ?
+`;
 
-          WHERE id = ?
-        `;
+       db.query(
+  sqlProduto,
+  [
+    item.quantidade,
+    item.custo_unitario_com_imposto,
+    item.quantidade,
 
-        db.query(
-          sqlProduto,
-          [
-            item.quantidade,
+    item.custo_unitario_com_imposto,
 
-            item.custo_unitario_sem_imposto,
+    item.quantidade,
 
-            item.custo_unitario_com_imposto,
+    item.custo_unitario_sem_imposto,
+    item.custo_unitario_com_imposto,
 
-            item.custo_unitario_com_imposto,
+    item.custo_unitario_com_imposto,
+    item.custo_unitario_com_imposto,
+    item.custo_unitario_com_imposto,
 
-            item.custo_unitario_com_imposto,
-            item.custo_unitario_com_imposto,
-            item.custo_unitario_com_imposto,
-
-            item.produto_id
+    item.produto_id
           ],
           (err) => {
 
@@ -824,8 +905,17 @@ app.post("/entradas", (req, res) => {
             processados++;
 
             if (processados === itens.length) {
-              return res.send("Entrada de NF registrada com sucesso ✅");
-            }
+ registrarAuditoria(
+  usuario_id,
+  usuario_nome,
+  "ENTRADA NF",
+  "entrada_mercadoria",
+  null,
+  `NF ${numero_nf} registrada com ${itens.length} item(ns)`
+);
+
+  return res.send("Entrada de NF registrada com sucesso ✅");
+}
           }
         );
       }
@@ -1374,6 +1464,7 @@ app.post("/ajustes-estoque", (req, res) => {
   const {
     produto_id,
     usuario_id,
+    usuario_nome,
     tipo,
     quantidade,
     motivo,
@@ -1477,49 +1568,33 @@ app.post("/ajustes-estoque", (req, res) => {
             return res.status(500).json({ erro: "Erro ao salvar ajuste." });
           }
 
-          const ajusteId = ajusteResult.insertId;
+         const ajusteId = ajusteResult.insertId;
 
-          const descricao = `
-            Ajuste manual no produto "${produto.nome}".
-            Tipo: ${tipo}.
-            Estoque anterior: ${estoqueAnterior}.
-            Quantidade ajustada: ${quantidadeAjustada}.
-            Novo estoque: ${novoEstoque}.
-            Motivo: ${motivo}.
-          `;
+const descricao = `
+  Ajuste manual no produto "${produto.nome}".
+  Tipo: ${tipo}.
+  Estoque anterior: ${estoqueAnterior}.
+  Quantidade ajustada: ${quantidadeAjustada}.
+  Novo estoque: ${novoEstoque}.
+  Motivo: ${motivo}.
+`;
 
-          const sqlAuditoria = `
-            INSERT INTO auditoria
-            (usuario_id, acao, tabela_afetada, registro_id, descricao)
-            VALUES (?, ?, ?, ?, ?)
-          `;
+registrarAuditoria(
+  usuario_id,
+  usuario_nome,
+  "AJUSTE_ESTOQUE",
+  "ajuste_estoque",
+  ajusteId,
+  descricao
+);
 
-          db.query(
-            sqlAuditoria,
-            [
-              usuario_id || null,
-              "AJUSTE_ESTOQUE",
-              "ajuste_estoque",
-              ajusteId,
-              descricao
-            ],
-            (err) => {
-              if (err) {
-                console.error("Erro ao registrar auditoria:", err);
-                return res.status(500).json({
-                  erro: "Ajuste salvo, mas erro ao registrar auditoria."
-                });
-              }
-
-              res.status(201).json({
-                mensagem: "Ajuste de estoque realizado com sucesso.",
-                ajuste_id: ajusteId,
-                estoque_anterior: estoqueAnterior,
-                quantidade_ajustada: quantidadeAjustada,
-                estoque_novo: novoEstoque
-              });
-            }
-          );
+res.status(201).json({
+  mensagem: "Ajuste de estoque realizado com sucesso.",
+  ajuste_id: ajusteId,
+  estoque_anterior: estoqueAnterior,
+  quantidade_ajustada: quantidadeAjustada,
+  estoque_novo: novoEstoque
+});
         }
       );
     });
@@ -1531,42 +1606,28 @@ app.post("/ajustes-estoque", (req, res) => {
 ========================= */
 
 app.get("/auditoria", (req, res) => {
-
   const sql = `
     SELECT
-      auditoria.id,
-      auditoria.acao,
-      auditoria.tabela_afetada,
-      auditoria.registro_id,
-      auditoria.descricao,
-      auditoria.data_hora,
-
-      usuario.login AS usuario_login
-
+      id,
+      usuario_id,
+      usuario_nome,
+      acao,
+      tabela_afetada,
+      registro_id,
+      descricao,
+      data_hora
     FROM auditoria
-
-    LEFT JOIN usuario
-      ON auditoria.usuario_id = usuario.id
-
-    ORDER BY auditoria.data_hora DESC
+    ORDER BY data_hora DESC
   `;
 
   db.query(sql, (err, result) => {
-
     if (err) {
-
       console.error(err);
-
-      return res.status(500).json({
-        erro: "Erro ao buscar auditoria"
-      });
-
+      return res.status(500).send("Erro ao buscar auditoria ❌");
     }
 
     res.json(result);
-
   });
-
 });
 
 /* =========================
@@ -1678,7 +1739,7 @@ app.get("/dashboard/auditorias-recentes", (req, res) => {
       auditoria.acao,
       auditoria.descricao,
       auditoria.data_hora,
-      usuario.login AS usuario_login
+    auditoria.usuario_nome AS usuario_login
     FROM auditoria
     LEFT JOIN usuario ON auditoria.usuario_id = usuario.id
     ORDER BY auditoria.data_hora DESC
@@ -1747,7 +1808,9 @@ app.post("/enderecos", (req, res) => {
     nivel,
     endereco,
     quantidade_unidades,
-    observacao
+    observacao,
+    usuario_id,
+    usuario_nome
   } = req.body;
 
   if (!produto_id || !quantidade_unidades) {
@@ -1877,6 +1940,15 @@ function salvarComPosicao(posicao) {
             });
           }
 
+          registrarAuditoria(
+  usuario_id,
+  usuario_nome,
+  "ATUALIZAÇÃO ENDEREÇAMENTO",
+  "endereco_estoque",
+  enderecoAtual.id,
+  `Quantidade do produto ${produto.nome} somada no endereço ${posicao.endereco}`
+);
+
           return res.status(200).json({
             mensagem: "Quantidade somada ao endereço existente ✅",
             produto: produto.nome,
@@ -1943,6 +2015,15 @@ function salvarComPosicao(posicao) {
             [posicao.id]
           );
         }
+
+        registrarAuditoria(
+  usuario_id,
+  usuario_nome,
+  "ENDEREÇAMENTO",
+  "endereco_estoque",
+  null,
+  `Produto ${produto.nome} endereçado para ${posicao.endereco}`
+);
 
         res.status(201).json({
           mensagem: "Endereçamento realizado com sucesso ✅",
@@ -2075,48 +2156,92 @@ app.get("/enderecos", (req, res) => {
 });
 
 app.delete("/enderecos/:id", (req, res) => {
+
   const { id } = req.params;
 
-  db.query(
-    "SELECT posicao_id FROM endereco_estoque WHERE id = ?",
-    [id],
-    (err, result) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Erro ao buscar endereçamento ❌");
-      }
+  const {
+    usuario_id,
+    usuario_nome
+  } = req.body;
 
-      if (result.length === 0) {
-        return res.status(404).send("Endereçamento não encontrado ❌");
-      }
+  const sqlBusca = `
+    SELECT
+      e.id,
+      e.endereco,
+      e.posicao_id,
+      produto.nome AS produto_nome
 
-      const posicaoId = result[0].posicao_id;
+    FROM endereco_estoque e
 
-      db.query(
-        "DELETE FROM endereco_estoque WHERE id = ?",
-        [id],
-        (err) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).send("Erro ao excluir endereçamento ❌");
-          }
+    INNER JOIN produto
+      ON e.produto_id = produto.id
+
+    WHERE e.id = ?
+  `;
+
+  db.query(sqlBusca, [id], (err, result) => {
+
+    if (err) {
+      console.error(err);
+
+      return res
+        .status(500)
+        .send("Erro ao buscar endereçamento ❌");
+    }
+
+    if (result.length === 0) {
+
+      return res
+        .status(404)
+        .send("Endereçamento não encontrado ❌");
+    }
+
+    const endereco = result[0];
+
+    db.query(
+      "DELETE FROM endereco_estoque WHERE id = ?",
+      [id],
+      (err) => {
+
+        if (err) {
+          console.error(err);
+
+          return res
+            .status(500)
+            .send("Erro ao excluir endereçamento ❌");
+        }
+
+        if (endereco.posicao_id) {
 
           db.query(
-            "UPDATE posicao_estoque SET status = 'LIVRE' WHERE id = ?",
-            [posicaoId],
-            (err) => {
-              if (err) {
-                console.error(err);
-                return res.status(500).send("Endereçamento excluído, mas erro ao liberar posição.");
-              }
-
-              res.send("Endereçamento excluído e posição liberada ✅");
-            }
+            `
+              UPDATE posicao_estoque
+              SET status = 'LIVRE'
+              WHERE id = ?
+            `,
+            [endereco.posicao_id]
           );
+
         }
-      );
-    }
-  );
+
+        registrarAuditoria(
+          usuario_id,
+          usuario_nome,
+          "EXCLUSÃO ENDEREÇAMENTO",
+          "endereco_estoque",
+          endereco.id,
+          `Produto ${endereco.produto_nome} removido da posição ${endereco.endereco}`
+        );
+
+        res.send(
+          "Endereçamento excluído e posição liberada ✅"
+        );
+
+      }
+    );
+
+  });
+
 });
 
 app.get("/enderecos/sugerir/:produtoId", (req, res) => {
@@ -2210,6 +2335,70 @@ function gerarIntervalo(inicio, fim) {
 /* =========================
    POSIÇÕES DO ARMAZÉM
 ========================= */
+
+app.post("/posicoes", (req, res) => {
+  const {
+    rua,
+    coluna,
+    nivel,
+    altura,
+    largura,
+    profundidade
+  } = req.body;
+
+  if (!rua || !coluna || !nivel || !altura || !largura || !profundidade) {
+    return res.status(400).send("Preencha todos os campos da posição ❌");
+  }
+
+  const endereco =
+    `R${String(rua).padStart(2, "0")}-C${String(coluna).padStart(3, "0")}-N${String(nivel).padStart(2, "0")}`;
+
+  const capacidadeM3 =
+    Number(altura) * Number(largura) * Number(profundidade);
+
+  const sql = `
+    INSERT INTO posicao_estoque
+    (
+      rua,
+      coluna,
+      nivel,
+      endereco,
+      altura,
+      largura,
+      profundidade,
+      capacidade_m3,
+      status
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'LIVRE')
+  `;
+
+  db.query(
+    sql,
+    [
+      rua,
+      coluna,
+      nivel,
+      endereco,
+      altura,
+      largura,
+      profundidade,
+      capacidadeM3
+    ],
+    (err) => {
+      if (err) {
+        console.error(err);
+
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(400).send("Esta posição já existe ❌");
+        }
+
+        return res.status(500).send("Erro ao cadastrar posição ❌");
+      }
+
+      res.send(`Posição ${endereco} cadastrada com sucesso ✅`);
+    }
+  );
+});
 
 app.post("/posicoes/gerar", (req, res) => {
   const valores = [];

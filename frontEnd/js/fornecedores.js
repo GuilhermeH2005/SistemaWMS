@@ -1,4 +1,4 @@
-let editandoId = null;
+var editandoId = null;
 
 function iniciarFornecedor() {
   const form = document.getElementById("formFornecedor");
@@ -30,13 +30,22 @@ function iniciarFornecedor() {
     res = await fetch(`http://localhost:3000/fornecedores/${editandoId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(fornecedor)
+        body: JSON.stringify({
+    ...fornecedor,
+    ...getUsuarioAuditoria()
+  })
+
+
     });
   } else {
     res = await fetch("http://localhost:3000/fornecedores", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(fornecedor)
+        body: JSON.stringify({
+    ...fornecedor,
+    ...getUsuarioAuditoria()
+  })
+
     });
   }
 
@@ -156,7 +165,15 @@ async function excluir(id) {
   if (!confirm("Deseja excluir este fornecedor?")) return;
 
   await fetch(`http://localhost:3000/fornecedores/${id}`, {
-    method: "DELETE"
+    method: "DELETE",
+
+      headers: {
+    "Content-Type": "application/json"
+  },
+
+    body: JSON.stringify({
+    ...getUsuarioAuditoria()
+  })
   });
 
   carregarLista();

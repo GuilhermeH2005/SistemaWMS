@@ -327,6 +327,20 @@ function aplicarPermissoes() {
   }
 }
 
+function getUsuarioAuditoria() {
+  const usuarioLogado =
+    JSON.parse(localStorage.getItem("usuarioLogado"));
+
+  return {
+    usuario_id: usuarioLogado?.id || null,
+    usuario_nome:
+      usuarioLogado?.nomeCompleto ||
+      usuarioLogado?.nome ||
+      usuarioLogado?.login ||
+      "Sistema"
+  };
+}
+
 // LOGOUT
 function configurarLogout() {
   const btnLogout = document.getElementById("btnLogout");

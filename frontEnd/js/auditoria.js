@@ -1,42 +1,31 @@
-const API_AUDITORIA =
-  "http://localhost:3000";
+var API_AUDITORIA = "http://localhost:3000";
 
 function iniciarAuditoria() {
   carregarAuditoria();
 }
 
 async function carregarAuditoria() {
-
   try {
-
-    const resposta =
-      await fetch(`${API_AUDITORIA}/auditoria`);
+    const resposta = await fetch(`${API_AUDITORIA}/auditoria`);
 
     if (!resposta.ok) {
-
-      const erro =
-        await resposta.text();
+      const erro = await resposta.text();
 
       alert("Erro ao carregar auditoria");
-
       console.error(erro);
 
       return;
-
     }
 
-    const auditorias =
-      await resposta.json();
+    const auditorias = await resposta.json();
 
-    const lista =
-      document.getElementById("listaAuditoria");
+    const lista = document.getElementById("listaAuditoria");
 
     if (!lista) return;
 
     lista.innerHTML = "";
 
     if (auditorias.length === 0) {
-
       lista.innerHTML = `
         <tr>
           <td colspan="7">
@@ -46,28 +35,25 @@ async function carregarAuditoria() {
       `;
 
       return;
-
     }
 
     auditorias.forEach(item => {
-
       lista.innerHTML += `
         <tr>
-
           <td>${item.id}</td>
 
           <td>
-            ${item.usuario_login || "Sistema"}
+            ${item.usuario_nome || "Sistema"}
           </td>
 
           <td>
             <span class="badge-acao">
-              ${item.acao}
+              ${item.acao || "-"}
             </span>
           </td>
 
           <td>
-            ${item.tabela_afetada}
+            ${item.tabela_afetada || "-"}
           </td>
 
           <td>
@@ -75,36 +61,24 @@ async function carregarAuditoria() {
           </td>
 
           <td class="descricao">
-            ${item.descricao}
+            ${item.descricao || "-"}
           </td>
 
           <td>
-            ${formatarData(item.data_hora)}
+            ${formatarDataAuditoria(item.data_hora)}
           </td>
-
         </tr>
       `;
-
     });
 
   } catch (erro) {
-
-    console.error(
-      "Erro ao carregar auditoria:",
-      erro
-    );
-
+    console.error("Erro ao carregar auditoria:", erro);
     alert("Erro ao carregar auditoria");
-
   }
-
 }
 
-function formatarData(data) {
-
+function formatarDataAuditoria(data) {
   if (!data) return "-";
 
-  return new Date(data)
-    .toLocaleString("pt-BR");
-
+  return new Date(data).toLocaleString("pt-BR");
 }

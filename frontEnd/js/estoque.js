@@ -1,4 +1,4 @@
-let produtosEstoque = [];
+var produtosEstoque = [];
 
 function iniciarEstoque() {
   carregarEstoque();

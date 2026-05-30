@@ -1,6 +1,6 @@
-let usuarios = [];
-let usuarioSelecionadoId = null;
-let linhaSelecionada = null;
+var usuarios = [];
+var usuarioSelecionadoId = null;
+var linhaSelecionada = null;
 
 /* =========================
    NOVO USUÁRIO
@@ -300,7 +300,14 @@ async function excluirUsuario() {
     const res = await fetch(
       `http://localhost:3000/usuarios/${usuarioSelecionadoId}`,
       {
-        method: "DELETE"
+        method: "DELETE",
+        headers: {
+    "Content-Type": "application/json"
+  },
+
+  body: JSON.stringify({
+    ...getUsuarioAuditoria()
+  })
       }
     );
 

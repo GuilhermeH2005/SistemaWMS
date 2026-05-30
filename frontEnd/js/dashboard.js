@@ -1,4 +1,4 @@
-const API_URL_DASHBOARD = "http://localhost:3000";
+var API_URL_DASHBOARD = "http://localhost:3000";
 
 function iniciarDashboard() {
   carregarDashboard();
