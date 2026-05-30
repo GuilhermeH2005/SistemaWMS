@@ -797,6 +797,9 @@ app.post("/entradas", (req, res) => {
         ipi_percentual,
         pis_percentual,
         cofins_percentual,
+        frete,
+        seguro,
+        outras_despesas,
         subtotal,
         valor_impostos,
         custo_total_com_imposto,
@@ -804,7 +807,7 @@ app.post("/entradas", (req, res) => {
         status_conferencia,
         usuario_id
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDENTE', ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDENTE', ?)
     `;
 
     db.query(
@@ -824,6 +827,9 @@ app.post("/entradas", (req, res) => {
         item.ipi_percentual,
         item.pis_percentual,
         item.cofins_percentual,
+        item.frete || 0,
+        item.seguro || 0,
+        item.outras_despesas || 0,
         item.subtotal,
         item.valor_impostos,
         item.custo_total_com_imposto,
@@ -842,82 +848,20 @@ app.post("/entradas", (req, res) => {
           return res.status(500).send("Erro ao registrar item da NF ❌");
         }
 
-       const sqlProduto = `
-  UPDATE produto
-  SET
-    custo_medio =
-      CASE
-        WHEN quantidade_estoque > 0
-        THEN (
-          (quantidade_estoque * IFNULL(custo_medio, 0)) + (? * ?)
-        ) / (quantidade_estoque + ?)
-        ELSE ?
-      END,
+      processados++;
 
-    quantidade_estoque =
-      quantidade_estoque + ?,
+if (processados === itens.length) {
+  registrarAuditoria(
+    usuario_id,
+    usuario_nome,
+    "ENTRADA NF",
+    "entrada_mercadoria",
+    null,
+    `NF ${numero_nf} registrada com ${itens.length} item(ns), aguardando conferência`
+  );
 
-    ultimo_custo_sem_imposto = ?,
-    ultimo_custo_com_imposto = ?,
-
-    margem_lucro_percentual =
-      CASE
-        WHEN preco_venda > 0 AND ? > 0
-        THEN ((preco_venda - ?) / ?) * 100
-        ELSE 0
-      END
-
-  WHERE id = ?
-`;
-
-       db.query(
-  sqlProduto,
-  [
-    item.quantidade,
-    item.custo_unitario_com_imposto,
-    item.quantidade,
-
-    item.custo_unitario_com_imposto,
-
-    item.quantidade,
-
-    item.custo_unitario_sem_imposto,
-    item.custo_unitario_com_imposto,
-
-    item.custo_unitario_com_imposto,
-    item.custo_unitario_com_imposto,
-    item.custo_unitario_com_imposto,
-
-    item.produto_id
-          ],
-          (err) => {
-
-            if (erroEncontrado) return;
-
-            if (err) {
-              erroEncontrado = true;
-
-              console.error(err);
-
-              return res.status(500).send("Erro ao atualizar produto ❌");
-            }
-
-            processados++;
-
-            if (processados === itens.length) {
- registrarAuditoria(
-  usuario_id,
-  usuario_nome,
-  "ENTRADA NF",
-  "entrada_mercadoria",
-  null,
-  `NF ${numero_nf} registrada com ${itens.length} item(ns)`
-);
-
-  return res.send("Entrada de NF registrada com sucesso ✅");
+  return res.send("Entrada de NF registrada com sucesso. Aguardando conferência ✅");
 }
-          }
-        );
       }
     );
   });
@@ -1636,25 +1580,33 @@ app.get("/auditoria", (req, res) => {
 
 app.get("/conferencia", (req, res) => {
   const sql = `
-    SELECT 
+    SELECT
       entrada_mercadoria.id,
       entrada_mercadoria.quantidade,
+      entrada_mercadoria.quantidade_contada,
       entrada_mercadoria.numero_nf,
+      entrada_mercadoria.serie_nf,
+      entrada_mercadoria.data_nf,
       entrada_mercadoria.lote,
       entrada_mercadoria.validade,
       entrada_mercadoria.status_conferencia,
 
       produto.nome AS produto_nome,
-      produto.codigo AS produto_codigo
+      produto.codigo AS produto_codigo,
+
+      fornecedor.nome AS fornecedor_nome
 
     FROM entrada_mercadoria
 
-    INNER JOIN produto 
+    INNER JOIN produto
       ON entrada_mercadoria.produto_id = produto.id
+
+    LEFT JOIN fornecedor
+      ON entrada_mercadoria.fornecedor_id = fornecedor.id
 
     WHERE entrada_mercadoria.status_conferencia IN ('PENDENTE', 'DIVERGENTE')
 
-    ORDER BY entrada_mercadoria.data_entrada DESC
+    ORDER BY entrada_mercadoria.numero_nf, produto.nome
   `;
 
   db.query(sql, (err, result) => {
@@ -1671,39 +1623,121 @@ app.put("/conferencia/:id", (req, res) => {
   const { id } = req.params;
 
   const {
-    status_conferencia,
-    usuario_edicao_id
+    quantidade_contada,
+    usuario_edicao_id,
+    usuario_id,
+    usuario_nome
   } = req.body;
 
-  if (!status_conferencia) {
-    return res.status(400).send("Status obrigatório ❌");
+  if (!quantidade_contada || Number(quantidade_contada) <= 0) {
+    return res.status(400).send("Informe a quantidade contada ❌");
   }
 
-  if (!["CONFERIDO", "DIVERGENTE", "PENDENTE"].includes(status_conferencia)) {
-    return res.status(400).send("Status inválido ❌");
-  }
-
-  const sql = `
-    UPDATE entrada_mercadoria
-    SET 
-      status_conferencia = ?,
-      usuario_edicao_id = ?,
-      data_atualizacao = NOW()
-    WHERE id = ?
+  const sqlBusca = `
+    SELECT
+      e.*,
+      p.nome AS produto_nome,
+      p.quantidade_estoque,
+      p.custo_medio,
+      p.preco_venda
+    FROM entrada_mercadoria e
+    INNER JOIN produto p
+      ON e.produto_id = p.id
+    WHERE e.id = ?
   `;
 
-  db.query(
-    sql,
-    [status_conferencia, usuario_edicao_id || null, id],
-    (err) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Erro ao atualizar conferência ❌");
+  db.query(sqlBusca, [id], (err, result) => {
+    if (err) return res.status(500).send("Erro ao buscar entrada ❌");
+    if (result.length === 0) return res.status(404).send("Entrada não encontrada ❌");
+
+    const entrada = result[0];
+
+    const qtdNF = Number(entrada.quantidade || 0);
+    const qtdContada = Number(quantidade_contada || 0);
+
+    const statusFinal =
+      qtdContada === qtdNF ? "CONFERIDO" : "DIVERGENTE";
+
+    const sqlEntrada = `
+      UPDATE entrada_mercadoria
+      SET
+        quantidade_contada = ?,
+        status_conferencia = ?,
+        usuario_edicao_id = ?,
+        data_atualizacao = NOW()
+      WHERE id = ?
+    `;
+
+    db.query(sqlEntrada, [qtdContada, statusFinal, usuario_edicao_id || null, id], (err) => {
+      if (err) return res.status(500).send("Erro ao atualizar conferência ❌");
+
+      if (statusFinal === "DIVERGENTE") {
+        registrarAuditoria(
+          usuario_id,
+          usuario_nome,
+          "CONFERÊNCIA DIVERGENTE",
+          "entrada_mercadoria",
+          id,
+          `Produto ${entrada.produto_nome}: NF ${qtdNF} un, contado ${qtdContada} un`
+        );
+
+        return res.send("Conferência marcada como DIVERGENTE ⚠️");
       }
 
-      res.send("Conferência atualizada com sucesso ✅");
-    }
-  );
+      const custoNovo = Number(entrada.custo_unitario_com_imposto || 0);
+      const estoqueAntigo = Number(entrada.quantidade_estoque || 0);
+      const custoMedioAntigo = Number(entrada.custo_medio || 0);
+
+      const novoCustoMedio =
+        estoqueAntigo > 0
+          ? ((estoqueAntigo * custoMedioAntigo) + (qtdContada * custoNovo)) / (estoqueAntigo + qtdContada)
+          : custoNovo;
+
+      const sqlProduto = `
+        UPDATE produto
+        SET
+          quantidade_estoque = quantidade_estoque + ?,
+          ultimo_custo_sem_imposto = ?,
+          ultimo_custo_com_imposto = ?,
+          custo_medio = ?,
+          margem_lucro_percentual =
+            CASE
+              WHEN preco_venda > 0 AND ? > 0
+              THEN ((preco_venda - ?) / ?) * 100
+              ELSE 0
+            END
+        WHERE id = ?
+      `;
+
+      db.query(
+        sqlProduto,
+        [
+          qtdContada,
+          entrada.custo_unitario_sem_imposto,
+          entrada.custo_unitario_com_imposto,
+          novoCustoMedio,
+          custoNovo,
+          custoNovo,
+          custoNovo,
+          entrada.produto_id
+        ],
+        (err) => {
+          if (err) return res.status(500).send("Erro ao atualizar estoque ❌");
+
+          registrarAuditoria(
+            usuario_id,
+            usuario_nome,
+            "CONFERÊNCIA",
+            "entrada_mercadoria",
+            id,
+            `Produto ${entrada.produto_nome} conferido. Estoque atualizado com ${qtdContada} un.`
+          );
+
+          res.send("Conferência realizada e estoque atualizado ✅");
+        }
+      );
+    });
+  });
 });
 
 /* =========================
@@ -1868,6 +1902,12 @@ function salvarComPosicao(posicao) {
   const capacidadeM3 = Number(posicao.capacidade_m3 || 1.8);
   const capacidadeUnidades = Math.floor(capacidadeM3 / volumeProduto);
   const quantidadeSolicitada = Number(quantidade_unidades);
+
+  if (quantidadeSolicitada > capacidadeUnidades) {
+  return res.status(400).json({
+    erro: `Quantidade excede a capacidade da posição. Essa posição comporta no máximo ${capacidadeUnidades} unidade(s).`
+  });
+}
 
   let quantidadeArmazenada = quantidadeSolicitada;
 
@@ -2128,8 +2168,13 @@ app.get("/enderecos", (req, res) => {
       e.nivel,
       e.endereco,
       e.quantidade_unidades,
-      e.capacidade_m3,
-      e.capacidade_unidades,
+
+      IFNULL(p.capacidade_m3, e.capacidade_m3) AS capacidade_m3,
+
+      FLOOR(
+        IFNULL(p.capacidade_m3, e.capacidade_m3) / produto.volume
+      ) AS capacidade_unidades,
+
       e.ocupacao_m3,
       e.status,
       e.observacao,
@@ -2141,6 +2186,9 @@ app.get("/enderecos", (req, res) => {
 
     INNER JOIN produto
       ON e.produto_id = produto.id
+
+    LEFT JOIN posicao_estoque p
+      ON e.posicao_id = p.id
 
     ORDER BY e.rua, e.coluna, e.nivel
   `;
@@ -2581,12 +2629,21 @@ app.put("/posicoes/:id/dimensoes", (req, res) => {
       id
     ],
     (err) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Erro ao atualizar dimensões ❌");
-      }
+     if (err) {
+  console.error(err);
+  return res.status(500).send("Erro ao atualizar dimensões ❌");
+}
 
-      res.send("Dimensões da posição atualizadas ✅");
+db.query(
+  `
+    UPDATE endereco_estoque
+    SET capacidade_m3 = ?
+    WHERE posicao_id = ?
+  `,
+  [capacidadeM3, id]
+);
+
+res.send("Dimensões da posição atualizadas ✅");
     }
   );
 });

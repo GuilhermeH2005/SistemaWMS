@@ -125,47 +125,109 @@ async function carregarProdutosEndereco() {
   }
 }
 
-function mostrarInfoProduto() {
-  const produtoId = document.getElementById("produto_id").value;
-  const info = document.getElementById("infoProdutoEndereco");
-  const quantidadeInput = document.getElementById("quantidade_unidades");
+function mostrarInfoProduto(capacidadePosicao = 1.8) {
 
-  const produto = produtosPendentes.find(p => String(p.id) === String(produtoId));
+  const produtoId =
+    document.getElementById("produto_id").value;
+
+  const info =
+    document.getElementById("infoProdutoEndereco");
+
+  const quantidadeInput =
+    document.getElementById("quantidade_unidades");
+
+  const produto =
+    produtosPendentes.find(
+      p => String(p.id) === String(produtoId)
+    );
 
   if (!produto) {
-    info.innerHTML = "Selecione um produto para ver o saldo pendente.";
+
+    info.innerHTML =
+      "Selecione um produto para ver o saldo pendente.";
+
     quantidadeInput.value = "";
+
     return;
   }
 
-  const capacidadeM3 = 1.8;
-  const volumeProduto = Number(produto.volume || 0);
-  const quantidadePendente = Number(produto.quantidade_pendente || 0);
+  let capacidadeM3 =
+    parseFloat(
+      String(capacidadePosicao || "1.8")
+        .replace(",", ".")
+    );
+
+  if (isNaN(capacidadeM3) || capacidadeM3 <= 0) {
+    capacidadeM3 = 1.8;
+  }
+
+  let volumeProduto =
+    parseFloat(
+      String(produto.volume || "0")
+        .replace(",", ".")
+    );
+
+  if (isNaN(volumeProduto) || volumeProduto <= 0) {
+    volumeProduto = 0;
+  }
+
+  const quantidadePendente =
+    Number(produto.quantidade_pendente || 0);
 
   let capacidadeUnidades = 0;
 
   if (volumeProduto > 0) {
-    capacidadeUnidades = Math.floor(capacidadeM3 / volumeProduto);
+    capacidadeUnidades =
+      Math.floor(capacidadeM3 / volumeProduto);
   }
 
-  const quantidadeSugerida = Math.min(
-    capacidadeUnidades,
-    quantidadePendente
-  );
+  if (
+    isNaN(capacidadeUnidades) ||
+    capacidadeUnidades < 0
+  ) {
+    capacidadeUnidades = 0;
+  }
+
+  const quantidadeSugerida =
+    Math.min(
+      capacidadeUnidades,
+      quantidadePendente
+    );
 
   info.innerHTML = `
     <strong>${produto.nome}</strong><br>
-    Estoque total: ${produto.quantidade_estoque} un<br>
-    Já endereçado: ${produto.quantidade_enderecada} un<br>
-    Falta endereçar: ${produto.quantidade_pendente} un<br><br>
 
-    Volume unitário: ${volumeProduto.toFixed(4)} m³<br>
-    Capacidade da posição-palete: ${capacidadeM3.toFixed(2)} m³<br>
-    Cabem aproximadamente: <strong>${capacidadeUnidades} un</strong><br>
-    Quantidade sugerida para este endereço: <strong>${quantidadeSugerida} un</strong>
+    Estoque total:
+    ${produto.quantidade_estoque || 0} un<br>
+
+    Já endereçado:
+    ${produto.quantidade_enderecada || 0} un<br>
+
+    Falta endereçar:
+    ${produto.quantidade_pendente || 0} un<br><br>
+
+    Volume unitário:
+    ${volumeProduto.toFixed(4)} m³<br>
+
+    Capacidade da posição-palete:
+    ${capacidadeM3.toFixed(2)} m³<br>
+
+    Cabem aproximadamente:
+    <strong>${capacidadeUnidades} un</strong><br>
+
+    Quantidade sugerida para este endereço:
+    <strong>${quantidadeSugerida} un</strong>
   `;
 
-  quantidadeInput.value = quantidadeSugerida;
+  if (
+    isNaN(quantidadeSugerida) ||
+    quantidadeSugerida <= 0
+  ) {
+    quantidadeInput.value = "";
+  } else {
+    quantidadeInput.value =
+      quantidadeSugerida;
+  }
 }
 
 async function sugerirEndereco() {
@@ -190,20 +252,12 @@ async function sugerirEndereco() {
     const sugestao = dados.sugestao;
 
     document.getElementById("posicao_id").value = sugestao.id;
-
     document.getElementById("rua").value = sugestao.rua;
     document.getElementById("coluna").value = sugestao.coluna;
     document.getElementById("nivel").value = sugestao.nivel;
     document.getElementById("endereco").value = sugestao.endereco;
 
-    mostrarInfoProduto();
-
-    alert(
-      `Endereço sugerido: ${sugestao.endereco}\n\n` +
-      `Giro: ${dados.giro}\n` +
-      `Volume produto: ${dados.volume} m³\n` +
-      `Capacidade posição: ${sugestao.capacidade_m3} m³`
-    );
+    mostrarInfoProduto(sugestao.capacidade_m3);
 
   } catch (erro) {
     console.error("Erro ao sugerir posição:", erro);

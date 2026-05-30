@@ -193,6 +193,9 @@ if (!lote) {
     custo_total_com_imposto: custoTotalComImposto,
     custo_unitario_com_imposto: custoUnitarioComImposto,
     lote: lote,
+    frete: Number(document.getElementById("frete").value || 0),
+    seguro: Number(document.getElementById("seguro").value || 0),
+    outras_despesas: Number(document.getElementById("outras_despesas").value || 0),
     validade: converterDataParaBanco(document.getElementById("validade").value)
   };
 
@@ -427,6 +430,7 @@ function gerarImpostosSimulados() {
 }
 
 function calcularTotaisNF() {
+
   const quantidade =
     Number(document.getElementById("quantidade").value || 0);
 
@@ -445,15 +449,30 @@ function calcularTotaisNF() {
   const cofins =
     Number(document.getElementById("cofins_percentual").value || 0);
 
-  const subtotal = quantidade * custoUnitario;
+  const frete =
+    Number(document.getElementById("frete").value || 0);
 
-  const percentualTotal = icms + ipi + pis + cofins;
+  const seguro =
+    Number(document.getElementById("seguro").value || 0);
+
+  const outrasDespesas =
+    Number(document.getElementById("outras_despesas").value || 0);
+
+  const subtotal =
+    quantidade * custoUnitario;
+
+  const percentualTotal =
+    icms + ipi + pis + cofins;
 
   const valorImpostos =
     subtotal * (percentualTotal / 100);
 
   const custoTotalComImposto =
-    subtotal + valorImpostos;
+    subtotal +
+    valorImpostos +
+    frete +
+    seguro +
+    outrasDespesas;
 
   const custoUnitarioComImposto =
     quantidade > 0
