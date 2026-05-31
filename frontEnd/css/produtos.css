@@ -201,3 +201,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+.campo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo-form label {
+  display: block;
+  color: #003641;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}

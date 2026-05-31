@@ -8,63 +8,65 @@
 
       <div class="grid-config">
 
-        <div class="grupo-form">
-
-          <label>Usuário</label>
-
+        <div class="campo-form">
+          <label for="configLogin">Usuário</label>
           <input
             type="text"
             id="configLogin"
             readonly
           >
-
         </div>
 
-        <div class="grupo-form">
-
-          <label>Senha Atual</label>
-
+        <div class="campo-form">
+          <label for="senhaAtual">Senha Atual</label>
           <input
             type="password"
             id="senhaAtual"
             required
           >
-
         </div>
 
-        <div class="senha-container">
-  <input
-    type="password"
-    id="senha"
-    placeholder="Nova Senha"
-    required
-  >
+        <div class="campo-form">
+          <label for="senha">Nova Senha</label>
 
-  <button
-    type="button"
-    class="btn-olho"
-    onclick="alternarSenha('senha', this)"
-  >
-    👁️
-  </button>
-</div>
+          <div class="senha-container">
+            <input
+              type="password"
+              id="senha"
+              placeholder="Nova Senha"
+              required
+            >
 
-        <div class="senha-container">
-  <input
-    type="password"
-    id="confirmar_senha"
-    placeholder="Confirme a senha"
-    required
-  >
+            <button
+              type="button"
+              class="btn-olho"
+              onclick="alternarSenha('senha', this)"
+            >
+              👁️
+            </button>
+          </div>
+        </div>
 
-  <button
-    type="button"
-    class="btn-olho"
-    onclick="alternarSenha('confirmar_senha', this)"
-  >
-    👁️
-  </button>
-</div>
+        <div class="campo-form">
+          <label for="confirmar_senha">Confirmar Senha</label>
+
+          <div class="senha-container">
+            <input
+              type="password"
+              id="confirmar_senha"
+              placeholder="Confirme a senha"
+              required
+            >
+
+            <button
+              type="button"
+              class="btn-olho"
+              onclick="alternarSenha('confirmar_senha', this)"
+            >
+              👁️
+            </button>
+          </div>
+        </div>
 
       </div>
 

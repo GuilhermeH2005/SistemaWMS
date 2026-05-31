@@ -17,14 +17,10 @@
 .card-formulario,
 .card-lista {
   background: #ffffff;
-
   padding: 28px;
   margin-bottom: 28px;
-
   border-radius: 16px;
-
   border: 1px solid #e5eaf0;
-
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
@@ -37,6 +33,20 @@
 }
 
 /* CAMPOS */
+
+.campo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo-form label {
+  display: block;
+  color: #003641;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
 
 .form-funcionario input,
 .form-funcionario select {
@@ -55,14 +65,14 @@
   font-size: 14px;
 
   transition: 0.2s;
+
+  box-sizing: border-box;
 }
 
 .form-funcionario input:focus,
 .form-funcionario select:focus {
   background: #ffffff;
-
   border-color: #00ae90;
-
   box-shadow: 0 0 0 3px rgba(0, 174, 144, 0.14);
 }
 
@@ -112,6 +122,12 @@
 }
 
 /* LISTA */
+
+#listaFuncionarios {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 
 #listaFuncionarios li {
   background: #ffffff;
@@ -199,11 +215,19 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .funcionario-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
 }
 
 @media (max-width: 650px) {
 
   .form-funcionario {
+    grid-template-columns: 1fr;
+  }
+
+  .funcionario-grid {
     grid-template-columns: 1fr;
   }
 
@@ -216,4 +240,17 @@
     font-size: 25px;
   }
 
+}
+
+.campo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo-form label {
+  color: #003641;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
 }

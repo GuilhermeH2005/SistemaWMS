@@ -4,53 +4,90 @@
   <h3 class="subtitulo">Novo Produto</h3>
 
   <form id="formProduto" class="form-produto">
-    <input type="text" id="nome" placeholder="Nome do Produto" required>
 
-   <select id="categoria_id" required>
-  <option value="">Selecione a categoria</option>
-</select>
+    <div class="campo-form">
+      <label for="nome">Nome do Produto</label>
+      <input type="text" id="nome" placeholder="Nome do Produto" required>
+    </div>
 
-<select id="cor_id" required>
-  <option value="">Selecione a cor</option>
-</select>
+    <div class="campo-form">
+      <label for="categoria_id">Categoria</label>
+      <select id="categoria_id" required>
+        <option value="">Selecione a categoria</option>
+      </select>
+    </div>
 
-    <select id="giro" required>
-      <option value="">Selecione o giro do produto</option>
-      <option value="ALTO">Alto giro</option>
-      <option value="MEDIO">Médio giro</option>
-      <option value="BAIXO">Baixo giro</option>
-    </select>
+    <div class="campo-form">
+      <label for="cor_id">Cor</label>
+      <select id="cor_id" required>
+        <option value="">Selecione a cor</option>
+      </select>
+    </div>
 
-    <input type="number" step="0.01" id="altura" placeholder="Altura (cm)" required>
-    <input type="number" step="0.01" id="largura" placeholder="Largura (cm)" required>
-    <input type="number" step="0.01" id="profundidade" placeholder="Profundidade (cm)" required>
-    <input type="number" step="0.01" id="preco_venda" placeholder="Preço de Venda (R$)" required>
-    <input type="number" step="0.01" id="margem_lucro_percentual" placeholder="Margem de lucro (%)">
+    <div class="campo-form">
+      <label for="giro">Giro do Produto</label>
+      <select id="giro" required>
+        <option value="">Selecione o giro do produto</option>
+        <option value="ALTO">Alto giro</option>
+        <option value="MEDIO">Médio giro</option>
+        <option value="BAIXO">Baixo giro</option>
+      </select>
+    </div>
 
-    <input type="number" id="estoque_minimo" placeholder="Estoque mínimo" required>
+    <div class="campo-form">
+      <label for="altura">Altura (cm)</label>
+      <input type="number" step="0.01" id="altura" placeholder="Altura (cm)" required>
+    </div>
+
+    <div class="campo-form">
+      <label for="largura">Largura (cm)</label>
+      <input type="number" step="0.01" id="largura" placeholder="Largura (cm)" required>
+    </div>
+
+    <div class="campo-form">
+      <label for="profundidade">Profundidade (cm)</label>
+      <input type="number" step="0.01" id="profundidade" placeholder="Profundidade (cm)" required>
+    </div>
+
+    <div class="campo-form">
+      <label for="preco_venda">Preço de Venda (R$)</label>
+      <input type="number" step="0.01" id="preco_venda" placeholder="Preço de Venda (R$)" required>
+    </div>
+
+    <div class="campo-form">
+      <label for="margem_lucro_percentual">Margem de Lucro (%)</label>
+      <input type="number" step="0.01" id="margem_lucro_percentual" placeholder="Margem de lucro (%)">
+    </div>
+
+    <div class="campo-form">
+      <label for="estoque_minimo">Estoque Mínimo</label>
+      <input type="number" id="estoque_minimo" placeholder="Estoque mínimo" required>
+    </div>
 
     <button type="submit">Cadastrar</button>
+
   </form>
 </section>
 
 <section class="card-lista">
   <h3 class="subtitulo">Produtos Cadastrados</h3>
-  <div class="tabela-produtos-container">
-  <table class="tabela-produtos">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Produto</th>
-        <th>SKU</th>
-        <th>Estoque</th>
-        <th>Mínimo</th>
-        <th>Custo</th>
-        <th>Venda</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
 
-    <tbody id="listaProdutos"></tbody>
-  </table>
-</div>
+  <div class="tabela-produtos-container">
+    <table class="tabela-produtos">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Produto</th>
+          <th>SKU</th>
+          <th>Estoque</th>
+          <th>Mínimo</th>
+          <th>Custo</th>
+          <th>Venda</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaProdutos"></tbody>
+    </table>
+  </div>
 </section>

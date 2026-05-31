@@ -5,12 +5,15 @@
 
   <form id="formEndereco" class="form-endereco">
 
-    <select id="produto_id" required>
-      <option value="">Selecione um produto pendente</option>
-    </select>
+    <div class="campo-form">
+      <label for="produto_id">Produto</label>
+      <select id="produto_id" required>
+        <option value="">Selecione um produto pendente</option>
+      </select>
+    </div>
 
     <div id="infoProdutoEndereco" class="info-endereco">
-  Selecione um produto para ver o saldo pendente.
+      Selecione um produto para ver o saldo pendente.
     </div>
 
     <button type="button" id="btnSugerirEndereco">
@@ -19,37 +22,55 @@
 
     <input type="hidden" id="posicao_id">
 
-    <select id="rua" required>
-      <option value="">Selecione a rua</option>
-    </select>
+    <div class="campo-form">
+      <label for="rua">Rua</label>
+      <select id="rua" required>
+        <option value="">Selecione a rua</option>
+      </select>
+    </div>
 
-    <select id="coluna" required>
-      <option value="">Selecione a coluna</option>
-    </select>
+    <div class="campo-form">
+      <label for="coluna">Coluna</label>
+      <select id="coluna" required>
+        <option value="">Selecione a coluna</option>
+      </select>
+    </div>
 
-    <select id="nivel" required>
-      <option value="">Selecione o nível</option>
-    </select>
+    <div class="campo-form">
+      <label for="nivel">Nível</label>
+      <select id="nivel" required>
+        <option value="">Selecione o nível</option>
+      </select>
+    </div>
 
-    <input
-      type="text"
-      id="endereco"
-      placeholder="Endereço gerado automaticamente"
-      readonly
-    >
+    <div class="campo-form">
+      <label for="endereco">Endereço</label>
+      <input
+        type="text"
+        id="endereco"
+        placeholder="Endereço gerado automaticamente"
+        readonly
+      >
+    </div>
 
-    <input
-      type="number"
-      id="quantidade_unidades"
-      min="1"
-      placeholder="Quantidade de unidades"
-      required
-    >
+    <div class="campo-form">
+      <label for="quantidade_unidades">Quantidade de Unidades</label>
+      <input
+        type="number"
+        id="quantidade_unidades"
+        min="1"
+        placeholder="Quantidade de unidades"
+        required
+      >
+    </div>
 
-    <textarea
-      id="observacao"
-      placeholder="Observação"
-    ></textarea>
+    <div class="campo-form">
+      <label for="observacao">Observação</label>
+      <textarea
+        id="observacao"
+        placeholder="Observação"
+      ></textarea>
+    </div>
 
     <button type="submit">
       Salvar Endereçamento
