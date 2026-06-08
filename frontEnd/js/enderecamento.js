@@ -1,4 +1,5 @@
 var API_URL_ENDERECO = "http://localhost:3000";
+var capacidadePosicaoAtual = null;
 
 var produtosPendentes = [];
 
@@ -16,7 +17,10 @@ function iniciarEnderecamento() {
   const nivel = document.getElementById("nivel");
 
   if (produtoSelect) {
-    produtoSelect.addEventListener("change", mostrarInfoProduto);
+  produtoSelect.addEventListener("change", () => {
+  capacidadePosicaoAtual = null;
+  mostrarInfoProduto(null);
+});
   }
 
   if (rua) rua.addEventListener("change", gerarEnderecoManual);
@@ -68,7 +72,7 @@ function carregarOpcoesEndereco() {
   }
 }
 
-function gerarEnderecoManual() {
+async function gerarEnderecoManual() {
   const rua = document.getElementById("rua").value;
   const coluna = document.getElementById("coluna").value;
   const nivel = document.getElementById("nivel").value;
@@ -76,11 +80,15 @@ function gerarEnderecoManual() {
 
   if (!rua || !coluna || !nivel) {
     endereco.value = "";
+    capacidadePosicaoAtual = null;
+    mostrarInfoProduto(null);
     return;
   }
 
   endereco.value =
     `R${String(rua).padStart(2, "0")}-C${String(coluna).padStart(3, "0")}-N${String(nivel).padStart(2, "0")}`;
+
+  await buscarCapacidadePorEndereco(endereco.value);
 }
 
 async function carregarProdutosEndereco() {
@@ -125,109 +133,83 @@ async function carregarProdutosEndereco() {
   }
 }
 
-function mostrarInfoProduto(capacidadePosicao = 1.8) {
+function mostrarInfoProduto(capacidadePosicao = null) {
+  const produtoId = document.getElementById("produto_id").value;
+  const info = document.getElementById("infoProdutoEndereco");
+  const quantidadeInput = document.getElementById("quantidade_unidades");
 
-  const produtoId =
-    document.getElementById("produto_id").value;
-
-  const info =
-    document.getElementById("infoProdutoEndereco");
-
-  const quantidadeInput =
-    document.getElementById("quantidade_unidades");
-
-  const produto =
-    produtosPendentes.find(
-      p => String(p.id) === String(produtoId)
-    );
+  const produto = produtosPendentes.find(
+    p => String(p.id) === String(produtoId)
+  );
 
   if (!produto) {
-
-    info.innerHTML =
-      "Selecione um produto para ver o saldo pendente.";
-
+    info.innerHTML = "Selecione um produto para ver o saldo pendente.";
     quantidadeInput.value = "";
-
     return;
   }
 
-  let capacidadeM3 =
-    parseFloat(
-      String(capacidadePosicao || "1.8")
-        .replace(",", ".")
-    );
-
-  if (isNaN(capacidadeM3) || capacidadeM3 <= 0) {
-    capacidadeM3 = 1.8;
-  }
-
-  let volumeProduto =
-    parseFloat(
-      String(produto.volume || "0")
-        .replace(",", ".")
-    );
+  let volumeProduto = parseFloat(
+    String(produto.volume || "0").replace(",", ".")
+  );
 
   if (isNaN(volumeProduto) || volumeProduto <= 0) {
     volumeProduto = 0;
   }
 
-  const quantidadePendente =
-    Number(produto.quantidade_pendente || 0);
+  const quantidadePendente = Number(produto.quantidade_pendente || 0);
 
-  let capacidadeUnidades = 0;
+  if (capacidadePosicao === null || capacidadePosicao === undefined || capacidadePosicao === "") {
+    info.innerHTML = `
+      <strong>${produto.nome}</strong><br>
+      Estoque total: ${produto.quantidade_estoque || 0} un<br>
+      Já endereçado: ${produto.quantidade_enderecada || 0} un<br>
+      Falta endereçar: ${produto.quantidade_pendente || 0} un<br><br>
+      Volume unitário: ${volumeProduto.toFixed(4)} m³<br><br>
+      <strong>Clique em "Sugerir Endereço" para calcular a capacidade real da posição.</strong>
+    `;
 
-  if (volumeProduto > 0) {
-    capacidadeUnidades =
-      Math.floor(capacidadeM3 / volumeProduto);
+    quantidadeInput.value = "";
+    return;
   }
 
-  if (
-    isNaN(capacidadeUnidades) ||
-    capacidadeUnidades < 0
-  ) {
-    capacidadeUnidades = 0;
+  let capacidadeM3 = parseFloat(
+    String(capacidadePosicao).replace(",", ".")
+  );
+
+  if (isNaN(capacidadeM3) || capacidadeM3 <= 0) {
+    info.innerHTML = `
+      <strong>${produto.nome}</strong><br>
+      Volume unitário: ${volumeProduto.toFixed(4)} m³<br><br>
+      <strong>Capacidade da posição inválida.</strong>
+    `;
+
+    quantidadeInput.value = "";
+    return;
   }
 
-  const quantidadeSugerida =
-    Math.min(
-      capacidadeUnidades,
-      quantidadePendente
-    );
+  const capacidadeUnidades =
+    volumeProduto > 0
+      ? Math.floor(capacidadeM3 / volumeProduto)
+      : 0;
+
+  const quantidadeSugerida = Math.min(
+    capacidadeUnidades,
+    quantidadePendente
+  );
 
   info.innerHTML = `
     <strong>${produto.nome}</strong><br>
-
-    Estoque total:
-    ${produto.quantidade_estoque || 0} un<br>
-
-    Já endereçado:
-    ${produto.quantidade_enderecada || 0} un<br>
-
-    Falta endereçar:
-    ${produto.quantidade_pendente || 0} un<br><br>
-
-    Volume unitário:
-    ${volumeProduto.toFixed(4)} m³<br>
-
-    Capacidade da posição-palete:
-    ${capacidadeM3.toFixed(2)} m³<br>
-
-    Cabem aproximadamente:
-    <strong>${capacidadeUnidades} un</strong><br>
-
-    Quantidade sugerida para este endereço:
-    <strong>${quantidadeSugerida} un</strong>
+    Estoque total: ${produto.quantidade_estoque || 0} un<br>
+    Já endereçado: ${produto.quantidade_enderecada || 0} un<br>
+    Falta endereçar: ${produto.quantidade_pendente || 0} un<br><br>
+    Volume unitário: ${volumeProduto.toFixed(4)} m³<br>
+    Capacidade da posição-palete: ${capacidadeM3.toFixed(2)} m³<br>
+    Cabem aproximadamente: <strong>${capacidadeUnidades} un</strong><br>
+    Quantidade sugerida para este endereço: <strong>${quantidadeSugerida} un</strong>
   `;
 
-  if (
-    isNaN(quantidadeSugerida) ||
-    quantidadeSugerida <= 0
-  ) {
-    quantidadeInput.value = "";
-  } else {
-    quantidadeInput.value =
-      quantidadeSugerida;
-  }
+  quantidadeInput.value =
+    quantidadeSugerida > 0 ? quantidadeSugerida : "";
 }
 
 async function sugerirEndereco() {
@@ -238,9 +220,22 @@ async function sugerirEndereco() {
     return;
   }
 
+  const produto = produtosPendentes.find(
+    p => String(p.id) === String(produtoId)
+  );
+
+  const quantidadeDigitada =
+    Number(document.getElementById("quantidade_unidades").value);
+
+ const quantidade =
+  quantidadeDigitada > 0
+    ? quantidadeDigitada
+    : 1;
+
   try {
-    const resposta =
-      await fetch(`${API_URL_ENDERECO}/enderecos/sugerir/${produtoId}`);
+    const resposta = await fetch(
+      `${API_URL_ENDERECO}/enderecos/sugerir/${produtoId}?quantidade=${quantidade}`
+    );
 
     if (!resposta.ok) {
       const erro = await resposta.text();
@@ -257,7 +252,12 @@ async function sugerirEndereco() {
     document.getElementById("nivel").value = sugestao.nivel;
     document.getElementById("endereco").value = sugestao.endereco;
 
-    mostrarInfoProduto(sugestao.capacidade_m3);
+    capacidadePosicaoAtual = sugestao.capacidade_m3;
+
+    console.log("Quantidade usada na sugestão:", quantidade);
+    console.log("Capacidade recebida da posição:", capacidadePosicaoAtual);
+
+    mostrarInfoProduto(capacidadePosicaoAtual);
 
   } catch (erro) {
     console.error("Erro ao sugerir posição:", erro);
@@ -419,5 +419,32 @@ async function excluirEndereco(id) {
   } catch (erro) {
     console.error("Erro ao excluir endereçamento:", erro);
     alert("Erro ao excluir endereçamento");
+  }
+}
+
+async function buscarCapacidadePorEndereco(endereco) {
+  try {
+    const resposta = await fetch(
+      `${API_URL_ENDERECO}/posicoes/endereco/${endereco}`
+    );
+
+    if (!resposta.ok) {
+      capacidadePosicaoAtual = null;
+      mostrarInfoProduto(null);
+      return;
+    }
+
+    const posicao = await resposta.json();
+
+    document.getElementById("posicao_id").value = posicao.id;
+
+    capacidadePosicaoAtual = posicao.capacidade_m3;
+
+    mostrarInfoProduto(capacidadePosicaoAtual);
+
+  } catch (erro) {
+    console.error("Erro ao buscar capacidade da posição:", erro);
+    capacidadePosicaoAtual = null;
+    mostrarInfoProduto(null);
   }
 }

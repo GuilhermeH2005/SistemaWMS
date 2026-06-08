@@ -178,15 +178,14 @@ function carregarPagina(pagina, permissaoNecessaria) {
 
       }
 
-      // ENTRADA
-      if (
-        pagina.includes("entrada") &&
-        typeof iniciarEntrada === "function"
-      ) {
-
-        iniciarEntrada();
-
-      }
+     // ENTRADA
+if (pagina.includes("entrada")) {
+  carregarScriptPagina(
+    "script-entrada",
+    "./js/entrada.js",
+    () => iniciarEntrada()
+  );
+}
 
       // ESTOQUE
       if (
@@ -260,21 +259,43 @@ function carregarPagina(pagina, permissaoNecessaria) {
 
       // CONFIGURAÇÕES
 
-      if (pagina.includes("configuracoes-gerais.html")) {
+     if (pagina.includes("configuracoes-gerais.html")) {
   carregarScriptPagina(
     "script-configuracoes-gerais",
     "js/configuracoes-gerais.js",
     () => iniciarConfiguracoesGerais()
   );
+
   return;
 }
 
-if (pagina.includes("configuracoes.html")) {
+if (pagina.includes("trocar_senha.html")) {
   carregarScriptPagina(
-    "script-configuracoes",
-    "js/configuracoes.js",
-    () => iniciarConfiguracoes()
+    "script-trocar_senhha",
+    "js/trocar_senha.js",
+    () => iniciarTrocarSenha()
   );
+
+  return;
+}
+
+if (pagina.includes("cores.html")) {
+  carregarScriptPagina(
+    "script-cores",
+    "js/cores.js",
+    () => iniciarCores()
+  );
+
+  return;
+}
+
+if (pagina.includes("cargos.html")) {
+  carregarScriptPagina(
+    "script-cargos",
+    "js/cargos.js",
+    () => iniciarCargos()
+  );
+
   return;
 }
 

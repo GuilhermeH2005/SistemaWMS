@@ -1,6 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const db = require("./config/db");
+const multer = require("multer");
+const { XMLParser } = require("fast-xml-parser");
+
+const upload = multer({
+  storage: multer.memoryStorage()
+});
 
 const app = express();
 
@@ -502,6 +508,32 @@ app.post("/produtos", (req, res) => {
   );
 });
 
+app.put("/produto/:id/codigo-xml", (req, res) => {
+
+  const { id } = req.params;
+  const { codigo_xml } = req.body;
+
+  if (!codigo_xml) {
+    return res.status(400).send("Código XML obrigatório");
+  }
+
+  const sql = `
+    UPDATE produto
+    SET codigo_xml = ?
+    WHERE id = ?
+  `;
+
+  db.query(sql, [codigo_xml, id], (err) => {
+
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao vincular código XML");
+    }
+
+    res.send("Código XML vinculado com sucesso");
+  });
+});
+
 app.put("/produtos/:id", (req, res) => {
   const { id } = req.params;
 
@@ -761,58 +793,77 @@ app.post("/entradas", (req, res) => {
     serie_nf,
     data_nf,
     usuario_id,
-     usuario_nome,
+    usuario_nome,
     itens
   } = req.body;
 
-  if (
-    !fornecedor_id ||
-    !numero_nf ||
-    !data_nf ||
-    !itens ||
-    itens.length === 0
-  ) {
+  if (!fornecedor_id || !numero_nf || !data_nf || !Array.isArray(itens) || itens.length === 0) {
     return res.status(400).send("Preencha os dados da NF ❌");
   }
 
-  let processados = 0;
-  let erroEncontrado = false;
+  for (const item of itens) {
+    if (!item.produto_id || !item.quantidade || item.quantidade <= 0) {
+      return res.status(400).send("Existe item inválido na NF ❌");
+    }
+  }
 
-  itens.forEach(item => {
+  const sqlVerifica = `
+    SELECT id 
+    FROM entrada_mercadoria
+    WHERE fornecedor_id = ?
+      AND numero_nf = ?
+      AND IFNULL(serie_nf, '') = IFNULL(?, '')
+    LIMIT 1
+  `;
 
-    const sqlEntrada = `
-      INSERT INTO entrada_mercadoria
-      (
-        fornecedor_id,
-        produto_id,
-        quantidade,
-        quantidade_disponivel,
-        numero_nf,
-        serie_nf,
-        data_nf,
-        lote,
-        validade,
-        custo_unitario_sem_imposto,
-        icms_percentual,
-        ipi_percentual,
-        pis_percentual,
-        cofins_percentual,
-        frete,
-        seguro,
-        outras_despesas,
-        subtotal,
-        valor_impostos,
-        custo_total_com_imposto,
-        custo_unitario_com_imposto,
-        status_conferencia,
-        usuario_id
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDENTE', ?)
-    `;
+  db.query(sqlVerifica, [fornecedor_id, numero_nf, serie_nf || null], (err, existe) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao verificar NF ❌");
+    }
 
-    db.query(
-      sqlEntrada,
-      [
+    if (existe.length > 0) {
+      return res.status(400).send("Essa NF já foi registrada para este fornecedor ❌");
+    }
+
+    db.beginTransaction((err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao iniciar transação ❌");
+      }
+
+      const sqlEntrada = `
+        INSERT INTO entrada_mercadoria
+        (
+          fornecedor_id,
+          produto_id,
+          quantidade,
+          quantidade_disponivel,
+          numero_nf,
+          serie_nf,
+          data_nf,
+          lote,
+          validade,
+          peso_unitario,
+          custo_unitario_sem_imposto,
+          icms_percentual,
+          ipi_percentual,
+          pis_percentual,
+          cofins_percentual,
+          frete,
+          seguro,
+          outras_despesas,
+          subtotal,
+          valor_impostos,
+          custo_total_com_imposto,
+          custo_unitario_com_imposto,
+          status_conferencia,
+          usuario_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDENTE', ?)
+      `;
+
+      const valores = itens.map(item => [
         fornecedor_id,
         item.produto_id,
         item.quantidade,
@@ -822,55 +873,211 @@ app.post("/entradas", (req, res) => {
         data_nf,
         item.lote || null,
         item.validade || null,
-        item.custo_unitario_sem_imposto,
-        item.icms_percentual,
-        item.ipi_percentual,
-        item.pis_percentual,
-        item.cofins_percentual,
+        item.peso_unitario || 0,
+        item.custo_unitario_sem_imposto || 0,
+        item.icms_percentual || 0,
+        item.ipi_percentual || 0,
+        item.pis_percentual || 0,
+        item.cofins_percentual || 0,
         item.frete || 0,
         item.seguro || 0,
         item.outras_despesas || 0,
-        item.subtotal,
-        item.valor_impostos,
-        item.custo_total_com_imposto,
-        item.custo_unitario_com_imposto,
+        item.subtotal || 0,
+        item.valor_impostos || 0,
+        item.custo_total_com_imposto || 0,
+        item.custo_unitario_com_imposto || 0,
         usuario_id || null
-      ],
-      (err) => {
+      ]);
 
-        if (erroEncontrado) return;
+      let concluidos = 0;
 
-        if (err) {
-          erroEncontrado = true;
+      valores.forEach(v => {
+        db.query(sqlEntrada, v, (err) => {
+          if (err) {
+            console.error(err);
 
-          console.error(err);
+            return db.rollback(() => {
+              res.status(500).send("Erro ao registrar item da NF ❌");
+            });
+          }
 
-          return res.status(500).send("Erro ao registrar item da NF ❌");
-        }
+          concluidos++;
 
-      processados++;
+          if (concluidos === valores.length) {
+            registrarAuditoria(
+              usuario_id,
+              usuario_nome,
+              "ENTRADA NF",
+              "entrada_mercadoria",
+              null,
+              `NF ${numero_nf} registrada com ${itens.length} item(ns), aguardando conferência`
+            );
 
-if (processados === itens.length) {
-  registrarAuditoria(
-    usuario_id,
-    usuario_nome,
-    "ENTRADA NF",
-    "entrada_mercadoria",
-    null,
-    `NF ${numero_nf} registrada com ${itens.length} item(ns), aguardando conferência`
-  );
+            db.commit((err) => {
+              if (err) {
+                console.error(err);
 
-  return res.send("Entrada de NF registrada com sucesso. Aguardando conferência ✅");
-}
-      }
-    );
+                return db.rollback(() => {
+                  res.status(500).send("Erro ao finalizar entrada da NF ❌");
+                });
+              }
+
+              res.send("Entrada de NF registrada com sucesso. Aguardando conferência ✅");
+            });
+          }
+        });
+      });
+    });
   });
 });
+
+app.post("/importar-xml-nfe", upload.single("xml"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send("Nenhum XML enviado ❌");
+  }
+
+  try {
+    const xmlString = req.file.buffer.toString("utf8");
+
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: ""
+    });
+
+    const xml = parser.parse(xmlString);
+
+    const nfe =
+      xml.nfeProc?.NFe?.infNFe ||
+      xml.NFe?.infNFe ||
+      xml.infNFe;
+
+    if (!nfe) {
+      return res.status(400).send("XML de NF-e inválido ❌");
+    }
+
+    const ide = nfe.ide || {};
+    const emit = nfe.emit || {};
+    const det = Array.isArray(nfe.det) ? nfe.det : [nfe.det];
+
+    const numero_nf = ide.nNF || "";
+    const serie_nf = ide.serie || "";
+    const dataOriginal = ide.dhEmi || ide.dEmi || "";
+
+    const data_nf = formatarDataXMLParaBR(dataOriginal);
+
+    const cnpjFornecedor = emit.CNPJ || "";
+    const nomeFornecedor = emit.xNome || "";
+
+    const itens = det.map(item => {
+      const prod = item.prod || {};
+      const imposto = item.imposto || {};
+
+      const icmsObj = imposto.ICMS
+        ? Object.values(imposto.ICMS)[0]
+        : {};
+
+      const ipiObj = imposto.IPI?.IPITrib || {};
+      const pisObj = imposto.PIS
+        ? Object.values(imposto.PIS)[0]
+        : {};
+      const cofinsObj = imposto.COFINS
+        ? Object.values(imposto.COFINS)[0]
+        : {};
+
+      const quantidade = Number(prod.qCom || 0);
+      const custoUnitario = Number(prod.vUnCom || 0);
+      const subtotal = Number(prod.vProd || quantidade * custoUnitario);
+
+      const icms_percentual = Number(icmsObj?.pICMS || 0);
+      const ipi_percentual = Number(ipiObj?.pIPI || 0);
+      const pis_percentual = Number(pisObj?.pPIS || 0);
+      const cofins_percentual = Number(cofinsObj?.pCOFINS || 0);
+
+      const valor_impostos =
+        Number(icmsObj?.vICMS || 0) +
+        Number(ipiObj?.vIPI || 0) +
+        Number(pisObj?.vPIS || 0) +
+        Number(cofinsObj?.vCOFINS || 0);
+
+     const custo_total_com_imposto = Number(prod.vProd || subtotal);
+
+const custo_unitario_com_imposto =
+  quantidade > 0 ? custo_total_com_imposto / quantidade : 0;
+
+      return {
+        codigo_produto_xml: prod.cProd || "",
+        ean: prod.cEAN || "",
+        produto_nome_xml: prod.xProd || "",
+        quantidade,
+        peso_unitario: 0,
+        custo_unitario_sem_imposto: custoUnitario,
+        icms_percentual,
+        ipi_percentual,
+        pis_percentual,
+        cofins_percentual,
+        frete: 0,
+        seguro: 0,
+        outras_despesas: 0,
+        subtotal,
+        valor_impostos,
+        custo_total_com_imposto,
+        custo_unitario_com_imposto,
+        lote: null,
+        validade: null
+      };
+    });
+
+    const sqlFornecedor = `
+      SELECT id, nome, cnpj
+      FROM fornecedor
+      WHERE cnpj = ?
+      LIMIT 1
+    `;
+
+    db.query(sqlFornecedor, [cnpjFornecedor], (err, fornecedores) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao buscar fornecedor do XML ❌");
+      }
+
+      const fornecedorEncontrado = fornecedores[0] || null;
+
+      res.json({
+        numero_nf,
+        serie_nf,
+        data_nf,
+        fornecedor: {
+          id: fornecedorEncontrado ? fornecedorEncontrado.id : null,
+          nome: nomeFornecedor,
+          cnpj: cnpjFornecedor
+        },
+        itens
+      });
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Erro ao importar XML da NF-e ❌");
+  }
+});
+
+function formatarDataXMLParaBR(dataXML) {
+  if (!dataXML) return "";
+
+  const data = dataXML.substring(0, 10);
+
+  const partes = data.split("-");
+
+  if (partes.length !== 3) return "";
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
 
 app.get("/entradas", (req, res) => {
   const sql = `
     SELECT
       e.*,
+      DATE_FORMAT(e.data_nf, '%d/%m/%Y') AS data_nf_formatada,
       p.nome AS produto_nome,
       p.codigo AS produto_codigo,
       f.nome AS fornecedor_nome,
@@ -1342,6 +1549,54 @@ app.get("/usuarios/:id", (req, res) => {
   });
 });
 
+app.put("/usuarios/:id/trocar-senha", (req, res) => {
+  const { id } = req.params;
+  const { novaSenha } = req.body;
+
+  if (!novaSenha) {
+    return res.status(400).send("Informe a nova senha.");
+  }
+
+  const sql = `
+    UPDATE usuario
+    SET senha = ?
+    WHERE id = ?
+  `;
+
+  db.query(sql, [novaSenha, id], (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao alterar senha.");
+    }
+
+    res.send("Senha alterada com sucesso ✅");
+  });
+});
+
+
+app.get("/usuarios/:id/dados-senha", (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT id, login, senha
+    FROM usuario
+    WHERE id = ?
+  `;
+
+  db.query(sql, [id], (err, resultado) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar dados do usuário.");
+    }
+
+    if (resultado.length === 0) {
+      return res.status(404).send("Usuário não encontrado.");
+    }
+
+    res.json(resultado[0]);
+  });
+});
+
 /* =========================
    AJUSTE MANUAL DE ESTOQUE
 ========================= */
@@ -1624,6 +1879,8 @@ app.put("/conferencia/:id", (req, res) => {
 
   const {
     quantidade_contada,
+    decisao_divergencia,
+    justificativa_divergencia,
     usuario_edicao_id,
     usuario_id,
     usuario_nome
@@ -1654,89 +1911,216 @@ app.put("/conferencia/:id", (req, res) => {
 
     const qtdNF = Number(entrada.quantidade || 0);
     const qtdContada = Number(quantidade_contada || 0);
+    const pendente = Math.max(qtdNF - qtdContada, 0);
 
-    const statusFinal =
-      qtdContada === qtdNF ? "CONFERIDO" : "DIVERGENTE";
+    let statusFinal = "CONFERIDO";
+    let quantidadeParaEstoque = qtdContada;
+
+    if (qtdContada !== qtdNF) {
+      if (!decisao_divergencia) {
+        return res.status(400).send("Informe a decisão da divergência ❌");
+      }
+
+      if (!justificativa_divergencia || justificativa_divergencia.trim() === "") {
+        return res.status(400).send("Justificativa obrigatória para divergência ❌");
+      }
+
+      if (decisao_divergencia === "ACEITAR_FISICO") {
+        statusFinal = "CONFERIDO_DIVERGENTE";
+      }
+
+      else if (decisao_divergencia === "COMPLEMENTO_PENDENTE") {
+        statusFinal = "COMPLEMENTO_PENDENTE";
+      }
+
+      else if (decisao_divergencia === "DEVOLUCAO_PENDENTE") {
+        statusFinal = "DEVOLUCAO_PENDENTE";
+      }
+
+      else {
+        return res.status(400).send("Decisão de divergência inválida ❌");
+      }
+    }
 
     const sqlEntrada = `
       UPDATE entrada_mercadoria
       SET
         quantidade_contada = ?,
         status_conferencia = ?,
+        decisao_divergencia = ?,
+        justificativa_divergencia = ?,
+        quantidade_pendente_complemento = ?,
         usuario_edicao_id = ?,
         data_atualizacao = NOW()
       WHERE id = ?
     `;
 
-    db.query(sqlEntrada, [qtdContada, statusFinal, usuario_edicao_id || null, id], (err) => {
-      if (err) return res.status(500).send("Erro ao atualizar conferência ❌");
+    db.query(
+      sqlEntrada,
+      [
+        qtdContada,
+        statusFinal,
+        decisao_divergencia || null,
+        justificativa_divergencia || null,
+        statusFinal === "COMPLEMENTO_PENDENTE" ? pendente : 0,
+        usuario_edicao_id || null,
+        id
+      ],
+      (err) => {
+        if (err) return res.status(500).send("Erro ao atualizar conferência ❌");
 
-      if (statusFinal === "DIVERGENTE") {
-        registrarAuditoria(
-          usuario_id,
-          usuario_nome,
-          "CONFERÊNCIA DIVERGENTE",
-          "entrada_mercadoria",
-          id,
-          `Produto ${entrada.produto_nome}: NF ${qtdNF} un, contado ${qtdContada} un`
+        atualizarEstoqueConferencia(
+          entrada,
+          quantidadeParaEstoque,
+          () => {
+            registrarAuditoria(
+              usuario_id,
+              usuario_nome,
+              statusFinal,
+              "entrada_mercadoria",
+              id,
+              `NF ${entrada.numero_nf}, produto ${entrada.produto_nome}. NF: ${qtdNF}, contado: ${qtdContada}. Decisão: ${decisao_divergencia || "CONFERIDO"}. Justificativa: ${justificativa_divergencia || "-"}`
+            );
+
+            res.send("Conferência registrada e estoque atualizado ✅");
+          },
+          res
         );
+      }
+    );
+  });
+});
 
-        return res.send("Conferência marcada como DIVERGENTE ⚠️");
+function atualizarEstoqueConferencia(entrada, quantidade, callback, res) {
+  const custoNovo = Number(entrada.custo_unitario_com_imposto || 0);
+  const estoqueAntigo = Number(entrada.quantidade_estoque || 0);
+  const custoMedioAntigo = Number(entrada.custo_medio || 0);
+
+  const novoCustoMedio =
+    estoqueAntigo > 0
+      ? ((estoqueAntigo * custoMedioAntigo) + (quantidade * custoNovo)) /
+        (estoqueAntigo + quantidade)
+      : custoNovo;
+
+  const sqlProduto = `
+    UPDATE produto
+    SET
+      quantidade_estoque = quantidade_estoque + ?,
+      peso = ?,
+      ultimo_custo_sem_imposto = ?,
+      ultimo_custo_com_imposto = ?,
+      custo_medio = ?,
+      margem_lucro_percentual =
+        CASE
+          WHEN preco_venda > 0 AND ? > 0
+          THEN ((preco_venda - ?) / ?) * 100
+          ELSE 0
+        END
+    WHERE id = ?
+  `;
+
+  db.query(
+    sqlProduto,
+    [
+      quantidade,
+      entrada.peso_unitario || 0,
+      entrada.custo_unitario_sem_imposto,
+      entrada.custo_unitario_com_imposto,
+      novoCustoMedio,
+      custoNovo,
+      custoNovo,
+      custoNovo,
+      entrada.produto_id
+    ],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao atualizar estoque ❌");
       }
 
-      const custoNovo = Number(entrada.custo_unitario_com_imposto || 0);
-      const estoqueAntigo = Number(entrada.quantidade_estoque || 0);
-      const custoMedioAntigo = Number(entrada.custo_medio || 0);
+      callback();
+    }
+  );
+}
 
-      const novoCustoMedio =
-        estoqueAntigo > 0
-          ? ((estoqueAntigo * custoMedioAntigo) + (qtdContada * custoNovo)) / (estoqueAntigo + qtdContada)
-          : custoNovo;
+app.put("/conferencia/:id/complemento", (req, res) => {
+  const { id } = req.params;
 
-      const sqlProduto = `
-        UPDATE produto
+  const {
+    quantidade_recebida,
+    usuario_id,
+    usuario_nome
+  } = req.body;
+
+  if (!quantidade_recebida || Number(quantidade_recebida) <= 0) {
+    return res.status(400).send("Informe a quantidade recebida ❌");
+  }
+
+  const sqlBusca = `
+    SELECT
+      e.*,
+      p.nome AS produto_nome,
+      p.quantidade_estoque,
+      p.custo_medio,
+      p.preco_venda
+    FROM entrada_mercadoria e
+    INNER JOIN produto p
+      ON e.produto_id = p.id
+    WHERE e.id = ?
+  `;
+
+  db.query(sqlBusca, [id], (err, result) => {
+    if (err) return res.status(500).send("Erro ao buscar entrada ❌");
+    if (result.length === 0) return res.status(404).send("Entrada não encontrada ❌");
+
+    const entrada = result[0];
+    const pendenteAtual = Number(entrada.quantidade_pendente_complemento || 0);
+    const recebido = Number(quantidade_recebida || 0);
+
+    if (entrada.status_conferencia !== "COMPLEMENTO_PENDENTE") {
+      return res.status(400).send("Esta entrada não possui complemento pendente ❌");
+    }
+
+    if (recebido > pendenteAtual) {
+      return res.status(400).send("Quantidade recebida maior que o pendente ❌");
+    }
+
+    const novoPendente = pendenteAtual - recebido;
+    const novoStatus = novoPendente === 0 ? "CONFERIDO" : "COMPLEMENTO_PENDENTE";
+
+    db.query(
+      `
+        UPDATE entrada_mercadoria
         SET
-          quantidade_estoque = quantidade_estoque + ?,
-          ultimo_custo_sem_imposto = ?,
-          ultimo_custo_com_imposto = ?,
-          custo_medio = ?,
-          margem_lucro_percentual =
-            CASE
-              WHEN preco_venda > 0 AND ? > 0
-              THEN ((preco_venda - ?) / ?) * 100
-              ELSE 0
-            END
+          quantidade_contada = IFNULL(quantidade_contada, 0) + ?,
+          quantidade_pendente_complemento = ?,
+          status_conferencia = ?,
+          data_atualizacao = NOW()
         WHERE id = ?
-      `;
+      `,
+      [recebido, novoPendente, novoStatus, id],
+      (err) => {
+        if (err) return res.status(500).send("Erro ao atualizar complemento ❌");
 
-      db.query(
-        sqlProduto,
-        [
-          qtdContada,
-          entrada.custo_unitario_sem_imposto,
-          entrada.custo_unitario_com_imposto,
-          novoCustoMedio,
-          custoNovo,
-          custoNovo,
-          custoNovo,
-          entrada.produto_id
-        ],
-        (err) => {
-          if (err) return res.status(500).send("Erro ao atualizar estoque ❌");
+        atualizarEstoqueConferencia(
+          entrada,
+          recebido,
+          () => {
+            registrarAuditoria(
+              usuario_id,
+              usuario_nome,
+              "COMPLEMENTO RECEBIDO",
+              "entrada_mercadoria",
+              id,
+              `Complemento recebido do produto ${entrada.produto_nome}. Recebido: ${recebido}. Pendente restante: ${novoPendente}.`
+            );
 
-          registrarAuditoria(
-            usuario_id,
-            usuario_nome,
-            "CONFERÊNCIA",
-            "entrada_mercadoria",
-            id,
-            `Produto ${entrada.produto_nome} conferido. Estoque atualizado com ${qtdContada} un.`
-          );
-
-          res.send("Conferência realizada e estoque atualizado ✅");
-        }
-      );
-    });
+            res.send("Complemento recebido e estoque atualizado ✅");
+          },
+          res
+        );
+      }
+    );
   });
 });
 
@@ -2296,7 +2680,12 @@ app.get("/enderecos/sugerir/:produtoId", (req, res) => {
   const { produtoId } = req.params;
 
   const sqlProduto = `
-    SELECT id, nome, volume, giro
+    SELECT
+      id,
+      nome,
+      volume,
+      giro,
+      peso
     FROM produto
     WHERE id = ?
   `;
@@ -2312,9 +2701,18 @@ app.get("/enderecos/sugerir/:produtoId", (req, res) => {
     }
 
     const produto = produtoResult[0];
-    const volumeProduto = Number(produto.volume || 0);
 
-    if (!volumeProduto || volumeProduto <= 0) {
+   const volumeUnitario =
+  Number(produto.volume || 0);
+    const pesoProduto = Number(produto.peso || 0);
+
+    const quantidadeSolicitada =
+  Number(req.query.quantidade || 1);
+
+const volumeTotal =
+  volumeUnitario * quantidadeSolicitada;
+
+   if (!volumeTotal || volumeTotal <= 0) {
       return res.status(400).send("Produto sem cubagem cadastrada ❌");
     }
 
@@ -2329,6 +2727,20 @@ app.get("/enderecos/sugerir/:produtoId", (req, res) => {
       ruaFim = 19;
     }
 
+    let nivelMaximo = 7;
+
+    if (pesoProduto >= 30) {
+      nivelMaximo = 2;
+    } else if (pesoProduto >= 15) {
+      nivelMaximo = 4;
+    }
+
+   let capacidadeMinima = volumeTotal;
+
+  if (pesoProduto >= 30 || volumeUnitario >= 0.5) {
+  capacidadeMinima = Math.max(volumeTotal * 3, 3);
+}
+
     const sqlSugestao = `
       SELECT
         p.id,
@@ -2341,14 +2753,24 @@ app.get("/enderecos/sugerir/:produtoId", (req, res) => {
       FROM posicao_estoque p
       WHERE p.status = 'LIVRE'
       AND p.rua BETWEEN ? AND ?
+      AND p.nivel <= ?
       AND p.capacidade_m3 >= ?
-      ORDER BY p.rua, p.coluna, p.nivel
+      ORDER BY
+  p.nivel ASC,
+  p.capacidade_m3 ASC,
+  p.rua ASC,
+  p.coluna ASC
       LIMIT 1
     `;
 
     db.query(
       sqlSugestao,
-      [ruaInicio, ruaFim, volumeProduto],
+      [
+        ruaInicio,
+        ruaFim,
+        nivelMaximo,
+        capacidadeMinima
+      ],
       (err, posicaoResult) => {
         if (err) {
           console.error(err);
@@ -2359,12 +2781,17 @@ app.get("/enderecos/sugerir/:produtoId", (req, res) => {
           return res.status(404).send("Nenhuma posição disponível com capacidade suficiente ❌");
         }
 
-        res.json({
-          produto: produto.nome,
-          giro: produto.giro,
-          volume: produto.volume,
-          sugestao: posicaoResult[0]
-        });
+       res.json({
+  produto: produto.nome,
+  giro: produto.giro,
+  peso: pesoProduto,
+  volume_unitario: volumeUnitario,
+  volume_total: volumeTotal,
+  quantidade_solicitada: quantidadeSolicitada,
+  nivel_maximo: nivelMaximo,
+  capacidade_minima: capacidadeMinima,
+  sugestao: posicaoResult[0]
+});
       }
     );
   });
@@ -2383,6 +2810,36 @@ function gerarIntervalo(inicio, fim) {
 /* =========================
    POSIÇÕES DO ARMAZÉM
 ========================= */
+
+app.get("/posicoes/endereco/:endereco", (req, res) => {
+  const { endereco } = req.params;
+
+  const sql = `
+    SELECT
+      id,
+      rua,
+      coluna,
+      nivel,
+      endereco,
+      capacidade_m3,
+      status
+    FROM posicao_estoque
+    WHERE endereco = ?
+  `;
+
+  db.query(sql, [endereco], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar posição ❌");
+    }
+
+    if (result.length === 0) {
+      return res.status(404).send("Posição não encontrada ❌");
+    }
+
+    res.json(result[0]);
+  });
+});
 
 app.post("/posicoes", (req, res) => {
   const {

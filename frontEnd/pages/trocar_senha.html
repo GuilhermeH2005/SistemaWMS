@@ -18,13 +18,24 @@
         </div>
 
         <div class="campo-form">
-          <label for="senhaAtual">Senha Atual</label>
-          <input
-            type="password"
-            id="senhaAtual"
-            required
-          >
-        </div>
+  <label for="senhaAtual">Senha Atual</label>
+
+  <div class="senha-container">
+    <input
+      type="password"
+      id="senhaAtual"
+      readonly
+    >
+
+    <button
+      type="button"
+      class="btn-olho"
+      onclick="alternarSenha('senhaAtual', this)"
+    >
+      👁️
+    </button>
+  </div>
+</div>
 
         <div class="campo-form">
           <label for="senha">Nova Senha</label>

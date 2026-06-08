@@ -56,7 +56,9 @@ function renderizarConferencia(entradas) {
       <tr>
         <td>${item.produto_nome || "-"}</td>
         <td>${item.produto_codigo || "-"}</td>
-        <td>${item.quantidade || 0}</td>
+      <td id="qtd-nf-${item.id}">
+  ${item.quantidade || 0}
+</td>
 
         <td>
           <input
@@ -74,6 +76,11 @@ function renderizarConferencia(entradas) {
           <span class="${classeStatusConferencia(item.status_conferencia)}">
             ${item.status_conferencia || "PENDENTE"}
           </span>
+            ${item.status_conferencia === "COMPLEMENTO_PENDENTE" ? `
+  <button onclick="receberComplemento(${item.id}, ${item.quantidade_pendente_complemento || 0})">
+    Receber complemento
+  </button>
+` : ""}
         </td>
       </tr>
     `).join("");
@@ -121,6 +128,35 @@ function renderizarConferencia(entradas) {
       </div>
     `;
   });
+}
+
+async function receberComplemento(id, pendente) {
+  const qtd = prompt(
+    `Quantidade pendente: ${pendente}\nInforme a quantidade recebida agora:`,
+    pendente
+  );
+
+  if (!qtd || Number(qtd) <= 0) return;
+
+  const auditoria = getUsuarioAuditoria();
+
+  const res = await fetch(`http://localhost:3000/conferencia/${id}/complemento`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      quantidade_recebida: Number(qtd),
+      ...auditoria
+    })
+  });
+
+  const msg = await res.text();
+  alert(msg);
+
+  if (res.ok) {
+    carregarConferencia();
+  }
 }
 
 async function atualizarStatusConferencia(id, quantidadeNF) {
@@ -190,9 +226,44 @@ async function conferirNotaInteira(ids) {
     const input = document.getElementById(`contagem-${id}`);
     const quantidadeContada = Number(input?.value);
 
+    const qtdNF = Number(
+      document.getElementById(`qtd-nf-${id}`)?.textContent || 0
+    );
+
     if (!input || isNaN(quantidadeContada) || quantidadeContada <= 0) {
       alert("Informe uma quantidade contada válida para todos os itens.");
       return;
+    }
+
+    let decisaoDivergencia = null;
+    let justificativa = null;
+
+    if (quantidadeContada !== qtdNF) {
+      const opcao = prompt(
+        `Divergência encontrada!\n\n` +
+        `Quantidade NF: ${qtdNF}\n` +
+        `Quantidade contada: ${quantidadeContada}\n\n` +
+        `Escolha uma opção:\n` +
+        `1 - Aceitar quantidade física\n` +
+        `2 - Complemento pendente\n` +
+        `3 - Devolução pendente`
+      );
+
+      if (!["1", "2", "3"].includes(opcao)) {
+        alert("Opção inválida.");
+        return;
+      }
+
+      if (opcao === "1") decisaoDivergencia = "ACEITAR_FISICO";
+      if (opcao === "2") decisaoDivergencia = "COMPLEMENTO_PENDENTE";
+      if (opcao === "3") decisaoDivergencia = "DEVOLUCAO_PENDENTE";
+
+      justificativa = prompt("Informe a justificativa da divergência:");
+
+      if (!justificativa || justificativa.trim() === "") {
+        alert("Justificativa obrigatória.");
+        return;
+      }
     }
 
     const res = await fetch(`http://localhost:3000/conferencia/${id}`, {
@@ -201,8 +272,9 @@ async function conferirNotaInteira(ids) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        status_conferencia: "CONFERIDO",
         quantidade_contada: quantidadeContada,
+        decisao_divergencia: decisaoDivergencia,
+        justificativa_divergencia: justificativa,
         usuario_edicao_id: auditoria.usuario_id,
         ...auditoria
       })
@@ -216,6 +288,6 @@ async function conferirNotaInteira(ids) {
     }
   }
 
-  alert("NF conferida com sucesso ✅");
+  alert("Conferência registrada ✅");
   carregarConferencia();
 }

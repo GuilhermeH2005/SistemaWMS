@@ -1,29 +1,74 @@
+<section class="card-lista">
+  <h3 class="subtitulo">Importar XML da NF-e</h3>
+
+  <div class="campo-form">
+    <label for="xmlNfe">Arquivo XML</label>
+
+    <input
+      type="file"
+      id="xmlNfe"
+      accept=".xml"
+    >
+  </div>
+
+  <button
+    type="button"
+    id="btnImportarXML"
+  >
+    Importar XML
+  </button>
+</section>
+
+<br>
+
 <form id="formEntrada" class="form-entrada">
 
   <div class="campo-form">
     <label for="fornecedor_id">Fornecedor</label>
+
     <select id="fornecedor_id" required>
-      <option value="">Selecione o fornecedor</option>
+      <option value="">
+        Selecione o fornecedor
+      </option>
     </select>
   </div>
 
   <div class="campo-form">
     <label for="numero_nf">Número da NF</label>
-    <input type="text" id="numero_nf" placeholder="Número da NF" required>
+
+    <input
+      type="text"
+      id="numero_nf"
+      placeholder="Número da NF"
+      required
+    >
   </div>
 
   <div class="campo-form">
     <label for="serie_nf">Série da NF</label>
-    <input type="text" id="serie_nf" placeholder="Série da NF">
+
+    <input
+      type="text"
+      id="serie_nf"
+      placeholder="Série da NF"
+    >
   </div>
 
   <div class="campo-form">
     <label for="data_nf">Data da NF</label>
-    <input type="text" id="data_nf" placeholder="Data da NF dd/mm/aaaa" maxlength="10" required>
+
+    <input
+      type="text"
+      id="data_nf"
+      placeholder="Data da NF dd/mm/aaaa"
+      maxlength="10"
+      required
+    >
   </div>
 
   <div class="campo-form">
     <label for="produtoBusca">Produto</label>
+
     <input
       type="text"
       id="produtoBusca"
@@ -31,75 +76,224 @@
       placeholder="Digite o nome ou SKU do produto"
       autocomplete="off"
     >
+
     <datalist id="listaProdutosEntrada"></datalist>
-    <input type="hidden" id="produto_id">
+
+    <input
+      type="hidden"
+      id="produto_id"
+    >
   </div>
 
   <div class="campo-form">
     <label for="quantidade">Quantidade</label>
-    <input type="number" id="quantidade" placeholder="Quantidade">
+
+    <input
+      type="number"
+      id="quantidade"
+      placeholder="Quantidade"
+    >
   </div>
 
   <div class="campo-form">
-    <label for="custo_unitario_sem_imposto">Custo Unitário sem Imposto</label>
-    <input type="number" step="0.01" id="custo_unitario_sem_imposto" placeholder="Custo unitário sem imposto">
+    <label for="peso_unitario">
+      Peso Unitário (kg)
+    </label>
+
+    <input
+      type="number"
+      id="peso_unitario"
+      step="0.01"
+      min="0"
+      placeholder="Peso unitário kg"
+    >
+  </div>
+
+  <div class="campo-form">
+    <label for="custo_unitario_sem_imposto">
+      Custo Unitário sem Imposto
+    </label>
+
+    <input
+      type="number"
+      step="0.01"
+      id="custo_unitario_sem_imposto"
+      placeholder="Custo unitário sem imposto"
+    >
   </div>
 
   <div class="campo-form">
     <label for="lote">Lote</label>
-    <input type="text" id="lote" placeholder="Lote">
+
+    <input
+      type="text"
+      id="lote"
+      placeholder="Lote"
+    >
   </div>
 
   <div class="campo-form">
     <label for="validade">Validade</label>
-    <input type="text" id="validade" placeholder="Validade dd/mm/aaaa" maxlength="10">
+
+    <input
+      type="text"
+      id="validade"
+      placeholder="Validade dd/mm/aaaa"
+      maxlength="10"
+    >
   </div>
 
   <div class="campo-form">
-    <label for="icms_percentual">ICMS (%)</label>
-    <input type="number" step="0.01" id="icms_percentual" placeholder="ICMS %">
+    <label for="icms_percentual">
+      ICMS (%)
+    </label>
+
+    <input
+      type="number"
+      step="0.01"
+      id="icms_percentual"
+      placeholder="ICMS %"
+    >
   </div>
 
   <div class="campo-form">
-    <label for="ipi_percentual">IPI (%)</label>
-    <input type="number" step="0.01" id="ipi_percentual" placeholder="IPI %">
+    <label for="ipi_percentual">
+      IPI (%)
+    </label>
+
+    <input
+      type="number"
+      step="0.01"
+      id="ipi_percentual"
+      placeholder="IPI %"
+    >
   </div>
 
   <div class="campo-form">
-    <label for="pis_percentual">PIS (%)</label>
-    <input type="number" step="0.01" id="pis_percentual" placeholder="PIS %">
+    <label for="pis_percentual">
+      PIS (%)
+    </label>
+
+    <input
+      type="number"
+      step="0.01"
+      id="pis_percentual"
+      placeholder="PIS %"
+    >
   </div>
 
   <div class="campo-form">
-    <label for="cofins_percentual">COFINS (%)</label>
-    <input type="number" step="0.01" id="cofins_percentual" placeholder="COFINS %">
+    <label for="cofins_percentual">
+      COFINS (%)
+    </label>
+
+    <input
+      type="number"
+      step="0.01"
+      id="cofins_percentual"
+      placeholder="COFINS %"
+    >
   </div>
 
-  <button type="button" id="btnGerarImpostos">
+  <button
+    type="button"
+    id="btnGerarImpostos"
+  >
     Gerar Impostos
   </button>
 
   <div class="campo-form">
     <label for="subtotal">Subtotal</label>
-    <input type="text" id="subtotal" placeholder="Subtotal" readonly>
+
+    <input
+      type="text"
+      id="subtotal"
+      placeholder="Subtotal"
+      readonly
+    >
   </div>
 
   <div class="campo-form">
-    <label for="valor_impostos">Valor dos Impostos</label>
-    <input type="text" id="valor_impostos" placeholder="Valor dos impostos" readonly>
+    <label for="valor_impostos">
+      Valor dos Impostos
+    </label>
+
+    <input
+      type="text"
+      id="valor_impostos"
+      placeholder="Valor dos impostos"
+      readonly
+    >
   </div>
 
   <div class="campo-form">
-    <label for="custo_total_com_imposto">Custo Total com Imposto</label>
-    <input type="text" id="custo_total_com_imposto" placeholder="Custo total com imposto" readonly>
+    <label for="frete">Frete</label>
+
+    <input
+      type="number"
+      id="frete"
+      step="0.01"
+      min="0"
+      value="0"
+    >
   </div>
 
   <div class="campo-form">
-    <label for="custo_unitario_com_imposto">Custo Unitário com Imposto</label>
-    <input type="text" id="custo_unitario_com_imposto" placeholder="Custo unitário com imposto" readonly>
+    <label for="seguro">Seguro</label>
+
+    <input
+      type="number"
+      id="seguro"
+      step="0.01"
+      min="0"
+      value="0"
+    >
   </div>
 
-  <button type="button" id="btnAdicionarItemNF">
+  <div class="campo-form">
+    <label for="outras_despesas">
+      Outras Despesas
+    </label>
+
+    <input
+      type="number"
+      id="outras_despesas"
+      step="0.01"
+      min="0"
+      value="0"
+    >
+  </div>
+
+  <div class="campo-form">
+    <label for="custo_total_com_imposto">
+      Custo Total com Imposto
+    </label>
+
+    <input
+      type="text"
+      id="custo_total_com_imposto"
+      placeholder="Custo total com imposto"
+      readonly
+    >
+  </div>
+
+  <div class="campo-form">
+    <label for="custo_unitario_com_imposto">
+      Custo Unitário com Imposto
+    </label>
+
+    <input
+      type="text"
+      id="custo_unitario_com_imposto"
+      placeholder="Custo unitário com imposto"
+      readonly
+    >
+  </div>
+
+  <button
+    type="button"
+    id="btnAdicionarItemNF"
+  >
     Adicionar Produto na NF
   </button>
 
@@ -108,3 +302,83 @@
   </button>
 
 </form>
+
+<br>
+
+<section class="card-lista">
+
+  <h3 class="subtitulo">
+    Itens da NF
+  </h3>
+
+  <div class="tabela-container">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Qtd</th>
+          <th>Custo Un.</th>
+          <th>Custo c/ Imp.</th>
+          <th>Lote</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaItensNF">
+        <tr>
+          <td colspan="6">
+            Nenhum item adicionado.
+          </td>
+        </tr>
+      </tbody>
+
+    </table>
+
+  </div>
+
+</section>
+
+<section class="card-lista">
+
+  <h3 class="subtitulo">
+    Notas Fiscais Registradas
+  </h3>
+
+  <div id="listaEntradas"></div>
+
+</section>
+
+<div
+  id="modalVincularProduto"
+  class="modal hidden"
+>
+
+  <div class="modal-conteudo">
+
+    <h3>
+      Vincular Produto XML
+    </h3>
+
+    <p id="produtoXmlNome"></p>
+
+    <select id="selectProdutoVinculo">
+
+      <option value="">
+        Selecione um produto
+      </option>
+
+    </select>
+
+    <button
+      type="button"
+      id="btnSalvarVinculoProduto"
+    >
+      Vincular Produto
+    </button>
+
+  </div>
+
+</div>
+```
