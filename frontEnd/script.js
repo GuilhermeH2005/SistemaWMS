@@ -168,6 +168,17 @@ function carregarPagina(pagina, permissaoNecessaria) {
 
       }
 
+      // DIVERGÊNCIAS
+if (pagina.includes("divergencias")) {
+
+  carregarScriptPagina(
+    "script-divergencias",
+    "./js/divergencias.js",
+    () => iniciarDivergencias()
+  );
+
+}
+
       // FORNECEDORES
       if (
         pagina.includes("fornecedores") &&
@@ -223,6 +234,14 @@ if (pagina.includes("entrada")) {
         "script-enderecamento",
         "js/enderecamento.js",
         () => iniciarEnderecamento()
+  );
+}
+
+if (pagina.includes("clientes.html")) {
+  carregarScriptPagina(
+    "script-clientes",
+    "./js/clientes.js",
+    () => iniciarClientes()
   );
 }
 

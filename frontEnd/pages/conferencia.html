@@ -1,20 +1,32 @@
 <h2 class="titulo-pagina">Conferência de Mercadorias</h2>
 
-<section class="card-conferencia">
+<section class="card-lista">
 
-  <div class="topo-conferencia">
-    <h3>Entradas para Conferência</h3>
+  <div class="topo-lista">
+    <div>
+      <h3 class="subtitulo">Notas para Conferência</h3>
+      <p class="descricao-pagina">
+        Clique em uma NF para visualizar os produtos e registrar a conferência.
+      </p>
+    </div>
 
-    <input
-      type="text"
-      id="buscarConferencia"
-      placeholder="Buscar por NF ou produto..."
-      onkeyup="filtrarConferencia()"
-    >
+    <div class="filtros-conferencia">
+      <input
+        type="text"
+        id="buscarConferencia"
+        placeholder="Buscar por NF, fornecedor, produto ou SKU..."
+        oninput="filtrarConferencia()"
+      >
+
+      <select id="filtroStatusConferencia" onchange="filtrarConferencia()">
+        <option value="TODOS">Todos</option>
+        <option value="PENDENTE">Pendentes</option>
+        <option value="CONFERIDO">Conferidas</option>
+        <option value="DIVERGENTE">Divergentes</option>
+      </select>
+    </div>
   </div>
 
-  <div id="listaConferencia" class="lista-conferencia">
-  Carregando...
-  </div>
+  <div id="listaConferencia"></div>
 
 </section>

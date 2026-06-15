@@ -1,22 +1,75 @@
-<h2 class="titulo-pagina">
-  Auditoria do Sistema
-</h2>
+<h2 class="titulo-pagina">Auditoria do Sistema</h2>
 
 <section class="card-lista">
 
   <div class="topo-auditoria">
     <div>
-      <h3 class="subtitulo">
-        Histórico de Operações
-      </h3>
-
+      <h3 class="subtitulo">Histórico de Operações</h3>
       <p class="descricao-auditoria">
-        Registro das ações realizadas no sistema.
+        Use os filtros ou veja as últimas 20 ações.
       </p>
     </div>
+  </div>
 
-    <button onclick="carregarAuditoria()">
-      🔄 Atualizar
+  <div class="filtros-auditoria">
+
+    <input
+      type="text"
+      id="filtroBuscaAuditoria"
+      placeholder="Buscar descrição, usuário, ação..."
+    >
+
+    <select id="filtroTabelaAuditoria">
+      <option value="TODAS">Todas as tabelas</option>
+      <option value="produto">Produto</option>
+      <option value="entrada_mercadoria">Entrada de Mercadoria</option>
+      <option value="cliente">Cliente</option>
+      <option value="fornecedor">Fornecedor</option>
+      <option value="usuario">Usuário</option>
+      <option value="divergencia_conferencia">Divergência</option>
+    </select>
+
+    <select id="filtroAcaoAuditoria">
+      <option value="TODAS">Todas as ações</option>
+      <option value="CADASTRO">Cadastro</option>
+      <option value="EDIÇÃO">Edição</option>
+      <option value="EXCLUSÃO">Exclusão</option>
+      <option value="ENTRADA NF">Entrada NF</option>
+      <option value="CONFERÊNCIA">Conferência</option>
+      <option value="DIVERGÊNCIA CONFERÊNCIA">Divergência</option>
+      <option value="RESOLUÇÃO DIVERGÊNCIA">Resolução Divergência</option>
+      <option value="AJUSTE ESTOQUE">Ajuste Estoque</option>
+    </select>
+
+    <input
+      type="text"
+      id="filtroUsuarioAuditoria"
+      placeholder="Usuário"
+    >
+
+    <input
+      type="date"
+      id="filtroDataInicioAuditoria"
+    >
+
+    <input
+      type="date"
+      id="filtroDataFimAuditoria"
+    >
+
+  </div>
+
+  <div class="acoes-auditoria">
+    <button onclick="pesquisarAuditoria()">
+      🔎 Pesquisar
+    </button>
+
+    <button onclick="carregarUltimasAuditorias()">
+      🕒 Últimas 20
+    </button>
+
+    <button onclick="limparFiltrosAuditoria()">
+      🧹 Limpar
     </button>
   </div>
 
@@ -26,20 +79,20 @@
 
       <thead>
         <tr>
-          <th>ID</th>
+          <th>Data/Hora</th>
           <th>Usuário</th>
           <th>Ação</th>
           <th>Tabela</th>
           <th>Registro</th>
-          <th>Descrição</th>
-          <th>Data/Hora</th>
+          <th>Resumo</th>
+          <th>Detalhes</th>
         </tr>
       </thead>
 
       <tbody id="listaAuditoria">
         <tr>
           <td colspan="7">
-            Carregando auditoria...
+            Use os filtros acima ou clique em "Últimas 20".
           </td>
         </tr>
       </tbody>
@@ -49,3 +102,21 @@
   </div>
 
 </section>
+
+<div id="modalAuditoria" class="modal-auditoria hidden">
+
+  <div class="modal-auditoria-conteudo">
+
+    <div class="modal-auditoria-topo">
+      <h3>Detalhes da Auditoria</h3>
+
+      <button onclick="fecharModalAuditoria()">
+        ✖
+      </button>
+    </div>
+
+    <div id="detalhesAuditoria"></div>
+
+  </div>
+
+</div>

@@ -243,14 +243,31 @@ async function sugerirEndereco() {
       return;
     }
 
-    const dados = await resposta.json();
-    const sugestao = dados.sugestao;
+  const dados = await resposta.json();
 
-    document.getElementById("posicao_id").value = sugestao.id;
+if (!dados.sugestao) {
+  console.log(dados);
+
+  alert(
+    "Nenhuma posição retornada pelo servidor."
+  );
+
+  return;
+}
+
+const sugestao = dados.sugestao;
+
+document.getElementById("posicao_id").value =
+  sugestao.id || "";
     document.getElementById("rua").value = sugestao.rua;
     document.getElementById("coluna").value = sugestao.coluna;
     document.getElementById("nivel").value = sugestao.nivel;
     document.getElementById("endereco").value = sugestao.endereco;
+
+    if (dados.quantidade_sugerida) {
+  document.getElementById("quantidade_unidades").value =
+    dados.quantidade_sugerida;
+}
 
     capacidadePosicaoAtual = sugestao.capacidade_m3;
 

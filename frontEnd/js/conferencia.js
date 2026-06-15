@@ -10,7 +10,6 @@ async function carregarConferencia() {
     entradasConferencia = await res.json();
 
     renderizarConferencia(entradasConferencia);
-
   } catch (err) {
     console.error(err);
     alert("Erro ao carregar conferência.");
@@ -19,12 +18,11 @@ async function carregarConferencia() {
 
 function renderizarConferencia(entradas) {
   const lista = document.getElementById("listaConferencia");
-
   if (!lista) return;
 
   lista.innerHTML = "";
 
-  if (entradas.length === 0) {
+  if (!entradas || entradas.length === 0) {
     lista.innerHTML = `
       <div class="sem-registro">
         Nenhuma NF pendente para conferência.
@@ -36,14 +34,15 @@ function renderizarConferencia(entradas) {
   const notas = {};
 
   entradas.forEach(e => {
-    const chave = `${e.numero_nf}-${e.serie_nf || ""}`;
+    const chave = `${e.numero_nf}-${e.serie_nf || ""}-${e.fornecedor_id || ""}`;
 
     if (!notas[chave]) {
       notas[chave] = {
         numero_nf: e.numero_nf,
         serie_nf: e.serie_nf,
         fornecedor_nome: e.fornecedor_nome || "-",
-        data_nf: e.data_nf,
+        data_nf: e.data_nf_formatada || e.data_nf || "-",
+        status_conferencia: e.status_conferencia || "PENDENTE",
         itens: []
       };
     }
@@ -51,230 +50,202 @@ function renderizarConferencia(entradas) {
     notas[chave].itens.push(e);
   });
 
-  Object.values(notas).forEach(nf => {
-    const itensHtml = nf.itens.map(item => `
-      <tr>
-        <td>${item.produto_nome || "-"}</td>
-        <td>${item.produto_codigo || "-"}</td>
-      <td id="qtd-nf-${item.id}">
-  ${item.quantidade || 0}
-</td>
+  Object.values(notas).forEach((nf, index) => {
+    const totalItens = nf.itens.length;
 
-        <td>
-          <input
-            type="number"
-            min="0"
-            class="input-contagem"
-            id="contagem-${item.id}"
-            value="${item.quantidade_contada || item.quantidade || 0}"
-          >
-        </td>
+    const qtdPendente = nf.itens.filter(i =>
+      !i.status_conferencia || i.status_conferencia === "PENDENTE"
+    ).length;
 
-        <td>${item.lote || "-"}</td>
+    const qtdDivergente = nf.itens.filter(i =>
+      i.status_conferencia === "DIVERGENTE"
+    ).length;
 
-        <td>
-          <span class="${classeStatusConferencia(item.status_conferencia)}">
-            ${item.status_conferencia || "PENDENTE"}
-          </span>
-            ${item.status_conferencia === "COMPLEMENTO_PENDENTE" ? `
-  <button onclick="receberComplemento(${item.id}, ${item.quantidade_pendente_complemento || 0})">
-    Receber complemento
-  </button>
-` : ""}
-        </td>
-      </tr>
-    `).join("");
+    const qtdConferido = nf.itens.filter(i =>
+      i.status_conferencia === "CONFERIDO"
+    ).length;
+
+   const itensHtml = nf.itens.map(item => {
+  const qtdNF = Number(item.quantidade || 0);
+
+  const qtdContada =
+    item.quantidade_conferida ??
+    item.quantidade_contada ??
+    "";
+
+  return `
+    <tr>
+      <td>
+        <strong>${item.produto_nome || "-"}</strong>
+        <small>SKU: ${item.produto_codigo || "-"}</small>
+      </td>
+
+      <td>
+        <input
+          type="number"
+          min="0"
+          class="input-contagem"
+          id="qtd_conferida_${item.id}"
+          value="${qtdContada}"
+          placeholder="Digite a qtd contada"
+        >
+      </td>
+
+      <td>${item.lote || "-"}</td>
+
+      <td>
+        <span class="${classeStatusConferencia(item.status_conferencia)}">
+          ${item.status_conferencia || "PENDENTE"}
+        </span>
+      </td>
+
+      <td>
+        <button
+          type="button"
+          class="btn-confirmar-item"
+          onclick="confirmarConferenciaItem(${item.id}, ${qtdNF})"
+        >
+          Confirmar
+        </button>
+      </td>
+    </tr>
+  `;
+}).join("");
 
     lista.innerHTML += `
       <div class="card-nf-conferencia">
-        <div class="topo-nf-conferencia">
+
+        <div class="topo-nf-conferencia" onclick="alternarItensNFConferencia(${index})">
           <div>
             <strong>
               NF ${nf.numero_nf}
               ${nf.serie_nf ? " - Série " + nf.serie_nf : ""}
             </strong>
 
-            <p>
-              Fornecedor: ${nf.fornecedor_nome}
-            </p>
+            <p>Fornecedor: ${nf.fornecedor_nome}</p>
+            <p>Data NF: ${nf.data_nf}</p>
           </div>
 
-          <button
-            class="btn-conferir"
-            onclick='conferirNotaInteira(${JSON.stringify(nf.itens.map(i => i.id))})'
-          >
-            Conferir NF inteira
+          <div class="resumo-conferencia">
+            <span>Total: ${totalItens}</span>
+            <span>Pendentes: ${qtdPendente}</span>
+            <span>Conferidos: ${qtdConferido}</span>
+            <span>Divergentes: ${qtdDivergente}</span>
+          </div>
+
+          <button type="button" class="btn-abrir-nf">
+            Ver produtos
           </button>
         </div>
 
-        <div class="tabela-container">
-          <table class="tabela-itens-conferencia">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>SKU</th>
-                <th>Qtd NF</th>
-                <th>Qtd Contada</th>
-                <th>Lote</th>
-                <th>Status</th>
-              </tr>
-            </thead>
+        <div class="itens-nf-conferencia hidden" id="itens-nf-${index}">
+          <div class="tabela-container">
+            <table class="tabela-itens-conferencia">
+           <thead>
+  <tr>
+    <th>Produto</th>
+    <th>Qtd Conferida</th>
+    <th>Lote</th>
+    <th>Status</th>
+    <th>Ação</th>
+  </tr>
+</thead>
 
-            <tbody>
-              ${itensHtml}
-            </tbody>
-          </table>
+              <tbody>
+                ${itensHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <button
+            type="button"
+            class="btn-conferir-nf"
+            onclick='conferirNotaInteira(${JSON.stringify(nf.itens.map(i => ({
+              id: i.id,
+              quantidade: i.quantidade
+            })))}); event.stopPropagation();'
+          >
+            Conferir todos os itens da NF
+          </button>
         </div>
+
       </div>
     `;
   });
 }
 
-async function receberComplemento(id, pendente) {
-  const qtd = prompt(
-    `Quantidade pendente: ${pendente}\nInforme a quantidade recebida agora:`,
-    pendente
+function alternarItensNFConferencia(index) {
+  const div = document.getElementById(`itens-nf-${index}`);
+  if (!div) return;
+
+  div.classList.toggle("hidden");
+}
+
+async function confirmarConferenciaItem(id, quantidadeNF) {
+  const qtdConferida = Number(
+    document.getElementById(`qtd_conferida_${id}`)?.value || 0
   );
 
-  if (!qtd || Number(qtd) <= 0) return;
-
-  const auditoria = getUsuarioAuditoria();
-
-  const res = await fetch(`http://localhost:3000/conferencia/${id}/complemento`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      quantidade_recebida: Number(qtd),
-      ...auditoria
-    })
-  });
-
-  const msg = await res.text();
-  alert(msg);
-
-  if (res.ok) {
-    carregarConferencia();
+  if (qtdConferida < 0 || isNaN(qtdConferida)) {
+    alert("Informe uma quantidade conferida válida.");
+    return;
   }
-}
 
-async function atualizarStatusConferencia(id, quantidadeNF) {
-  const qtdContada = prompt(
-    `Quantidade na NF: ${quantidadeNF}\nDigite a quantidade contada fisicamente:`,
-    quantidadeNF
-  );
+  let motivo = "";
+  let justificativa = "";
 
-  if (!qtdContada) return;
-
-  const auditoria = getUsuarioAuditoria();
-
-  const res = await fetch(`http://localhost:3000/conferencia/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      quantidade_contada: Number(qtdContada),
-      usuario_edicao_id: auditoria.usuario_id,
-      ...auditoria
-    })
-  });
-
-  const msg = await res.text();
-  alert(msg);
-
-  if (res.ok) {
-    carregarConferencia();
-  }
-}
-
-function filtrarConferencia() {
-  const texto = document
-    .getElementById("buscarConferencia")
-    .value
-    .toLowerCase();
-
-  const filtrados = entradasConferencia.filter(e => {
-    return (
-      String(e.numero_nf || "").toLowerCase().includes(texto) ||
-      String(e.produto_nome || "").toLowerCase().includes(texto) ||
-      String(e.produto_codigo || "").toLowerCase().includes(texto)
-    );
-  });
-
-  renderizarConferencia(filtrados);
-}
-
-function classeStatusConferencia(status) {
-  if (status === "CONFERIDO") return "status-conferido";
-  if (status === "DIVERGENTE") return "status-divergente";
-  return "status-pendente";
-}
-
-function formatarDataConferencia(data) {
-  if (!data) return "";
-  return new Date(data).toLocaleDateString("pt-BR");
-}
-
-async function conferirNotaInteira(ids) {
-  if (!confirm("Deseja conferir todos os itens desta NF?")) return;
-
-  const auditoria = getUsuarioAuditoria();
-
-  for (const id of ids) {
-    const input = document.getElementById(`contagem-${id}`);
-    const quantidadeContada = Number(input?.value);
-
-    const qtdNF = Number(
-      document.getElementById(`qtd-nf-${id}`)?.textContent || 0
+  if (qtdConferida !== Number(quantidadeNF)) {
+    motivo = prompt(
+      "Divergência encontrada.\n\n" +
+      "Escolha o motivo:\n" +
+      "1 - Falta de mercadoria\n" +
+      "2 - Sobra de mercadoria\n" +
+      "3 - Produto avariado\n" +
+      "4 - Produto errado\n" +
+      "5 - Divergência de lote\n" +
+      "6 - Validade incorreta\n" +
+      "7 - Outro"
     );
 
-    if (!input || isNaN(quantidadeContada) || quantidadeContada <= 0) {
-      alert("Informe uma quantidade contada válida para todos os itens.");
+    const motivos = {
+      "1": "FALTA DE MERCADORIA",
+      "2": "SOBRA DE MERCADORIA",
+      "3": "PRODUTO AVARIADO",
+      "4": "PRODUTO ERRADO",
+      "5": "DIVERGÊNCIA DE LOTE",
+      "6": "VALIDADE INCORRETA",
+      "7": "OUTRO"
+    };
+
+    motivo = motivos[motivo];
+
+    if (!motivo) {
+      alert("Motivo inválido.");
       return;
     }
 
-    let decisaoDivergencia = null;
-    let justificativa = null;
+    justificativa = prompt("Informe a justificativa da divergência:");
 
-    if (quantidadeContada !== qtdNF) {
-      const opcao = prompt(
-        `Divergência encontrada!\n\n` +
-        `Quantidade NF: ${qtdNF}\n` +
-        `Quantidade contada: ${quantidadeContada}\n\n` +
-        `Escolha uma opção:\n` +
-        `1 - Aceitar quantidade física\n` +
-        `2 - Complemento pendente\n` +
-        `3 - Devolução pendente`
-      );
-
-      if (!["1", "2", "3"].includes(opcao)) {
-        alert("Opção inválida.");
-        return;
-      }
-
-      if (opcao === "1") decisaoDivergencia = "ACEITAR_FISICO";
-      if (opcao === "2") decisaoDivergencia = "COMPLEMENTO_PENDENTE";
-      if (opcao === "3") decisaoDivergencia = "DEVOLUCAO_PENDENTE";
-
-      justificativa = prompt("Informe a justificativa da divergência:");
-
-      if (!justificativa || justificativa.trim() === "") {
-        alert("Justificativa obrigatória.");
-        return;
-      }
+    if (!justificativa || justificativa.trim() === "") {
+      alert("Justificativa obrigatória para divergência.");
+      return;
     }
 
+    justificativa = justificativa.trim();
+  }
+
+  const auditoria = getUsuarioAuditoria();
+
+  try {
     const res = await fetch(`http://localhost:3000/conferencia/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        quantidade_contada: quantidadeContada,
-        decisao_divergencia: decisaoDivergencia,
-        justificativa_divergencia: justificativa,
+        quantidade_conferida: qtdConferida,
+        motivo,
+        justificativa,
         usuario_edicao_id: auditoria.usuario_id,
         ...auditoria
       })
@@ -286,8 +257,172 @@ async function conferirNotaInteira(ids) {
       alert(msg);
       return;
     }
+
+    alert(msg);
+    carregarConferencia();
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao confirmar conferência.");
+  }
+}
+
+async function conferirNotaInteira(itens) {
+  if (!confirm("Deseja conferir todos os itens desta NF?")) return;
+
+  for (const item of itens) {
+    const id = item.id;
+    const quantidadeNF = Number(item.quantidade || 0);
+
+    const qtdConferida = Number(
+      document.getElementById(`qtd_conferida_${id}`)?.value || 0
+    );
+
+    if (qtdConferida < 0 || isNaN(qtdConferida)) {
+      alert("Informe uma quantidade conferida válida para todos os itens.");
+      return;
+    }
+
+    let motivo = "";
+    let justificativa = "";
+
+    if (qtdConferida !== quantidadeNF) {
+      const opcao = prompt(
+        `Divergência no item ID ${id}\n\n` +
+        `Quantidade NF: ${quantidadeNF}\n` +
+        `Quantidade conferida: ${qtdConferida}\n\n` +
+        "Escolha o motivo:\n" +
+        "1 - Falta de mercadoria\n" +
+        "2 - Sobra de mercadoria\n" +
+        "3 - Produto avariado\n" +
+        "4 - Produto errado\n" +
+        "5 - Divergência de lote\n" +
+        "6 - Validade incorreta\n" +
+        "7 - Outro"
+      );
+
+      const motivos = {
+        "1": "FALTA DE MERCADORIA",
+        "2": "SOBRA DE MERCADORIA",
+        "3": "PRODUTO AVARIADO",
+        "4": "PRODUTO ERRADO",
+        "5": "DIVERGÊNCIA DE LOTE",
+        "6": "VALIDADE INCORRETA",
+        "7": "OUTRO"
+      };
+
+      motivo = motivos[opcao];
+
+      if (!motivo) {
+        alert("Motivo inválido.");
+        return;
+      }
+
+      justificativa = prompt("Informe a justificativa da divergência:");
+
+      if (!justificativa || justificativa.trim() === "") {
+        alert("Justificativa obrigatória para divergência.");
+        return;
+      }
+
+      justificativa = justificativa.trim();
+    }
+
+    await enviarConferenciaItem(id, qtdConferida, motivo, justificativa);
   }
 
-  alert("Conferência registrada ✅");
+  alert("Conferência da NF registrada ✅");
   carregarConferencia();
+}
+
+async function enviarConferenciaItem(id, qtdConferida, motivo, justificativa) {
+  const auditoria = getUsuarioAuditoria();
+
+  const res = await fetch(`http://localhost:3000/conferencia/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      quantidade_conferida: qtdConferida,
+      motivo,
+      justificativa,
+      usuario_edicao_id: auditoria.usuario_id,
+      ...auditoria
+    })
+  });
+
+  const msg = await res.text();
+
+  if (!res.ok) {
+    throw new Error(msg);
+  }
+}
+
+async function confirmarConferenciaItemSemAlert(id, quantidadeNF) {
+  const qtdConferida = Number(
+    document.getElementById(`qtd_conferida_${id}`)?.value || 0
+  );
+
+  const motivo = document.getElementById(`motivo_${id}`)?.value || "";
+  const justificativa = document
+    .getElementById(`justificativa_${id}`)
+    ?.value
+    .trim() || "";
+
+  const auditoria = getUsuarioAuditoria();
+
+  const res = await fetch(`http://localhost:3000/conferencia/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      quantidade_conferida: qtdConferida,
+      motivo,
+      justificativa,
+      usuario_edicao_id: auditoria.usuario_id,
+      ...auditoria
+    })
+  });
+
+  const msg = await res.text();
+
+  if (!res.ok) {
+    throw new Error(msg);
+  }
+}
+
+function filtrarConferencia() {
+  const texto = document
+    .getElementById("buscarConferencia")
+    .value
+    .toLowerCase();
+
+  const statusFiltro =
+    document.getElementById("filtroStatusConferencia").value;
+
+  const filtrados = entradasConferencia.filter(e => {
+    const bateTexto =
+      String(e.numero_nf || "").toLowerCase().includes(texto) ||
+      String(e.fornecedor_nome || "").toLowerCase().includes(texto) ||
+      String(e.produto_nome || "").toLowerCase().includes(texto) ||
+      String(e.produto_codigo || "").toLowerCase().includes(texto);
+
+    const statusAtual = e.status_conferencia || "PENDENTE";
+
+    const bateStatus =
+      statusFiltro === "TODOS" ||
+      statusAtual === statusFiltro;
+
+    return bateTexto && bateStatus;
+  });
+
+  renderizarConferencia(filtrados);
+}
+
+function classeStatusConferencia(status) {
+  if (status === "CONFERIDO") return "status-conferido";
+  if (status === "DIVERGENTE") return "status-divergente";
+  return "status-pendente";
 }

@@ -11,6 +11,7 @@ function iniciarEntrada() {
   carregarProdutosEntrada();
   carregarEntradas();
   aplicarMascarasEntrada();
+  restaurarRascunhoNF();
 
   const produtoBusca = document.getElementById("produtoBusca");
   const produtoId = document.getElementById("produto_id");
@@ -37,7 +38,7 @@ if (btnImportarXML) {
     const valor = produtoBusca.value;
 
     const produtoSelecionado = produtosEntrada.find(p =>
-      valor === `${p.nome} | SKU: ${p.codigo || "-"} | Estoque: ${p.quantidade_estoque || 0}`
+      valor === `${p.nome} | SKU: ${p.codigo || "-"}`
     );
 
     produtoId.value = produtoSelecionado ? produtoSelecionado.id : "";
@@ -59,10 +60,20 @@ if (btnImportarXML) {
   if (campo) {
     campo.addEventListener("input", calcularTotaisNF);
   }
+
+  document.querySelectorAll("#formEntrada input, #formEntrada select")
+  .forEach(campo => {
+    campo.addEventListener("input", salvarRascunhoNF);
+    campo.addEventListener("change", salvarRascunhoNF);
+  });
+
 });
 
-  document.getElementById("btnGerarImpostos")
-    .addEventListener("click", gerarImpostosSimulados);
+ document.getElementById("btnGerarImpostos")
+  .addEventListener("click", () => {
+    gerarImpostosSimulados();
+    salvarRascunhoNF();
+  });
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -109,6 +120,7 @@ if (btnImportarXML) {
     alert(msg);
 
 form.reset();
+limparRascunhoNF();
 document.getElementById("produto_id").value = "";
 
 itensNF = [];
@@ -219,6 +231,72 @@ function adicionarItemNF() {
       document.getElementById("validade").value
     )
   };
+
+  function salvarRascunhoNF() {
+  const dados = {
+    fornecedor_id: document.getElementById("fornecedor_id")?.value || "",
+    numero_nf: document.getElementById("numero_nf")?.value || "",
+    serie_nf: document.getElementById("serie_nf")?.value || "",
+    data_nf: document.getElementById("data_nf")?.value || "",
+
+    produtoBusca: document.getElementById("produtoBusca")?.value || "",
+    produto_id: document.getElementById("produto_id")?.value || "",
+
+    quantidade: document.getElementById("quantidade")?.value || "",
+    custo_unitario_sem_imposto:
+      document.getElementById("custo_unitario_sem_imposto")?.value || "",
+
+    icms_percentual:
+      document.getElementById("icms_percentual")?.value || "",
+
+    ipi_percentual:
+      document.getElementById("ipi_percentual")?.value || "",
+
+    pis_percentual:
+      document.getElementById("pis_percentual")?.value || "",
+
+    cofins_percentual:
+      document.getElementById("cofins_percentual")?.value || "",
+
+    frete: document.getElementById("frete")?.value || "",
+    seguro: document.getElementById("seguro")?.value || "",
+    outras_despesas:
+      document.getElementById("outras_despesas")?.value || "",
+
+    lote: document.getElementById("lote")?.value || "",
+    validade: document.getElementById("validade")?.value || "",
+
+    itensNF
+  };
+
+  localStorage.setItem(
+    "rascunhoNF",
+    JSON.stringify(dados)
+  );
+}
+
+function restaurarRascunhoNF() {
+  const dados =
+    JSON.parse(localStorage.getItem("rascunhoNF"));
+
+  if (!dados) return;
+
+  Object.keys(dados).forEach(chave => {
+    const campo = document.getElementById(chave);
+
+    if (campo) {
+      campo.value = dados[chave];
+    }
+  });
+
+  itensNF = dados.itensNF || [];
+
+  renderizarItensNF();
+}
+
+function limparRascunhoNF() {
+  localStorage.removeItem("rascunhoNF");
+}
 
   itensNF.push(item);
   bloquearCabecalhoNF();
@@ -455,7 +533,7 @@ async function carregarProdutosEntrada() {
   produtos.forEach(p => {
     datalist.innerHTML += `
       <option
-        value="${p.nome} | SKU: ${p.codigo || "-"} | Estoque: ${p.quantidade_estoque || 0}"
+        value="${p.nome} | SKU: ${p.codigo || "-"}"
       ></option>
     `;
   });
@@ -560,16 +638,9 @@ function formatarData(data) {
 }
 
 async function importarXMLNFe() {
-  console.log("Botão importar XML clicado");
-
   const inputXML = document.getElementById("xmlNfe");
 
-  if (!inputXML) {
-    alert("Campo xmlNfe não encontrado no HTML.");
-    return;
-  }
-
-  if (!inputXML.files.length) {
+  if (!inputXML || !inputXML.files.length) {
     alert("Selecione um arquivo XML da NF-e.");
     return;
   }
@@ -586,105 +657,68 @@ async function importarXMLNFe() {
     const texto = await res.text();
 
     if (!res.ok) {
-      console.error("Erro backend:", texto);
       alert(texto);
       return;
     }
 
     const dados = JSON.parse(texto);
 
-    console.log("XML importado:", dados);
-
     document.getElementById("numero_nf").value = dados.numero_nf || "";
     document.getElementById("serie_nf").value = dados.serie_nf || "";
     document.getElementById("data_nf").value = dados.data_nf || "";
 
-    if (dados.fornecedor && dados.fornecedor.id) {
+    if (dados.fornecedor?.id) {
       document.getElementById("fornecedor_id").value = dados.fornecedor.id;
     } else {
-      alert("Fornecedor não encontrado. Selecione manualmente.");
+      alert("Fornecedor não encontrado. Cadastre ou selecione manualmente.");
     }
 
     itensNF = [];
 
-    let produtosNaoEncontrados = [];
+    for (const itemXML of dados.itens) {
+      const codigoXML = String(itemXML.codigo_produto_xml || "").trim();
 
-    dados.itens.forEach(itemXML => {
       const produto = produtosEntrada.find(p =>
+        String(p.codigo_xml || "").trim() === codigoXML ||
+        String(p.codigo || "").trim() === codigoXML
+      );
 
-  String(p.codigo_xml || "").trim() ===
-  String(itemXML.codigo_produto_xml || "").trim()
+      if (!produto) {
+        abrirModalVinculo(itemXML);
+        return;
+      }
 
-);
+      const item = {
+        produto_id: Number(produto.id),
+        produto_nome: produto.nome,
 
-     if (!produto) {
+        quantidade: Number(itemXML.quantidade || 0),
+        peso_unitario: Number(itemXML.peso_unitario || produto.peso || 0),
 
-  abrirModalVinculo(itemXML);
+        custo_unitario_sem_imposto: Number(itemXML.custo_unitario_sem_imposto || 0),
 
-  return;
-}
+        icms_percentual: Number(itemXML.icms_percentual || 0),
+        ipi_percentual: Number(itemXML.ipi_percentual || 0),
+        pis_percentual: Number(itemXML.pis_percentual || 0),
+        cofins_percentual: Number(itemXML.cofins_percentual || 0),
 
-      itensNF.push({
-  produto_id: Number(produto.id),
+        frete: Number(itemXML.frete || 0),
+        seguro: Number(itemXML.seguro || 0),
+        outras_despesas: Number(itemXML.outras_despesas || 0),
 
-  produto_nome:
-    produto.nome || itemXML.produto_nome_xml || "-",
+        subtotal: Number(itemXML.subtotal || 0),
+        valor_impostos: Number(itemXML.valor_impostos || 0),
+        custo_total_com_imposto: Number(itemXML.custo_total_com_imposto || 0),
+        custo_unitario_com_imposto: Number(itemXML.custo_unitario_com_imposto || 0),
 
-  quantidade: Number(itemXML.quantidade || 0),
+        lote: itemXML.lote || null,
+        validade: itemXML.validade || null
+      };
 
-  peso_unitario: Number(
-    itemXML.peso_unitario ||
-    produto.peso ||
-    0
-  ),
+      itensNF.push(item);
 
-  custo_unitario_sem_imposto: Number(
-    itemXML.custo_unitario_sem_imposto || 0
-  ),
-
-  icms_percentual: Number(
-    itemXML.icms_percentual || 0
-  ),
-
-  ipi_percentual: Number(
-    itemXML.ipi_percentual || 0
-  ),
-
-  pis_percentual: Number(
-    itemXML.pis_percentual || 0
-  ),
-
-  cofins_percentual: Number(
-    itemXML.cofins_percentual || 0
-  ),
-
-  frete: Number(itemXML.frete || 0),
-
-  seguro: Number(itemXML.seguro || 0),
-
-  outras_despesas: Number(
-    itemXML.outras_despesas || 0
-  ),
-
-  subtotal: Number(itemXML.subtotal || 0),
-
-  valor_impostos: Number(
-    itemXML.valor_impostos || 0
-  ),
-
-  custo_total_com_imposto: Number(
-    itemXML.custo_total_com_imposto || 0
-  ),
-
-  custo_unitario_com_imposto: Number(
-    itemXML.custo_unitario_com_imposto || 0
-  ),
-
-  lote: itemXML.lote || null,
-
-  validade: itemXML.validade || null
-});
-    });
+      preencherCamposItemXML(produto, item);
+    }
 
     renderizarItensNF();
 
@@ -692,20 +726,14 @@ async function importarXMLNFe() {
       bloquearCabecalhoNF();
     }
 
-    if (produtosNaoEncontrados.length > 0) {
-      alert(
-        "Produtos não encontrados pelo código/SKU:\n\n" +
-        produtosNaoEncontrados.join("\n")
-      );
-    } else {
-      alert("XML importado com sucesso ✅");
-    }
+    alert("XML importado com sucesso ✅");
 
   } catch (err) {
-    console.error("Erro ao importar XML:", err);
-    alert("Erro ao importar XML. Veja o console.");
+    console.error(err);
+    alert("Erro ao importar XML da NF-e.");
   }
 }
+
 
 function abrirModalVinculo(itemXML) {
 
@@ -792,4 +820,119 @@ async function salvarVinculoProdutoXML() {
 
     alert("Erro ao vincular produto XML.");
   }
+}
+
+function preencherCamposItemXML(produto, item) {
+  document.getElementById("produtoBusca").value =
+    `${produto.nome} | SKU: ${produto.codigo || "-"}`;
+
+  document.getElementById("produto_id").value = produto.id;
+
+  document.getElementById("quantidade").value =
+    item.quantidade;
+
+  document.getElementById("peso_unitario").value =
+    item.peso_unitario;
+
+  document.getElementById("custo_unitario_sem_imposto").value =
+    item.custo_unitario_sem_imposto.toFixed(2);
+
+  document.getElementById("icms_percentual").value =
+    item.icms_percentual;
+
+  document.getElementById("ipi_percentual").value =
+    item.ipi_percentual;
+
+  document.getElementById("pis_percentual").value =
+    item.pis_percentual;
+
+  document.getElementById("cofins_percentual").value =
+    item.cofins_percentual;
+
+  document.getElementById("frete").value =
+    item.frete.toFixed(2);
+
+  document.getElementById("seguro").value =
+    item.seguro.toFixed(2);
+
+  document.getElementById("outras_despesas").value =
+    item.outras_despesas.toFixed(2);
+
+  document.getElementById("subtotal").value =
+    item.subtotal.toFixed(2);
+
+  document.getElementById("valor_impostos").value =
+    item.valor_impostos.toFixed(2);
+
+  document.getElementById("custo_total_com_imposto").value =
+    item.custo_total_com_imposto.toFixed(2);
+
+  document.getElementById("custo_unitario_com_imposto").value =
+    item.custo_unitario_com_imposto.toFixed(2);
+
+  document.getElementById("lote").value =
+    item.lote || "";
+
+  document.getElementById("validade").value =
+    item.validade || "";
+}
+
+function salvarRascunhoNF() {
+  const rascunho = {
+    fornecedor_id: document.getElementById("fornecedor_id")?.value || "",
+    numero_nf: document.getElementById("numero_nf")?.value || "",
+    serie_nf: document.getElementById("serie_nf")?.value || "",
+    data_nf: document.getElementById("data_nf")?.value || "",
+    produtoBusca: document.getElementById("produtoBusca")?.value || "",
+    produto_id: document.getElementById("produto_id")?.value || "",
+    quantidade: document.getElementById("quantidade")?.value || "",
+    custo_unitario_sem_imposto: document.getElementById("custo_unitario_sem_imposto")?.value || "",
+    icms_percentual: document.getElementById("icms_percentual")?.value || "",
+    ipi_percentual: document.getElementById("ipi_percentual")?.value || "",
+    pis_percentual: document.getElementById("pis_percentual")?.value || "",
+    cofins_percentual: document.getElementById("cofins_percentual")?.value || "",
+    frete: document.getElementById("frete")?.value || "",
+    seguro: document.getElementById("seguro")?.value || "",
+    outras_despesas: document.getElementById("outras_despesas")?.value || "",
+    subtotal: document.getElementById("subtotal")?.value || "",
+    valor_impostos: document.getElementById("valor_impostos")?.value || "",
+    custo_total_com_imposto: document.getElementById("custo_total_com_imposto")?.value || "",
+    custo_unitario_com_imposto: document.getElementById("custo_unitario_com_imposto")?.value || "",
+    lote: document.getElementById("lote")?.value || "",
+    validade: document.getElementById("validade")?.value || "",
+    peso_unitario: document.getElementById("peso_unitario")?.value || "",
+    itensNF
+  };
+
+  localStorage.setItem("rascunhoNF", JSON.stringify(rascunho));
+}
+
+function restaurarRascunhoNF() {
+  const dados = localStorage.getItem("rascunhoNF");
+
+  if (!dados) return;
+
+  const rascunho = JSON.parse(dados);
+
+  Object.keys(rascunho).forEach(chave => {
+    if (chave === "itensNF") return;
+
+    const campo = document.getElementById(chave);
+
+    if (campo) {
+      campo.value = rascunho[chave] || "";
+    }
+  });
+
+  itensNF = rascunho.itensNF || [];
+
+  renderizarItensNF();
+
+  if (itensNF.length > 0) {
+    bloquearCabecalhoNF();
+  }
+}
+
+function limparRascunhoNF() {
+  localStorage.removeItem("rascunhoNF");
 }

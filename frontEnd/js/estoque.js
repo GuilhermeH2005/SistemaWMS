@@ -27,7 +27,7 @@ function renderizarEstoque(produtos) {
   if (produtos.length === 0) {
     lista.innerHTML = `
       <tr>
-        <td colspan="11" class="sem-registro">
+        <td colspan="12" class="sem-registro">
           Nenhum produto encontrado.
         </td>
       </tr>

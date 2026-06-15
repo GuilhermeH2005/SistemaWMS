@@ -1,0 +1,34 @@
+<h2 class="titulo-pagina">Divergências de Conferência</h2>
+
+<section class="card-lista">
+
+  <div class="topo-lista">
+    <div>
+      <h3 class="subtitulo">Divergências Registradas</h3>
+      <p class="descricao-pagina">
+        Resolva divergências por complemento, devolução, abatimento ou resolução manual.
+      </p>
+    </div>
+
+    <div class="filtros-conferencia">
+      <input
+        type="text"
+        id="buscarDivergencia"
+        placeholder="Buscar por NF, fornecedor ou produto..."
+        oninput="carregarDivergencias()"
+      >
+
+      <select id="filtroStatusDivergencia" onchange="carregarDivergencias()">
+        <option value="TODOS">Todos</option>
+        <option value="ABERTA">Abertas</option>
+        <option value="AGUARDANDO_COMPLEMENTO">Aguardando complemento</option>
+        <option value="DEVOLUCAO">Devolução</option>
+        <option value="ABATIMENTO">Abatimento</option>
+        <option value="RESOLVIDA">Resolvidas</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="listaDivergencias"></div>
+
+</section>

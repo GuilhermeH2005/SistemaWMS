@@ -21,10 +21,13 @@
   <link rel="stylesheet" href="css/configuracoes.css">
   <link rel="stylesheet" href="css/ajuste-estoque.css">
   <link rel="stylesheet" href="css/conferencia.css">
+  <link rel="stylesheet" href="css/divergencias.css">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/enderecamento.css">
+  <link rel="stylesheet" href="css/auditoria.css">
   <link rel="stylesheet" href="css/posicoes.css">
   <link rel="stylesheet" href="css/configuracoes-gerais.css">
+  <link rel="stylesheet" href="css/clientes.css">
 </head>
 
 <body>
@@ -117,6 +120,11 @@
             )">
               Conferência
             </li>
+
+          <li onclick="carregarPagina('pages/divergencias.html', 'divergencias')">
+                 Divergências
+          </li>
+</li>
 
           </ul>
 
@@ -255,6 +263,12 @@
           </div>
 
           <ul class="submenu">
+
+            <li onclick="carregarPagina(
+              'pages/clientes.html', 'clientes' )"
+            >
+              Cliente
+          </li>
 
             <li onclick="carregarPagina(
               'pages/nota_fiscal.html',
