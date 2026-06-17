@@ -1,0 +1,147 @@
+<h2 class="titulo-pagina">Nota Fiscal / Saída</h2>
+
+<section class="card-nf">
+  <h3 class="subtitulo">Gerar Nota Fiscal</h3>
+
+  <form id="formNotaFiscal" class="form-nf">
+
+    <div class="campo-form">
+      <label>Tipo da Nota</label>
+      <select id="tipo_nf" required onchange="alterarTipoNotaFiscal()">
+        <option value="">Selecione</option>
+        <option value="VENDA">Venda</option>
+        <option value="DEVOLUCAO_FORNECEDOR">Devolução ao Fornecedor</option>
+        <option value="DEVOLUCAO_CLIENTE">Devolução de Cliente</option>
+      </select>
+    </div>
+
+    <div class="campo-form">
+      <label>Número NF</label>
+      <input type="text" id="numero_nf_saida" placeholder="Número da NF" required>
+    </div>
+
+    <div class="campo-form">
+      <label>Série</label>
+      <input type="text" id="serie_nf_saida" placeholder="Série">
+    </div>
+
+    <div class="campo-form">
+      <label>Data NF</label>
+      <input type="date" id="data_nf_saida" required>
+    </div>
+
+    <div class="campo-form campo-venda">
+      <label>Pedido Separado</label>
+      <select id="pedido_id">
+        <option value="">Selecione o pedido</option>
+      </select>
+    </div>
+
+    <div class="campo-form campo-fornecedor hidden">
+      <label>Fornecedor</label>
+      <select id="fornecedor_id_nf">
+        <option value="">Selecione o fornecedor</option>
+      </select>
+    </div>
+
+    <div class="campo-form campo-cliente hidden">
+      <label>Cliente</label>
+      <select id="cliente_id_nf">
+        <option value="">Selecione o cliente</option>
+      </select>
+    </div>
+
+    <div class="campo-form campo-observacao">
+      <label>Observação</label>
+      <input type="text" id="observacao_nf" placeholder="Observação">
+    </div>
+
+  </form>
+
+  <section id="areaItensNota" class="area-itens-nota hidden">
+
+    <h3 class="subtitulo">Itens da Nota</h3>
+
+    <div class="form-item-nf">
+
+      <div class="campo-form">
+        <label>Produto</label>
+        <input
+          type="text"
+          id="produtoBuscaNF"
+          list="listaProdutosNF"
+          placeholder="Digite o produto ou SKU"
+        >
+        <datalist id="listaProdutosNF"></datalist>
+        <input type="hidden" id="produto_id_nf">
+      </div>
+
+      <div class="campo-form">
+        <label>Quantidade</label>
+        <input type="number" id="quantidade_nf" min="1" placeholder="Quantidade">
+      </div>
+
+      <div class="campo-form">
+        <label>Valor Unitário</label>
+        <input type="number" id="valor_unitario_nf" step="0.01" placeholder="Valor unitário">
+      </div>
+
+      <button type="button" onclick="adicionarItemNotaFiscal()">
+        Adicionar Item
+      </button>
+
+    </div>
+
+    <div class="tabela-container">
+      <table class="tabela-nf">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>SKU</th>
+            <th>Qtd</th>
+            <th>Valor Unit.</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+
+        <tbody id="listaItensNFsaida">
+          <tr>
+            <td colspan="5">Nenhum item adicionado.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <button class="btn-salvar-nf" onclick="salvarNotaFiscal()">
+    Emitir Nota
+  </button>
+
+</section>
+
+<section class="card-lista">
+  <h3 class="subtitulo">Notas Emitidas</h3>
+
+  <div class="tabela-container">
+    <table class="tabela-nf">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tipo</th>
+          <th>Número</th>
+          <th>Série</th>
+          <th>Data</th>
+          <th>Status</th>
+          <th>Observação</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaNotasFiscais">
+        <tr>
+          <td colspan="7">Carregando notas...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

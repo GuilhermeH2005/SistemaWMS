@@ -2701,18 +2701,34 @@ app.get("/dashboard", (req, res) => {
     SELECT
       (SELECT COUNT(*) FROM produto) AS total_produtos,
       (SELECT COUNT(*) FROM fornecedor) AS total_fornecedores,
+      (SELECT COUNT(*) FROM cliente) AS total_clientes,
+
       (SELECT COUNT(*) FROM entrada_mercadoria) AS total_entradas,
       (SELECT IFNULL(SUM(quantidade_estoque), 0) FROM produto) AS estoque_total,
       (SELECT COUNT(*) FROM produto WHERE quantidade_estoque <= estoque_minimo) AS produtos_alerta,
+
       (SELECT COUNT(*) FROM ajuste_estoque) AS total_ajustes,
+
       (SELECT COUNT(*) FROM entrada_mercadoria WHERE status_conferencia = 'PENDENTE') AS conferencias_pendentes,
+
+      (SELECT COUNT(*) FROM entrada_mercadoria WHERE status_divergencia IS NOT NULL AND status_divergencia <> 'RESOLVIDA') AS divergencias_abertas,
+
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'ABERTO') AS pedidos_abertos,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'EM_PICKING') AS pedidos_picking,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'SEPARADO') AS pedidos_separados,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'EXPEDIDO') AS pedidos_expedidos,
+
+      (SELECT COUNT(*) FROM nota_fiscal_saida) AS notas_emitidas,
+
       (SELECT COUNT(*) FROM auditoria) AS total_auditorias
   `;
 
   db.query(sql, (err, result) => {
     if (err) {
       console.error("Erro ao buscar dashboard:", err);
-      return res.status(500).json({ erro: "Erro ao buscar dados do dashboard" });
+      return res.status(500).json({
+        erro: "Erro ao buscar dados do dashboard"
+      });
     }
 
     res.json(result[0]);
@@ -3926,6 +3942,1208 @@ app.delete("/clientes/:id", (req, res) => {
     res.send("Cliente desativado com sucesso ✅");
   });
 });
+
+/* =========================
+   PEDIDOS
+========================= */
+
+app.post("/pedidos", (req, res) => {
+  const {
+    cliente_id,
+    observacao,
+    itens,
+    usuario_id,
+    usuario_nome
+  } = req.body;
+
+  if (!cliente_id) {
+    return res.status(400).send("Cliente é obrigatório ❌");
+  }
+
+  if (!itens || itens.length === 0) {
+    return res.status(400).send("Adicione pelo menos um item ❌");
+  }
+
+  db.beginTransaction((err) => {
+    if (err) {
+      return res.status(500).send("Erro ao iniciar pedido ❌");
+    }
+
+    const sqlPedido = `
+      INSERT INTO pedido_cliente
+      (
+        cliente_id,
+        observacao,
+        usuario_criacao_id
+      )
+      VALUES (?, ?, ?)
+    `;
+
+    db.query(
+      sqlPedido,
+      [
+        cliente_id,
+        observacao || null,
+        usuario_id || null
+      ],
+      (err, result) => {
+        if (err) {
+          console.error(err);
+
+          return db.rollback(() => {
+            res.status(500).send("Erro ao salvar pedido ❌");
+          });
+        }
+
+        const pedidoId = result.insertId;
+
+        const valoresItens = itens.map(item => [
+          pedidoId,
+          item.produto_id,
+          item.quantidade,
+          0
+        ]);
+
+        const sqlItens = `
+          INSERT INTO pedido_cliente_item
+          (
+            pedido_id,
+            produto_id,
+            quantidade,
+            quantidade_separada
+          )
+          VALUES ?
+        `;
+
+        db.query(sqlItens, [valoresItens], (err) => {
+          if (err) {
+            console.error(err);
+
+            return db.rollback(() => {
+              res.status(500).send("Erro ao salvar itens do pedido ❌");
+            });
+          }
+
+          registrarAuditoria(
+            usuario_id,
+            usuario_nome,
+            "CADASTRO PEDIDO",
+            "pedido_cliente",
+            pedidoId,
+            `Pedido ${pedidoId} cadastrado com ${itens.length} item(ns).`
+          );
+
+          db.commit((err) => {
+            if (err) {
+              return db.rollback(() => {
+                res.status(500).send("Erro ao finalizar pedido ❌");
+              });
+            }
+
+            res.send("Pedido cadastrado com sucesso ✅");
+          });
+        });
+      }
+    );
+  });
+});
+
+app.get("/pedidos", (req, res) => {
+  const busca = req.query.busca || "";
+
+  let sql = `
+    SELECT
+      pc.id,
+      pc.cliente_id,
+      pc.data_pedido,
+      pc.status,
+      pc.observacao,
+      c.razao_social AS cliente_nome
+    FROM pedido_cliente pc
+    INNER JOIN cliente c
+      ON pc.cliente_id = c.id
+    WHERE 1 = 1
+  `;
+
+  const valores = [];
+
+  if (busca) {
+    sql += `
+      AND (
+        pc.id LIKE ?
+        OR c.razao_social LIKE ?
+        OR pc.status LIKE ?
+      )
+    `;
+
+    valores.push(
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`
+    );
+  }
+
+  sql += `
+    ORDER BY pc.id DESC
+  `;
+
+  db.query(sql, valores, (err, pedidos) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar pedidos ❌");
+    }
+
+    if (pedidos.length === 0) {
+      return res.json([]);
+    }
+
+    const ids = pedidos.map(p => p.id);
+
+    const sqlItens = `
+      SELECT
+        pci.pedido_id,
+        pci.produto_id,
+        pci.quantidade,
+        pci.quantidade_separada,
+        p.nome AS produto_nome,
+        p.codigo AS produto_codigo
+      FROM pedido_cliente_item pci
+      INNER JOIN produto p
+        ON pci.produto_id = p.id
+      WHERE pci.pedido_id IN (?)
+    `;
+
+    db.query(sqlItens, [ids], (err, itens) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao buscar itens dos pedidos ❌");
+      }
+
+      const pedidosComItens = pedidos.map(pedido => {
+        const itensPedido = itens.filter(
+          item => Number(item.pedido_id) === Number(pedido.id)
+        );
+
+        return {
+          ...pedido,
+          total_itens: itensPedido.length,
+          itens: JSON.stringify(itensPedido)
+        };
+      });
+
+      res.json(pedidosComItens);
+    });
+  });
+});
+
+app.put("/pedidos/:id/cancelar", (req, res) => {
+  const { id } = req.params;
+
+  const {
+    usuario_id,
+    usuario_nome
+  } = req.body;
+
+  const sql = `
+    UPDATE pedido_cliente
+    SET status = 'CANCELADO'
+    WHERE id = ?
+      AND status IN ('ABERTO', 'EM_PICKING')
+  `;
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao cancelar pedido ❌");
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(400).send("Pedido não pode ser cancelado ❌");
+    }
+
+    registrarAuditoria(
+      usuario_id,
+      usuario_nome,
+      "CANCELAMENTO PEDIDO",
+      "pedido_cliente",
+      id,
+      `Pedido ${id} cancelado.`
+    );
+
+    res.send("Pedido cancelado com sucesso ✅");
+  });
+});
+
+/* =========================
+   PICKING
+========================= */
+
+function consumirEstoqueFIFO(produtoId, quantidadeNecessaria, callback) {
+  const sqlLotes = `
+    SELECT
+      id,
+      produto_id,
+      numero_nf,
+      lote,
+      validade,
+      data_nf,
+      quantidade_disponivel
+    FROM entrada_mercadoria
+    WHERE
+      produto_id = ?
+      AND status_conferencia = 'CONFERIDO'
+      AND quantidade_disponivel > 0
+    ORDER BY
+      CASE WHEN validade IS NULL THEN 1 ELSE 0 END,
+      validade ASC,
+      data_nf ASC,
+      id ASC
+  `;
+
+  db.query(sqlLotes, [produtoId], (err, lotes) => {
+    if (err) return callback(err);
+
+    let restante = Number(quantidadeNecessaria);
+    const consumo = [];
+
+    for (const lote of lotes) {
+      if (restante <= 0) break;
+
+      const disponivel = Number(lote.quantidade_disponivel || 0);
+      const consumir = Math.min(disponivel, restante);
+
+      consumo.push({
+        entrada_id: lote.id,
+        lote: lote.lote,
+        validade: lote.validade,
+        numero_nf: lote.numero_nf,
+        quantidade: consumir
+      });
+
+      restante -= consumir;
+    }
+
+    if (restante > 0) {
+      return callback(new Error("Estoque por lote insuficiente para FIFO/FEFO"));
+    }
+
+    const updates = consumo.map(item => {
+      return new Promise((resolve, reject) => {
+        db.query(
+          `
+            UPDATE entrada_mercadoria
+            SET quantidade_disponivel = quantidade_disponivel - ?
+            WHERE id = ?
+          `,
+          [item.quantidade, item.entrada_id],
+          (err) => {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
+      });
+    });
+
+    Promise.all(updates)
+      .then(() => callback(null, consumo))
+      .catch(callback);
+  });
+}
+
+app.get("/picking", (req, res) => {
+  const sql = `
+    SELECT
+      pc.id AS pedido_id,
+      c.razao_social AS cliente_nome,
+
+      p.id AS produto_id,
+      p.nome AS produto_nome,
+      p.codigo AS produto_codigo,
+      p.quantidade_estoque,
+
+      pci.quantidade,
+      IFNULL(pci.quantidade_separada, 0) AS quantidade_separada
+
+    FROM pedido_cliente pc
+
+    INNER JOIN pedido_cliente_item pci
+      ON pc.id = pci.pedido_id
+
+    INNER JOIN produto p
+      ON pci.produto_id = p.id
+
+    INNER JOIN cliente c
+      ON pc.cliente_id = c.id
+
+    WHERE
+      pc.status = 'ABERTO'
+      AND (pci.quantidade - IFNULL(pci.quantidade_separada, 0)) > 0
+
+    ORDER BY p.nome
+  `;
+
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar picking ❌");
+    }
+
+    const agrupado = {};
+
+    rows.forEach(r => {
+      if (!agrupado[r.produto_id]) {
+        agrupado[r.produto_id] = {
+          produto_id: r.produto_id,
+          produto_nome: r.produto_nome,
+          produto_codigo: r.produto_codigo,
+          quantidade_estoque: r.quantidade_estoque,
+          total_quantidade: 0,
+          pedidos: []
+        };
+      }
+
+      const pendente =
+        Number(r.quantidade || 0) -
+        Number(r.quantidade_separada || 0);
+
+      agrupado[r.produto_id].total_quantidade += pendente;
+
+      agrupado[r.produto_id].pedidos.push({
+        pedido_id: r.pedido_id,
+        cliente_nome: r.cliente_nome,
+        quantidade: r.quantidade,
+        quantidade_separada: r.quantidade_separada
+      });
+    });
+
+    const resultado = Object.values(agrupado).map(item => ({
+      ...item,
+      pedidos: JSON.stringify(item.pedidos)
+    }));
+
+    res.json(resultado);
+  });
+});
+
+app.put("/picking/iniciar", (req, res) => {
+  const {
+    usuario_id,
+    usuario_nome
+  } = req.body;
+
+  const sql = `
+    UPDATE pedido_cliente
+    SET status = 'EM_PICKING'
+    WHERE status = 'ABERTO'
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao iniciar picking ❌");
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(400).send("Nenhum pedido aberto para picking ❌");
+    }
+
+    registrarAuditoria(
+      usuario_id,
+      usuario_nome,
+      "INÍCIO PICKING",
+      "pedido_cliente",
+      null,
+      `${result.affectedRows} pedido(s) enviado(s) para picking.`
+    );
+
+    res.send("Picking iniciado com sucesso ✅");
+  });
+});
+
+app.put("/picking/separar-produto/:produtoId", (req, res) => {
+  const { produtoId } = req.params;
+
+  const {
+    usuario_id,
+    usuario_nome
+  } = req.body;
+
+  const sqlBusca = `
+    SELECT
+      pc.id AS pedido_id,
+      pc.status,
+      pci.id AS item_id,
+      pci.produto_id,
+      pci.quantidade,
+      IFNULL(pci.quantidade_separada, 0) AS quantidade_separada,
+      p.nome AS produto_nome,
+      p.quantidade_estoque
+    FROM pedido_cliente pc
+
+    INNER JOIN pedido_cliente_item pci
+      ON pc.id = pci.pedido_id
+
+    INNER JOIN produto p
+      ON pci.produto_id = p.id
+
+    WHERE
+      pc.status = 'EM_PICKING'
+      AND pci.produto_id = ?
+      AND (pci.quantidade - IFNULL(pci.quantidade_separada, 0)) > 0
+  `;
+
+  db.query(sqlBusca, [produtoId], (err, itens) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar itens do picking ❌");
+    }
+
+    if (itens.length === 0) {
+      return res.status(404).send("Nenhum item em picking para este produto ❌");
+    }
+
+    const produtoNome = itens[0].produto_nome;
+
+    const totalSeparar = itens.reduce((soma, item) => {
+      return soma +
+        (
+          Number(item.quantidade || 0) -
+          Number(item.quantidade_separada || 0)
+        );
+    }, 0);
+
+    const estoqueAtual = Number(itens[0].quantidade_estoque || 0);
+
+    if (estoqueAtual < totalSeparar) {
+      return res.status(400).send(
+        `Estoque insuficiente para separar ${produtoNome}. Necessário: ${totalSeparar}, estoque: ${estoqueAtual} ❌`
+      );
+    }
+
+    db.beginTransaction((err) => {
+      if (err) {
+        return res.status(500).send("Erro ao iniciar separação ❌");
+      }
+
+      consumirEstoqueFIFO(produtoId, totalSeparar, (err, consumoFIFO) => {
+        if (err) {
+          console.error(err);
+
+          return db.rollback(() => {
+            res.status(400).send(
+              "Erro no FIFO/FEFO: " + err.message + " ❌"
+            );
+          });
+        }
+
+        const updatesItens = itens.map(item => {
+          return new Promise((resolve, reject) => {
+            db.query(
+              `
+                UPDATE pedido_cliente_item
+                SET quantidade_separada = quantidade
+                WHERE id = ?
+              `,
+              [item.item_id],
+              (err) => {
+                if (err) reject(err);
+                else resolve();
+              }
+            );
+          });
+        });
+
+        Promise.all(updatesItens)
+          .then(() => {
+            db.query(
+              `
+                UPDATE produto
+                SET quantidade_estoque = quantidade_estoque - ?
+                WHERE id = ?
+              `,
+              [
+                totalSeparar,
+                produtoId
+              ],
+              (err) => {
+                if (err) {
+                  console.error(err);
+
+                  return db.rollback(() => {
+                    res.status(500).send("Erro ao baixar estoque ❌");
+                  });
+                }
+
+                atualizarPedidosSeparados(
+                  itens,
+                  usuario_id,
+                  usuario_nome,
+                  produtoNome,
+                  totalSeparar,
+                  consumoFIFO,
+                  res
+                );
+              }
+            );
+          })
+          .catch((err) => {
+            console.error(err);
+
+            db.rollback(() => {
+              res.status(500).send("Erro ao atualizar itens do picking ❌");
+            });
+          });
+      });
+    });
+  });
+});
+
+function atualizarPedidosSeparados(
+  itens,
+  usuario_id,
+  usuario_nome,
+  produtoNome,
+  totalSeparar,
+  consumoFIFO,
+  res
+) {
+  const pedidosIds = [
+    ...new Set(itens.map(i => i.pedido_id))
+  ];
+
+  const verificacoes = pedidosIds.map(pedidoId => {
+    return new Promise((resolve, reject) => {
+      db.query(
+        `
+          SELECT
+            COUNT(*) AS pendentes
+          FROM pedido_cliente_item
+          WHERE
+            pedido_id = ?
+            AND quantidade_separada < quantidade
+        `,
+        [pedidoId],
+        (err, result) => {
+          if (err) reject(err);
+          else {
+            resolve({
+              pedidoId,
+              pendentes: Number(result[0].pendentes || 0)
+            });
+          }
+        }
+      );
+    });
+  });
+
+  Promise.all(verificacoes)
+    .then(resultados => {
+      const pedidosSeparados = resultados
+        .filter(r => r.pendentes === 0)
+        .map(r => r.pedidoId);
+
+      const finalizar = () => {
+        registrarAuditoria(
+          usuario_id,
+          usuario_nome,
+          "SEPARAÇÃO PICKING FIFO/FEFO",
+          "pedido_cliente_item",
+          null,
+          `Produto ${produtoNome} separado. Quantidade: ${totalSeparar}. Consumo FIFO/FEFO: ${JSON.stringify(consumoFIFO)}`
+        );
+
+        db.commit((err) => {
+          if (err) {
+            return db.rollback(() => {
+              res.status(500).send("Erro ao finalizar separação ❌");
+            });
+          }
+
+          res.send("Separação confirmada com FIFO/FEFO ✅");
+        });
+      };
+
+      if (pedidosSeparados.length === 0) {
+        return finalizar();
+      }
+
+      db.query(
+        `
+          UPDATE pedido_cliente
+          SET status = 'SEPARADO'
+          WHERE id IN (?)
+        `,
+        [pedidosSeparados],
+        (err) => {
+          if (err) {
+            console.error(err);
+
+            return db.rollback(() => {
+              res.status(500).send("Erro ao atualizar pedidos separados ❌");
+            });
+          }
+
+          finalizar();
+        }
+      );
+    })
+    .catch(err => {
+      console.error(err);
+
+      db.rollback(() => {
+        res.status(500).send("Erro ao verificar pedidos separados ❌");
+      });
+    });
+}
+
+app.get("/fifo/produto/:produtoId", (req, res) => {
+  const { produtoId } = req.params;
+
+  const sql = `
+    SELECT
+      e.id,
+      e.numero_nf,
+      e.lote,
+      e.validade,
+      e.data_nf,
+      e.quantidade_disponivel,
+      p.nome AS produto_nome,
+      p.codigo AS produto_codigo
+    FROM entrada_mercadoria e
+
+    INNER JOIN produto p
+      ON e.produto_id = p.id
+
+    WHERE
+      e.produto_id = ?
+      AND e.status_conferencia = 'CONFERIDO'
+      AND e.quantidade_disponivel > 0
+
+    ORDER BY
+      CASE WHEN e.validade IS NULL THEN 1 ELSE 0 END,
+      e.validade ASC,
+      e.data_nf ASC,
+      e.id ASC
+  `;
+
+  db.query(sql, [produtoId], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar FIFO ❌");
+    }
+
+    res.json(result);
+  });
+});
+
+/* =========================
+   ROMANEIO
+========================= */
+
+app.get("/romaneio", (req, res) => {
+  const sql = `
+    SELECT
+      pc.id,
+      pc.cliente_id,
+      pc.data_pedido,
+      pc.status,
+      pc.observacao,
+
+      c.razao_social AS cliente_nome,
+      c.nome_fantasia,
+      c.cnpj,
+      c.telefone,
+      c.email,
+      c.cep,
+      c.rua,
+      c.numero,
+      c.bairro,
+      c.cidade,
+      c.estado,
+
+      pci.produto_id,
+      pci.quantidade,
+      pci.quantidade_separada,
+
+      p.nome AS produto_nome,
+      p.codigo AS produto_codigo
+
+    FROM pedido_cliente pc
+
+    INNER JOIN cliente c
+      ON pc.cliente_id = c.id
+
+    INNER JOIN pedido_cliente_item pci
+      ON pc.id = pci.pedido_id
+
+    INNER JOIN produto p
+      ON pci.produto_id = p.id
+
+    WHERE pc.status = 'SEPARADO'
+
+    ORDER BY
+      c.cidade,
+      c.bairro,
+      c.razao_social,
+      pc.id
+  `;
+
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar romaneio ❌");
+    }
+
+    const agrupado = {};
+
+    rows.forEach(r => {
+      if (!agrupado[r.id]) {
+        agrupado[r.id] = {
+          id: r.id,
+          cliente_id: r.cliente_id,
+          data_pedido: r.data_pedido,
+          status: r.status,
+          observacao: r.observacao,
+
+          cliente_nome: r.cliente_nome,
+          nome_fantasia: r.nome_fantasia,
+          cnpj: r.cnpj,
+          telefone: r.telefone,
+          email: r.email,
+          cep: r.cep,
+          rua: r.rua,
+          numero: r.numero,
+          bairro: r.bairro,
+          cidade: r.cidade,
+          estado: r.estado,
+
+          total_itens: 0,
+          itens: []
+        };
+      }
+
+      agrupado[r.id].total_itens += 1;
+
+      agrupado[r.id].itens.push({
+        produto_id: r.produto_id,
+        produto_nome: r.produto_nome,
+        produto_codigo: r.produto_codigo,
+        quantidade: r.quantidade,
+        quantidade_separada: r.quantidade_separada
+      });
+    });
+
+    const resultado = Object.values(agrupado).map(pedido => ({
+      ...pedido,
+      itens: JSON.stringify(pedido.itens)
+    }));
+
+    res.json(resultado);
+  });
+});
+
+app.put("/romaneio/:id/expedir", (req, res) => {
+  const { id } = req.params;
+
+  const {
+    usuario_id,
+    usuario_nome
+  } = req.body;
+
+  const sqlBusca = `
+    SELECT
+      pc.id,
+      pc.status,
+      c.razao_social AS cliente_nome
+    FROM pedido_cliente pc
+    INNER JOIN cliente c
+      ON pc.cliente_id = c.id
+    WHERE pc.id = ?
+  `;
+
+  db.query(sqlBusca, [id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar pedido ❌");
+    }
+
+    if (result.length === 0) {
+      return res.status(404).send("Pedido não encontrado ❌");
+    }
+
+    const pedido = result[0];
+
+    if (pedido.status !== "SEPARADO") {
+      return res.status(400).send("Pedido ainda não está separado ❌");
+    }
+
+    const sqlUpdate = `
+      UPDATE pedido_cliente
+      SET status = 'EXPEDIDO'
+      WHERE id = ?
+    `;
+
+    db.query(sqlUpdate, [id], (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao expedir pedido ❌");
+      }
+
+      registrarAuditoria(
+        usuario_id,
+        usuario_nome,
+        "EXPEDIÇÃO ROMANEIO",
+        "pedido_cliente",
+        id,
+        `Pedido ${id} do cliente ${pedido.cliente_nome} marcado como expedido.`
+      );
+
+      res.send("Pedido expedido com sucesso ✅");
+    });
+  });
+});
+
+/* =========================
+   NOTA FISCAL
+========================= */
+
+app.get("/nf/pedidos-separados", (req, res) => {
+  const sql = `
+    SELECT
+      pc.id,
+      c.razao_social AS cliente_nome
+    FROM pedido_cliente pc
+    INNER JOIN cliente c
+      ON pc.cliente_id = c.id
+    WHERE pc.status = 'SEPARADO'
+    ORDER BY pc.id DESC
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar pedidos separados ❌");
+    }
+
+    res.json(result);
+  });
+});
+
+app.get("/notas-fiscais", (req, res) => {
+  const sql = `
+    SELECT *
+    FROM nota_fiscal_saida
+    ORDER BY id DESC
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar notas fiscais ❌");
+    }
+
+    res.json(result);
+  });
+});
+
+app.post("/notas-fiscais", (req, res) => {
+  const {
+    tipo,
+    numero_nf,
+    serie_nf,
+    data_nf,
+    pedido_id,
+    cliente_id,
+    fornecedor_id,
+    observacao,
+    itens,
+    usuario_id,
+    usuario_nome
+  } = req.body;
+
+  if (!tipo || !numero_nf || !data_nf) {
+    return res.status(400).send("Tipo, número e data são obrigatórios ❌");
+  }
+
+  const tiposPermitidos = [
+    "VENDA",
+    "DEVOLUCAO_FORNECEDOR",
+    "DEVOLUCAO_CLIENTE"
+  ];
+
+  if (!tiposPermitidos.includes(tipo)) {
+    return res.status(400).send("Tipo de nota inválido ❌");
+  }
+
+  db.beginTransaction((err) => {
+    if (err) {
+      return res.status(500).send("Erro ao iniciar nota fiscal ❌");
+    }
+
+    const sqlNota = `
+      INSERT INTO nota_fiscal_saida
+      (
+        tipo,
+        numero_nf,
+        serie_nf,
+        data_nf,
+        pedido_id,
+        cliente_id,
+        fornecedor_id,
+        observacao,
+        usuario_id
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+      sqlNota,
+      [
+        tipo,
+        numero_nf,
+        serie_nf || null,
+        data_nf,
+        pedido_id || null,
+        cliente_id || null,
+        fornecedor_id || null,
+        observacao || null,
+        usuario_id || null
+      ],
+      (err, result) => {
+        if (err) {
+          console.error(err);
+          return db.rollback(() => {
+            res.status(500).send("Erro ao salvar nota fiscal ❌");
+          });
+        }
+
+        const notaId = result.insertId;
+
+        if (tipo === "VENDA") {
+          return finalizarNotaVenda(
+            notaId,
+            pedido_id,
+            usuario_id,
+            usuario_nome,
+            res
+          );
+        }
+
+        salvarItensNotaFiscal(
+          notaId,
+          tipo,
+          itens,
+          usuario_id,
+          usuario_nome,
+          res
+        );
+      }
+    );
+  });
+});
+
+function finalizarNotaVenda(notaId, pedidoId, usuario_id, usuario_nome, res) {
+  if (!pedidoId) {
+    return db.rollback(() => {
+      res.status(400).send("Pedido é obrigatório para NF de venda ❌");
+    });
+  }
+
+  const sqlItensPedido = `
+    SELECT
+      pci.produto_id,
+      pci.quantidade,
+      p.preco_venda
+    FROM pedido_cliente_item pci
+    INNER JOIN produto p
+      ON pci.produto_id = p.id
+    WHERE pci.pedido_id = ?
+  `;
+
+  db.query(sqlItensPedido, [pedidoId], (err, itensPedido) => {
+    if (err) {
+      console.error(err);
+      return db.rollback(() => {
+        res.status(500).send("Erro ao buscar itens do pedido ❌");
+      });
+    }
+
+    if (itensPedido.length === 0) {
+      return db.rollback(() => {
+        res.status(400).send("Pedido sem itens ❌");
+      });
+    }
+
+    const valores = itensPedido.map(item => [
+      notaId,
+      item.produto_id,
+      item.quantidade,
+      item.preco_venda || 0
+    ]);
+
+    db.query(
+      `
+        INSERT INTO nota_fiscal_saida_item
+        (
+          nota_id,
+          produto_id,
+          quantidade,
+          valor_unitario
+        )
+        VALUES ?
+      `,
+      [valores],
+      (err) => {
+        if (err) {
+          console.error(err);
+          return db.rollback(() => {
+            res.status(500).send("Erro ao salvar itens da NF ❌");
+          });
+        }
+
+        db.query(
+          `
+            UPDATE pedido_cliente
+            SET status = 'EXPEDIDO'
+            WHERE id = ?
+          `,
+          [pedidoId],
+          (err) => {
+            if (err) {
+              console.error(err);
+              return db.rollback(() => {
+                res.status(500).send("Erro ao expedir pedido ❌");
+              });
+            }
+
+            registrarAuditoria(
+              usuario_id,
+              usuario_nome,
+              "NF VENDA",
+              "nota_fiscal_saida",
+              notaId,
+              `NF de venda ${notaId} emitida para o pedido ${pedidoId}. Estoque não foi baixado novamente, pois já baixou no picking.`
+            );
+
+            db.commit((err) => {
+              if (err) {
+                return db.rollback(() => {
+                  res.status(500).send("Erro ao finalizar NF ❌");
+                });
+              }
+
+              res.send("NF de venda emitida e pedido expedido ✅");
+            });
+          }
+        );
+      }
+    );
+  });
+}
+
+function salvarItensNotaFiscal(notaId, tipo, itens, usuario_id, usuario_nome, res) {
+  if (!itens || itens.length === 0) {
+    return db.rollback(() => {
+      res.status(400).send("Adicione pelo menos um item ❌");
+    });
+  }
+
+  const valores = itens.map(item => [
+    notaId,
+    item.produto_id,
+    item.quantidade,
+    item.valor_unitario || 0
+  ]);
+
+  db.query(
+    `
+      INSERT INTO nota_fiscal_saida_item
+      (
+        nota_id,
+        produto_id,
+        quantidade,
+        valor_unitario
+      )
+      VALUES ?
+    `,
+    [valores],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return db.rollback(() => {
+          res.status(500).send("Erro ao salvar itens da nota ❌");
+        });
+      }
+
+      atualizarEstoqueNotaFiscal(
+        notaId,
+        tipo,
+        itens,
+        usuario_id,
+        usuario_nome,
+        res
+      );
+    }
+  );
+}
+
+function atualizarEstoqueNotaFiscal(notaId, tipo, itens, usuario_id, usuario_nome, res) {
+  const operacao =
+    tipo === "DEVOLUCAO_CLIENTE" ? "+" : "-";
+
+  const updates = itens.map(item => {
+    return new Promise((resolve, reject) => {
+      db.query(
+        `
+          UPDATE produto
+          SET quantidade_estoque = quantidade_estoque ${operacao} ?
+          WHERE id = ?
+        `,
+        [
+          item.quantidade,
+          item.produto_id
+        ],
+        (err) => {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+  });
+
+  Promise.all(updates)
+    .then(() => {
+      registrarAuditoria(
+        usuario_id,
+        usuario_nome,
+        tipo,
+        "nota_fiscal_saida",
+        notaId,
+        `Nota fiscal ${tipo} emitida. Estoque ${tipo === "DEVOLUCAO_CLIENTE" ? "estornado para entrada" : "baixado para devolução ao fornecedor"}.`
+      );
+
+      db.commit((err) => {
+        if (err) {
+          return db.rollback(() => {
+            res.status(500).send("Erro ao finalizar nota fiscal ❌");
+          });
+        }
+
+        if (tipo === "DEVOLUCAO_CLIENTE") {
+          return res.send("Devolução de cliente registrada e estoque estornado ✅");
+        }
+
+        res.send("Devolução ao fornecedor registrada e estoque baixado ✅");
+      });
+    })
+    .catch(err => {
+      console.error(err);
+
+      db.rollback(() => {
+        res.status(500).send("Erro ao atualizar estoque ❌");
+      });
+    });
+}
 
 app.use((req, res) => {
   res.status(404).send("Rota não encontrada ❌");

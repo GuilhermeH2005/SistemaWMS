@@ -1,0 +1,43 @@
+<h2 class="titulo-pagina">Picking</h2>
+
+<section class="card-picking">
+
+  <div class="topo-picking">
+    <div>
+      <h3 class="subtitulo">Pedidos Abertos para Separação</h3>
+      <p>Produtos iguais são agrupados para separação.</p>
+    </div>
+
+    <button onclick="carregarPicking()">
+      🔄 Atualizar
+    </button>
+  </div>
+
+  <div id="resumoPicking" class="resumo-picking"></div>
+
+  <div class="tabela-container">
+    <table class="tabela-picking">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>SKU</th>
+          <th>Total a Separar</th>
+          <th>Estoque</th>
+          <th>Status</th>
+          <th>Detalhes</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaPicking">
+        <tr>
+          <td colspan="6">Carregando picking...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button class="btn-gerar-picking" onclick="iniciarSeparacaoPicking()">
+    Iniciar Picking
+  </button>
+
+</section>

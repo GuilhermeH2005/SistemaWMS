@@ -16,33 +16,38 @@ async function carregarDashboard() {
 
     const dados = await resposta.json();
 
-    document.getElementById("totalProdutos").textContent =
-      dados.total_produtos ?? 0;
+    setDashboardValor("totalProdutos", dados.total_produtos);
+    setDashboardValor("totalFornecedores", dados.total_fornecedores);
+    setDashboardValor("totalClientes", dados.total_clientes);
 
-    document.getElementById("totalFornecedores").textContent =
-      dados.total_fornecedores ?? 0;
+    setDashboardValor("totalEntradas", dados.total_entradas);
+    setDashboardValor("estoqueTotal", dados.estoque_total);
+    setDashboardValor("produtosAlerta", dados.produtos_alerta);
 
-    document.getElementById("totalEntradas").textContent =
-      dados.total_entradas ?? 0;
+    setDashboardValor("conferenciasPendentes", dados.conferencias_pendentes);
+    setDashboardValor("divergenciasAbertas", dados.divergencias_abertas);
 
-    document.getElementById("estoqueTotal").textContent =
-      dados.estoque_total ?? 0;
+    setDashboardValor("pedidosAbertos", dados.pedidos_abertos);
+    setDashboardValor("pedidosPicking", dados.pedidos_picking);
+    setDashboardValor("pedidosSeparados", dados.pedidos_separados);
+    setDashboardValor("pedidosExpedidos", dados.pedidos_expedidos);
 
-    document.getElementById("produtosAlerta").textContent =
-      dados.produtos_alerta ?? 0;
+    setDashboardValor("notasEmitidas", dados.notas_emitidas);
 
-    document.getElementById("totalAjustes").textContent =
-      dados.total_ajustes ?? 0;
-
-    document.getElementById("conferenciasPendentes").textContent =
-      dados.conferencias_pendentes ?? 0;
-
-    document.getElementById("totalAuditorias").textContent =
-      dados.total_auditorias ?? 0;
+    setDashboardValor("totalAjustes", dados.total_ajustes);
+    setDashboardValor("totalAuditorias", dados.total_auditorias);
 
   } catch (erro) {
     console.error("Erro ao carregar dashboard:", erro);
     alert("Erro ao conectar com o servidor");
+  }
+}
+
+function setDashboardValor(id, valor) {
+  const elemento = document.getElementById(id);
+
+  if (elemento) {
+    elemento.textContent = valor ?? 0;
   }
 }
 
@@ -51,6 +56,11 @@ async function carregarAuditoriasDashboard() {
     const resposta =
       await fetch(`${API_URL_DASHBOARD}/dashboard/auditorias-recentes`);
 
+    if (!resposta.ok) {
+      console.error("Erro ao carregar auditorias recentes");
+      return;
+    }
+
     const auditorias = await resposta.json();
 
     const lista =
@@ -58,7 +68,7 @@ async function carregarAuditoriasDashboard() {
 
     if (!lista) return;
 
-    if (auditorias.length === 0) {
+    if (!auditorias || auditorias.length === 0) {
       lista.innerHTML = "Nenhum registro encontrado.";
       return;
     }
@@ -68,8 +78,12 @@ async function carregarAuditoriasDashboard() {
     auditorias.forEach(item => {
       lista.innerHTML += `
         <div class="auditoria-item">
-          <strong>${item.acao}</strong>
-          <p>${item.descricao}</p>
+          <strong>${item.acao || "-"}</strong>
+
+          <p>
+            ${item.descricao || "-"}
+          </p>
+
           <small>
             Usuário: ${item.usuario_login || "Sistema"} |
             ${formatarDataDashboard(item.data_hora)}

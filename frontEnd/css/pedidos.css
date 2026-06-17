@@ -1,0 +1,186 @@
+.card-pedido,
+.card-lista {
+  background: #ffffff;
+  padding: 28px;
+  margin-bottom: 28px;
+  border-radius: 16px;
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.form-pedido {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.form-pedido input,
+.form-pedido select,
+.form-item-pedido input {
+  width: 100%;
+  height: 48px;
+  padding: 12px 14px;
+  border: 1px solid #d1d9e6;
+  border-radius: 10px;
+  background: #f9fafb;
+  outline: none;
+  font-size: 14px;
+}
+
+.form-pedido input:focus,
+.form-pedido select:focus,
+.form-item-pedido input:focus {
+  background: #ffffff;
+  border-color: #00ae90;
+  box-shadow: 0 0 0 3px rgba(0, 174, 144, 0.14);
+}
+
+.area-itens-pedido {
+  margin-top: 22px;
+}
+
+.form-item-pedido {
+  display: grid;
+  grid-template-columns: 2fr 1fr 180px;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.form-item-pedido button,
+.btn-salvar-pedido {
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #00ae90, #003641);
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-salvar-pedido {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.topo-lista-pedido {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.topo-lista-pedido input {
+  width: 360px;
+  height: 46px;
+  padding: 12px 14px;
+  border: 1px solid #d1d9e6;
+  border-radius: 10px;
+  background: #f9fafb;
+}
+
+.tabela-container {
+  overflow-x: auto;
+}
+
+.tabela-pedidos {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.tabela-pedidos thead {
+  background: linear-gradient(135deg, #003641, #0b1f3a);
+  color: #ffffff;
+}
+
+.tabela-pedidos th,
+.tabela-pedidos td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  font-size: 14px;
+}
+
+.tabela-pedidos tbody tr:hover {
+  background: #f8fafc;
+}
+
+.tabela-pedidos button {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #dc2626;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.box-itens-pedido {
+  background: #f9fafb;
+  border-left: 5px solid #00ae90;
+  padding: 16px;
+  border-radius: 10px;
+}
+
+.tabela-itens-interna {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-itens-interna th,
+.tabela-itens-interna td {
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.status-aberto,
+.status-picking,
+.status-separado,
+.status-expedido,
+.status-cancelado {
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.status-aberto {
+  background: #2563eb;
+}
+
+.status-picking {
+  background: #f59e0b;
+}
+
+.status-separado {
+  background: #7c3aed;
+}
+
+.status-expedido {
+  background: #16a34a;
+}
+
+.status-cancelado {
+  background: #dc2626;
+}
+
+@media (max-width: 900px) {
+  .form-pedido,
+  .form-item-pedido {
+    grid-template-columns: 1fr;
+  }
+
+  .topo-lista-pedido {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topo-lista-pedido input {
+    width: 100%;
+  }
+}

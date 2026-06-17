@@ -46,7 +46,8 @@ function atualizarUsuarioTopo() {
 }
 
 // CARREGAR SCRIPT DA PÁGINA
-function carregarScriptPagina(idScript, caminhoScript, funcaoInicializacao) {
+
+function carregarScriptPagina(idScript, caminhoScript, callback) {
   const scriptAntigo = document.getElementById(idScript);
 
   if (scriptAntigo) {
@@ -54,68 +55,49 @@ function carregarScriptPagina(idScript, caminhoScript, funcaoInicializacao) {
   }
 
   const script = document.createElement("script");
-  script.src = caminhoScript;
+
   script.id = idScript;
+  script.src = caminhoScript;
+  script.defer = true;
 
   script.onload = () => {
-    if (typeof funcaoInicializacao === "function") {
-      funcaoInicializacao();
+    if (typeof callback === "function") {
+      callback();
     }
+  };
+
+  script.onerror = () => {
+    console.error(`Erro ao carregar script: ${caminhoScript}`);
   };
 
   document.body.appendChild(script);
 }
 
-// CARREGAR PÁGINA
 function carregarPagina(pagina, permissaoNecessaria) {
-
-  if (pagina.includes("dashboard.html")) {
-  carregarScriptPagina(
-    "script-dashboard",
-    "js/dashboard.js",
-    () => iniciarDashboard()
-  );
-}
-
-  const usuario =
-    JSON.parse(localStorage.getItem("usuarioLogado"));
+  const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
 
   if (!usuario) {
     window.location.href = "login.html";
     return;
   }
 
-  if (pagina.includes("posicoes.html")) {
-  carregarScriptPagina(
-    "script-posicoes",
-    "js/posicoes.js",
-    () => iniciarPosicoes()
-  );
-}
+  const permissoes = usuario.permissoes || [];
 
-  const permissoes =
-    usuario.permissoes || [];
-
-  if (
-    permissaoNecessaria &&
-    !permissoes.includes(permissaoNecessaria)
-  ) {
-
-    alert(
-      "Você não possui permissão para acessar esta página ❌"
-    );
-
+  if (permissaoNecessaria && !permissoes.includes(permissaoNecessaria)) {
+    alert("Você não possui permissão para acessar esta página ❌");
     return;
   }
 
   fetch(pagina)
+    .then(res => {
+      if (!res.ok) {
+        throw new Error("Página não encontrada");
+      }
 
-    .then(res => res.text())
-
+      return res.text();
+    })
     .then(html => {
-
-      const content =
-        document.querySelector(".content");
+      const content = document.querySelector(".content");
 
       if (!content) {
         console.error("Elemento .content não encontrado");
@@ -124,208 +106,222 @@ function carregarPagina(pagina, permissaoNecessaria) {
 
       content.innerHTML = html;
 
-      // PRODUTOS
-      if (pagina.includes("produtos.html")) {
+      if (pagina.includes("dashboard.html")) {
+        carregarScriptPagina(
+          "script-dashboard",
+          "./js/dashboard.js",
+          () => iniciarDashboard()
+        );
+      }
 
+      if (pagina.includes("produtos.html")) {
         carregarScriptPagina(
           "script-produtos",
           "./js/produtos.js",
           () => iniciarProduto()
         );
-
       }
 
-      // AJUSTE ESTOQUE
-      if (pagina.includes("ajuste-estoque.html")) {
+      if (pagina.includes("fornecedores.html")) {
+        carregarScriptPagina(
+          "script-fornecedores",
+          "./js/fornecedores.js",
+          () => iniciarFornecedor()
+        );
+      }
 
+      if (pagina.includes("entrada.html")) {
+        carregarScriptPagina(
+          "script-entrada",
+          "./js/entrada.js",
+          () => iniciarEntrada()
+        );
+      }
+
+      if (
+        pagina.includes("estoque.html") &&
+        !pagina.includes("ajuste-estoque.html")
+      ) {
+        carregarScriptPagina(
+          "script-estoque",
+          "./js/estoque.js",
+          () => iniciarEstoque()
+        );
+      }
+
+      if (pagina.includes("ajuste-estoque.html")) {
         carregarScriptPagina(
           "script-ajuste-estoque",
           "./js/ajuste-estoque.js",
           () => iniciarAjusteEstoque()
         );
-
       }
 
-      // AUDITORIA
-      if (pagina.includes("auditoria.html")) {
-
+      if (pagina.includes("alerta_min.html")) {
         carregarScriptPagina(
-          "script-auditoria",
-          "./js/auditoria.js",
-          () => iniciarAuditoria()
+          "script-alerta-min",
+          "./js/alerta_min.js",
+          () => iniciarAlertas()
         );
-
       }
 
-      // CONFERÊNCIA
-      if (pagina.includes("conferencia")) {
-
+      if (pagina.includes("conferencia.html")) {
         carregarScriptPagina(
           "script-conferencia",
           "./js/conferencia.js",
           () => iniciarConferencia()
         );
-
       }
 
-      // DIVERGÊNCIAS
-if (pagina.includes("divergencias")) {
-
-  carregarScriptPagina(
-    "script-divergencias",
-    "./js/divergencias.js",
-    () => iniciarDivergencias()
-  );
-
-}
-
-      // FORNECEDORES
-      if (
-        pagina.includes("fornecedores") &&
-        typeof iniciarFornecedor === "function"
-      ) {
-
-        iniciarFornecedor();
-
-      }
-
-     // ENTRADA
-if (pagina.includes("entrada")) {
-  carregarScriptPagina(
-    "script-entrada",
-    "./js/entrada.js",
-    () => iniciarEntrada()
-  );
-}
-
-      // ESTOQUE
-      if (
-        pagina.includes("estoque") &&
-        !pagina.includes("ajuste-estoque") &&
-        typeof iniciarEstoque === "function"
-      ) {
-
-        iniciarEstoque();
-
-      }
-
-      // ALERTAS
-      if (
-        pagina.includes("alerta_min") &&
-        typeof iniciarAlertas === "function"
-      ) {
-
-        iniciarAlertas();
-
-      }
-
-      // FUNCIONÁRIOS
-      if (
-        pagina.includes("funcionarios") &&
-        typeof iniciarFuncionario === "function"
-      ) {
-
-        iniciarFuncionario();
-
+      if (pagina.includes("divergencias.html")) {
+        carregarScriptPagina(
+          "script-divergencias",
+          "./js/divergencias.js",
+          () => iniciarDivergencias()
+        );
       }
 
       if (pagina.includes("enderecamento.html")) {
         carregarScriptPagina(
-        "script-enderecamento",
-        "js/enderecamento.js",
-        () => iniciarEnderecamento()
-  );
-}
+          "script-enderecamento",
+          "./js/enderecamento.js",
+          () => iniciarEnderecamento()
+        );
+      }
 
-if (pagina.includes("clientes.html")) {
-  carregarScriptPagina(
-    "script-clientes",
-    "./js/clientes.js",
-    () => iniciarClientes()
-  );
-}
+      if (pagina.includes("posicoes.html")) {
+        carregarScriptPagina(
+          "script-posicoes",
+          "./js/posicoes.js",
+          () => iniciarPosicoes()
+        );
+      }
 
-      // USUÁRIOS
+      if (pagina.includes("clientes.html")) {
+        carregarScriptPagina(
+          "script-clientes",
+          "./js/clientes.js",
+          () => iniciarClientes()
+        );
+      }
+
+      if (pagina.includes("pedidos.html")) {
+        carregarScriptPagina(
+          "script-pedidos",
+          "./js/pedidos.js",
+          () => iniciarPedidos()
+        );
+      }
+
+      if (pagina.includes("picking.html")) {
+        carregarScriptPagina(
+          "script-picking",
+          "./js/picking.js",
+          () => iniciarPicking()
+        );
+      }
+
+      if (pagina.includes("romaneio.html")) {
+        carregarScriptPagina(
+          "script-romaneio",
+          "./js/romaneio.js",
+          () => iniciarRomaneio()
+        );
+      }
+
+      if (pagina.includes("nota_fiscal.html")) {
+        carregarScriptPagina(
+          "script-nota-fiscal",
+          "./js/nota_fiscal.js",
+          () => iniciarNotaFiscal()
+        );
+      }
+
+      if (pagina.includes("funcionarios.html")) {
+        carregarScriptPagina(
+          "script-funcionarios",
+          "./js/funcionarios.js",
+          () => iniciarFuncionario()
+        );
+      }
+
       if (
         pagina.includes("usuarios.html") &&
-        !pagina.includes("cadastro-usuario") &&
-        typeof consultarUsuarios === "function"
+        !pagina.includes("cadastro-usuario.html")
       ) {
-
-        consultarUsuarios();
-
+        carregarScriptPagina(
+          "script-usuarios",
+          "./js/usuarios.js",
+          () => consultarUsuarios()
+        );
       }
 
-      // SETORES
-      if (
-        pagina.includes("setores") &&
-        typeof carregarSetores === "function"
-      ) {
-
-        carregarSetores();
-
+      if (pagina.includes("cadastro-usuario.html")) {
+        carregarScriptPagina(
+          "script-cadastro-usuario",
+          "./js/cadastro-usuario.js",
+          () => iniciarCadastroUsuario()
+        );
       }
 
-      // CADASTRO USUÁRIO
-      if (
-        pagina.includes("cadastro-usuario") &&
-        typeof iniciarCadastroUsuario === "function"
-      ) {
-
-        iniciarCadastroUsuario();
-
+      if (pagina.includes("setores.html")) {
+        carregarScriptPagina(
+          "script-setores",
+          "./js/setores.js",
+          () => carregarSetores()
+        );
       }
 
-      // CONFIGURAÇÕES
+      if (pagina.includes("auditoria.html")) {
+        carregarScriptPagina(
+          "script-auditoria",
+          "./js/auditoria.js",
+          () => iniciarAuditoria()
+        );
+      }
 
-     if (pagina.includes("configuracoes-gerais.html")) {
-  carregarScriptPagina(
-    "script-configuracoes-gerais",
-    "js/configuracoes-gerais.js",
-    () => iniciarConfiguracoesGerais()
-  );
+      if (pagina.includes("configuracoes-gerais.html")) {
+        carregarScriptPagina(
+          "script-configuracoes-gerais",
+          "./js/configuracoes-gerais.js",
+          () => iniciarConfiguracoesGerais()
+        );
+      }
 
-  return;
-}
+      if (pagina.includes("trocar_senha.html")) {
+        carregarScriptPagina(
+          "script-trocar-senha",
+          "./js/trocar_senha.js",
+          () => iniciarTrocarSenha()
+        );
+      }
 
-if (pagina.includes("trocar_senha.html")) {
-  carregarScriptPagina(
-    "script-trocar_senhha",
-    "js/trocar_senha.js",
-    () => iniciarTrocarSenha()
-  );
+      if (pagina.includes("cores.html")) {
+        carregarScriptPagina(
+          "script-cores",
+          "./js/cores.js",
+          () => iniciarCores()
+        );
+      }
 
-  return;
-}
+      if (pagina.includes("cargos.html")) {
+        carregarScriptPagina(
+          "script-cargos",
+          "./js/cargos.js",
+          () => iniciarCargos()
+        );
+      }
 
-if (pagina.includes("cores.html")) {
-  carregarScriptPagina(
-    "script-cores",
-    "js/cores.js",
-    () => iniciarCores()
-  );
-
-  return;
-}
-
-if (pagina.includes("cargos.html")) {
-  carregarScriptPagina(
-    "script-cargos",
-    "js/cargos.js",
-    () => iniciarCargos()
-  );
-
-  return;
-}
-
+      if (pagina.includes("categorias.html")) {
+        carregarScriptPagina(
+          "script-categorias",
+          "./js/categorias.js",
+          () => iniciarCategorias()
+        );
+      }
     })
-
     .catch(erro => {
-
-      console.error(
-        "Erro ao carregar página:",
-        erro
-      );
+      console.error("Erro ao carregar página:", erro);
 
       document.querySelector(".content").innerHTML = `
         <div class="erro-pagina">
@@ -333,9 +329,7 @@ if (pagina.includes("cargos.html")) {
           <p>Não foi possível carregar o conteúdo solicitado.</p>
         </div>
       `;
-
     });
-
 }
 
 // ABRIR PÁGINA

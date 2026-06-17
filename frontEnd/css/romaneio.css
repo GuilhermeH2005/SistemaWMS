@@ -1,0 +1,166 @@
+.card-romaneio {
+  background: #ffffff;
+  padding: 28px;
+  margin-bottom: 28px;
+  border-radius: 16px;
+  border: 1px solid #e5eaf0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.topo-romaneio {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.topo-romaneio p {
+  color: #6b7280;
+  margin-top: -8px;
+}
+
+.topo-romaneio button,
+.btn-expedir,
+.btn-ver-romaneio {
+  border: none;
+  padding: 9px 13px;
+  border-radius: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.topo-romaneio button,
+.btn-ver-romaneio {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.btn-expedir {
+  background: linear-gradient(135deg, #00ae90, #003641);
+  color: white;
+}
+
+.resumo-romaneio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.card-resumo-romaneio {
+  background: #f9fafb;
+  border: 1px solid #e5eaf0;
+  border-left: 5px solid #00ae90;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.card-resumo-romaneio span {
+  display: block;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.card-resumo-romaneio strong {
+  display: block;
+  margin-top: 4px;
+  color: #111827;
+  font-size: 22px;
+}
+
+.tabela-container {
+  overflow-x: auto;
+}
+
+.tabela-romaneio {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.tabela-romaneio thead {
+  background: linear-gradient(135deg, #003641, #0b1f3a);
+  color: white;
+}
+
+.tabela-romaneio th,
+.tabela-romaneio td {
+  padding: 13px 14px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.tabela-romaneio tbody tr:hover {
+  background: #f8fafc;
+}
+
+.status-separado,
+.status-expedido {
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.status-separado {
+  background: #7c3aed;
+}
+
+.status-expedido {
+  background: #16a34a;
+}
+
+.linha-detalhes-romaneio {
+  display: none;
+}
+
+.linha-detalhes-romaneio.ativo {
+  display: table-row;
+}
+
+.box-detalhes-romaneio {
+  background: #f9fafb;
+  border-left: 5px solid #00ae90;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.tabela-itens-romaneio {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.tabela-itens-romaneio th {
+  background: #003641;
+  color: white;
+}
+
+.tabela-itens-romaneio th,
+.tabela-itens-romaneio td {
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.acoes-romaneio {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .topo-romaneio {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .resumo-romaneio {
+    grid-template-columns: 1fr;
+  }
+}

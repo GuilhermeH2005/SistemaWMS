@@ -28,6 +28,10 @@
   <link rel="stylesheet" href="css/posicoes.css">
   <link rel="stylesheet" href="css/configuracoes-gerais.css">
   <link rel="stylesheet" href="css/clientes.css">
+  <link rel="stylesheet" href="css/pedidos.css">
+  <link rel="stylesheet" href="css/romaneio.css">
+  <link rel="stylesheet" href="css/picking.css">
+  <link rel="stylesheet" href="css/nota_fiscal.css">
 </head>
 
 <body>
@@ -270,18 +274,22 @@
               Cliente
           </li>
 
-            <li onclick="carregarPagina(
-              'pages/nota_fiscal.html',
-              'nota_fiscal'
-            )">
-              Nota Fiscal
-            </li>
+          <li onclick="carregarPagina('pages/pedidos.html', 'pedidos')">
+  Pedidos
+</li>
 
             <li onclick="carregarPagina(
               'pages/romaneio.html',
               'romaneio'
             )">
               Romaneio
+            </li>
+
+            <li onclick="carregarPagina(
+              'pages/nota_fiscal.html',
+              'nota_fiscal'
+            )">
+              Nota Fiscal
             </li>
 
           </ul>
@@ -444,10 +452,14 @@
   <script src="js/alerta_min.js"></script>
   <script src="js/funcionarios.js"></script>
   <script src="js/usuarios.js"></script>
+  <script src="js/pedidos.js"></script>
   <script src="js/setores.js"></script>
   <script src="js/cadastro-usuario.js"></script>
   <script src="js/ajuste-estoque.js"></script>
   <script src="js/conferencia.js"></script>
+  <script src="js/picking.js"></script>
+  <script src="js/romaneio.js"></script>
+  <script src="js/nota_fiscal.js"></script>
 
 </body>
 
