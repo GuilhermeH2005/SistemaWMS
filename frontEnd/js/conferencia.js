@@ -36,16 +36,17 @@ function renderizarConferencia(entradas) {
   entradas.forEach(e => {
     const chave = `${e.numero_nf}-${e.serie_nf || ""}-${e.fornecedor_id || ""}`;
 
-    if (!notas[chave]) {
-      notas[chave] = {
-        numero_nf: e.numero_nf,
-        serie_nf: e.serie_nf,
-        fornecedor_nome: e.fornecedor_nome || "-",
-        data_nf: e.data_nf_formatada || e.data_nf || "-",
-        status_conferencia: e.status_conferencia || "PENDENTE",
-        itens: []
-      };
-    }
+  if (!notas[chave]) {
+  notas[chave] = {
+    numero_nf: e.numero_nf,
+    serie_nf: e.serie_nf,
+    fornecedor_nome: e.fornecedor_nome || "-",
+    data_nf: e.data_nf_formatada || e.data_nf || "-",
+    status_conferencia: e.status_conferencia || "PENDENTE",
+    tipo_entrada: e.tipo_entrada || "COMPRA",
+    itens: []
+  };
+}
 
     notas[chave].itens.push(e);
   });
@@ -122,8 +123,16 @@ function renderizarConferencia(entradas) {
               ${nf.serie_nf ? " - Série " + nf.serie_nf : ""}
             </strong>
 
-            <p>Fornecedor: ${nf.fornecedor_nome}</p>
-            <p>Data NF: ${nf.data_nf}</p>
+          <p>Fornecedor: ${nf.fornecedor_nome}</p>
+<p>Data NF: ${nf.data_nf}</p>
+<p>
+  Tipo:
+  ${
+    nf.tipo_entrada === "DEVOLUCAO_CLIENTE"
+      ? "🔁 Devolução de Cliente"
+      : "📦 Compra"
+  }
+</p>
           </div>
 
           <div class="resumo-conferencia">

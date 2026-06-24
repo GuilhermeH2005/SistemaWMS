@@ -164,3 +164,46 @@
     grid-template-columns: 1fr;
   }
 }
+
+.acoes-topo-romaneio{
+    display:flex;
+    gap:12px;
+}
+
+.btn-imprimir-geral{
+    border:none;
+    background:#003641;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:700;
+}
+
+.btn-imprimir-geral:hover{
+    background:#005463;
+}
+
+.btn-atualizar-romaneio{
+    border:none;
+    background:#00ae90;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:700;
+}
+
+.btn-imprimir-romaneio{
+    border:none;
+    background:#0b5ed7;
+    color:white;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:700;
+}
+
+.btn-imprimir-romaneio:hover{
+    background:#084298;
+}

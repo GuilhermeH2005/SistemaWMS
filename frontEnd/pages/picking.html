@@ -5,12 +5,18 @@
   <div class="topo-picking">
     <div>
       <h3 class="subtitulo">Pedidos Abertos para Separação</h3>
-      <p>Produtos iguais são agrupados para separação.</p>
+      <p>Produtos iguais são agrupados para separação FIFO/FEFO com endereço físico.</p>
     </div>
 
-    <button onclick="carregarPicking()">
-      🔄 Atualizar
-    </button>
+    <div class="acoes-topo-picking">
+      <button onclick="imprimirPickingSelecionados()">
+        🖨 Imprimir Selecionados
+      </button>
+
+      <button onclick="carregarPicking()">
+        🔄 Atualizar
+      </button>
+    </div>
   </div>
 
   <div id="resumoPicking" class="resumo-picking"></div>
@@ -19,10 +25,14 @@
     <table class="tabela-picking">
       <thead>
         <tr>
+          <th>
+            <input type="checkbox" id="checkTodosPicking" onchange="selecionarTodosPicking()">
+          </th>
           <th>Produto</th>
           <th>SKU</th>
           <th>Total a Separar</th>
           <th>Estoque</th>
+          <th>Endereço</th>
           <th>Status</th>
           <th>Detalhes</th>
         </tr>
@@ -30,13 +40,13 @@
 
       <tbody id="listaPicking">
         <tr>
-          <td colspan="6">Carregando picking...</td>
+          <td colspan="8">Carregando picking...</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <button class="btn-gerar-picking" onclick="iniciarSeparacaoPicking()">
+  <button class="btn-gerar-picking" id="btnIniciarPicking" onclick="iniciarSeparacaoPicking()">
     Iniciar Picking
   </button>
 

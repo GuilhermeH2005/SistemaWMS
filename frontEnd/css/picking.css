@@ -1,61 +1,73 @@
 .card-picking {
   background: #ffffff;
-  padding: 28px;
+  padding: 30px;
   margin-bottom: 28px;
-  border-radius: 16px;
+  border-radius: 18px;
   border: 1px solid #e5eaf0;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
 .topo-picking {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 18px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e5eaf0;
 }
 
 .topo-picking p {
-  color: #6b7280;
-  margin-top: -8px;
+  color: #64748b;
+  margin-top: -6px;
+  font-size: 14px;
 }
 
 .topo-picking button,
 .btn-gerar-picking {
   height: 46px;
-  padding: 0 18px;
+  padding: 0 20px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #00ae90, #003641);
-  color: #fff;
+  color: #ffffff;
   font-weight: 800;
   cursor: pointer;
+  box-shadow: 0 8px 18px rgba(0, 174, 144, 0.25);
+  transition: 0.2s;
+}
+
+.topo-picking button:hover,
+.btn-gerar-picking:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 174, 144, 0.35);
 }
 
 .btn-gerar-picking {
   width: 100%;
-  margin-top: 20px;
+  margin-top: 22px;
   height: 52px;
 }
 
 .resumo-picking {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 20px;
+  gap: 15px;
+  margin-bottom: 24px;
 }
 
 .card-resumo-picking {
-  background: #f9fafb;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
   border: 1px solid #e5eaf0;
   border-left: 5px solid #00ae90;
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
 }
 
 .card-resumo-picking span {
   display: block;
-  color: #6b7280;
+  color: #64748b;
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
@@ -63,46 +75,71 @@
 
 .card-resumo-picking strong {
   display: block;
-  margin-top: 4px;
-  color: #111827;
-  font-size: 22px;
+  margin-top: 6px;
+  color: #003641;
+  font-size: 24px;
 }
 
 .tabela-container {
   overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid #e5eaf0;
 }
 
 .tabela-picking {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: #ffffff;
 }
 
 .tabela-picking thead {
   background: linear-gradient(135deg, #003641, #0b1f3a);
-  color: white;
+  color: #ffffff;
 }
 
 .tabela-picking th,
 .tabela-picking td {
-  padding: 13px 14px;
+  padding: 14px 16px;
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
   font-size: 14px;
+  vertical-align: middle;
 }
 
 .tabela-picking tbody tr:hover {
   background: #f8fafc;
 }
 
-.btn-detalhes-picking {
+.btn-detalhes-picking,
+.btn-confirmar-picking {
   border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: #e0f2fe;
-  color: #075985;
+  padding: 9px 13px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 800;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+
+.btn-detalhes-picking {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.btn-detalhes-picking:hover {
+  background: #bae6fd;
+  transform: translateY(-1px);
+}
+
+.btn-confirmar-picking {
+  background: #16a34a;
+  color: #ffffff;
+  margin-left: 6px;
+}
+
+.btn-confirmar-picking:hover {
+  background: #15803d;
+  transform: translateY(-1px);
 }
 
 .linha-detalhes-picking {
@@ -114,35 +151,39 @@
 }
 
 .box-detalhes-picking {
-  background: #f9fafb;
+  background: #f8fafc;
   border-left: 5px solid #00ae90;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: inset 0 0 0 1px #e5eaf0;
 }
 
 .tabela-interna-picking {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .tabela-interna-picking th {
   background: #003641;
-  color: white;
+  color: #ffffff;
 }
 
 .tabela-interna-picking th,
 .tabela-interna-picking td {
-  padding: 10px;
+  padding: 11px 12px;
   border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
 }
 
 .status-ok,
 .status-insuficiente {
   display: inline-block;
-  padding: 5px 11px;
+  padding: 6px 12px;
   border-radius: 999px;
-  color: #fff;
+  color: #ffffff;
   font-size: 12px;
   font-weight: 800;
 }
@@ -155,20 +196,83 @@
   background: #dc2626;
 }
 
-.btn-confirmar-picking {
-  border: none;
-  padding: 8px 12px;
-  margin-left: 6px;
-  border-radius: 8px;
+.box-fifo-picking {
+  margin-top: 18px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e5eaf0;
+  border-radius: 14px;
+}
+
+.box-fifo-picking h4 {
+  color: #003641;
+  margin: 0 0 12px;
+}
+
+.texto-fifo {
+  margin-bottom: 14px;
+  color: #374151;
+  font-size: 14px;
+}
+
+.texto-fifo strong {
+  color: #003641;
+}
+
+.linha-pegar-fifo {
+  background: #ecfdf5;
+}
+
+.linha-pegar-fifo td:last-child strong {
   background: #16a34a;
   color: #ffffff;
-  cursor: pointer;
+  padding: 6px 11px;
+  border-radius: 999px;
+}
+
+.alerta-fifo {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #fef2f2;
+  color: #991b1b;
+  border-left: 4px solid #dc2626;
+  border-radius: 10px;
   font-weight: 800;
 }
 
-.btn-confirmar-picking:hover {
-  background: #15803d;
-  transform: translateY(-1px);
+.campo-separacao-picking {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+}
+
+.campo-separacao-picking label {
+  display: block;
+  margin-bottom: 6px;
+  color: #003641;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.campo-separacao-picking input,
+.campo-separacao-picking select {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  outline: none;
+}
+
+.campo-separacao-picking input:focus,
+.campo-separacao-picking select:focus {
+  border-color: #00ae90;
+  box-shadow: 0 0 0 3px rgba(0, 174, 144, 0.12);
 }
 
 @media (max-width: 900px) {
@@ -178,6 +282,10 @@
   }
 
   .resumo-picking {
+    grid-template-columns: 1fr;
+  }
+
+  .campo-separacao-picking {
     grid-template-columns: 1fr;
   }
 }

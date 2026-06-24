@@ -65,14 +65,16 @@
     <div class="tabela-container">
       <table class="tabela-pedidos">
         <thead>
-          <tr>
-            <th>Produto</th>
-            <th>SKU</th>
-            <th>Qtd</th>
-            <th>Estoque Atual</th>
-            <th>Ação</th>
-          </tr>
-        </thead>
+  <tr>
+    <th>Produto</th>
+    <th>SKU</th>
+    <th>Qtd</th>
+    <th>Valor Unit.</th>
+    <th>Subtotal</th>
+    <th>Estoque Atual</th>
+    <th>Ação</th>
+  </tr>
+</thead>
 
         <tbody id="listaItensPedido">
           <tr>
@@ -81,6 +83,11 @@
         </tbody>
       </table>
     </div>
+
+    <div class="campo-form campo-total-pedido">
+  <label>Total do Pedido</label>
+  <input type="text" id="totalPedido" readonly placeholder="R$ 0,00">
+</div>
 
     <button
       type="button"
@@ -115,6 +122,7 @@
           <th>Data</th>
           <th>Status</th>
           <th>Itens</th>
+          <th>Valor Total</th>
           <th>Observação</th>
           <th>Ações</th>
         </tr>
@@ -122,7 +130,7 @@
 
       <tbody id="listaPedidos">
         <tr>
-          <td colspan="7">Carregando pedidos...</td>
+          <td colspan="8">Carregando pedidos...</td>
         </tr>
       </tbody>
     </table>

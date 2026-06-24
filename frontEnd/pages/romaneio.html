@@ -4,13 +4,36 @@
 
   <div class="topo-romaneio">
     <div>
-      <h3 class="subtitulo">Pedidos Separados</h3>
-      <p>Pedidos prontos para carregamento e entrega.</p>
+      <h3 class="subtitulo">Romaneio de Carga</h3>
+      <p>Pedidos separados, expedidos e histórico de carregamento.</p>
     </div>
 
-    <button onclick="carregarRomaneio()">
-      🔄 Atualizar
-    </button>
+    <div class="acoes-topo-romaneio">
+      <button class="btn-romaneio-ativo" onclick="mudarTipoRomaneio('ATIVO')">
+        📦 Ativos
+      </button>
+
+      <button class="btn-romaneio-expedido" onclick="mudarTipoRomaneio('EXPEDIDO')">
+        🚚 Expedidos
+      </button>
+
+      <button class="btn-imprimir-geral" onclick="imprimirRomaneioSelecionados()">
+        🖨 Imprimir Selecionados
+      </button>
+
+      <button class="btn-atualizar-romaneio" onclick="carregarRomaneio()">
+        🔄 Atualizar
+      </button>
+    </div>
+  </div>
+
+  <div class="filtros-romaneio">
+    <input
+      type="text"
+      id="buscaRomaneio"
+      placeholder="Buscar por pedido, cliente, CNPJ, cidade, NF ou status..."
+      oninput="carregarRomaneio()"
+    >
   </div>
 
   <div id="resumoRomaneio" class="resumo-romaneio"></div>
@@ -19,11 +42,15 @@
     <table class="tabela-romaneio">
       <thead>
         <tr>
+          <th>
+            <input type="checkbox" id="checkTodosRomaneio" onchange="selecionarTodosRomaneio()">
+          </th>
           <th>Pedido</th>
           <th>Cliente</th>
           <th>CNPJ</th>
           <th>Cidade</th>
           <th>Endereço</th>
+          <th>NF</th>
           <th>Itens</th>
           <th>Status</th>
           <th>Ações</th>
@@ -32,7 +59,7 @@
 
       <tbody id="listaRomaneio">
         <tr>
-          <td colspan="8">Carregando romaneio...</td>
+          <td colspan="10">Carregando romaneio...</td>
         </tr>
       </tbody>
     </table>

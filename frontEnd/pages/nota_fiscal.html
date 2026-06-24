@@ -15,23 +15,55 @@
       </select>
     </div>
 
+    <div class="campo-form campo-nf-venda-origem hidden">
+  <label>NF de Venda Original</label>
+  <select id="nf_venda_origem_id" onchange="carregarItensNFVendaOrigem()">
+    <option value="">Selecione a NF de venda</option>
+  </select>
+</div>
+
+<div class="campo-form campo-nf-entrada-origem hidden">
+  <label>NF de Entrada Original</label>
+  <select id="nf_entrada_origem_id" onchange="carregarItensNFEntradaOrigem()">
+    <option value="">Selecione a NF de entrada</option>
+  </select>
+</div>
+
     <div class="campo-form">
       <label>Número NF</label>
-      <input type="text" id="numero_nf_saida" placeholder="Número da NF" required>
+      <input
+        type="text"
+        id="numero_nf_saida"
+        placeholder="Gerado automaticamente"
+        readonly
+        required
+      >
     </div>
 
     <div class="campo-form">
       <label>Série</label>
-      <input type="text" id="serie_nf_saida" placeholder="Série">
+      <input
+        type="text"
+        id="serie_nf_saida"
+        placeholder="Série"
+        value="1"
+      >
     </div>
 
     <div class="campo-form">
       <label>Data NF</label>
-      <input type="date" id="data_nf_saida" required>
+      <input
+        type="text"
+        id="data_nf_saida"
+        placeholder="dd/mm/aaaa"
+        maxlength="10"
+        readonly
+        required
+      >
     </div>
 
     <div class="campo-form campo-venda">
-      <label>Pedido Separado</label>
+      <label>Pedido para Faturar</label>
       <select id="pedido_id">
         <option value="">Selecione o pedido</option>
       </select>
@@ -53,8 +85,36 @@
 
     <div class="campo-form campo-observacao">
       <label>Observação</label>
-      <input type="text" id="observacao_nf" placeholder="Observação">
+      <input
+        type="text"
+        id="observacao_nf"
+        placeholder="Observação da nota fiscal"
+      >
     </div>
+
+<div id="areaValoresExtrasNF" class="area-valores-extras-nf">
+
+  <div class="campo-form">
+    <label>Frete</label>
+    <input type="number" id="valor_frete_nf" step="0.01" value="0">
+  </div>
+
+  <div class="campo-form">
+    <label>Desconto</label>
+    <input type="number" id="valor_desconto_nf" step="0.01" value="0">
+  </div>
+
+  <div class="campo-form">
+    <label>Outras Despesas</label>
+    <input type="number" id="outras_despesas_nf" step="0.01" value="0">
+  </div>
+
+  <div class="campo-form">
+    <label>Total da NF</label>
+    <input type="text" id="valor_total_nf" readonly placeholder="R$ 0,00">
+  </div>
+
+</div>
 
   </form>
 
@@ -62,7 +122,11 @@
 
     <h3 class="subtitulo">Itens da Nota</h3>
 
-    <div class="form-item-nf">
+    <p class="texto-ajuda-nf">
+      Os itens serão carregados conforme o tipo da nota selecionada.
+    </p>
+
+    <div id="formItemManualNF" class="form-item-nf hidden">
 
       <div class="campo-form">
         <label>Produto</label>
@@ -78,12 +142,22 @@
 
       <div class="campo-form">
         <label>Quantidade</label>
-        <input type="number" id="quantidade_nf" min="1" placeholder="Quantidade">
+        <input
+          type="number"
+          id="quantidade_nf"
+          min="1"
+          placeholder="Quantidade"
+        >
       </div>
 
       <div class="campo-form">
         <label>Valor Unitário</label>
-        <input type="number" id="valor_unitario_nf" step="0.01" placeholder="Valor unitário">
+        <input
+          type="number"
+          id="valor_unitario_nf"
+          step="0.01"
+          placeholder="Valor unitário"
+        >
       </div>
 
       <button type="button" onclick="adicionarItemNotaFiscal()">
@@ -98,25 +172,50 @@
           <tr>
             <th>Produto</th>
             <th>SKU</th>
-            <th>Qtd</th>
+            <th>Qtd Pedido</th>
+            <th id="thQtdNF">Qtd Física/Faturada</th>
             <th>Valor Unit.</th>
-            <th>Ação</th>
+            <th>Subtotal</th>
           </tr>
         </thead>
 
         <tbody id="listaItensNFsaida">
           <tr>
-            <td colspan="5">Nenhum item adicionado.</td>
+            <td colspan="6">Nenhum item carregado.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
+    <div class="campo-form campo-total-nf">
+      <label>Total da NF</label>
+      <input
+        type="text"
+        id="total_nf"
+        readonly
+        placeholder="R$ 0,00"
+      >
+    </div>
+
   </section>
 
-  <button class="btn-salvar-nf" onclick="salvarNotaFiscal()">
-    Emitir Nota
+  <div class="acoes-nf">
+  <button
+    type="button"
+    class="btn-salvar-nf"
+    onclick="salvarNotaFiscal()"
+  >
+    Salvar Espelho
   </button>
+
+  <button
+    type="button"
+    class="btn-transmitir-nf"
+    onclick="transmitirNotaFiscalSelecionada()"
+  >
+    Transmitir NF
+  </button>
+</div>
 
 </section>
 
@@ -125,21 +224,23 @@
 
   <div class="tabela-container">
     <table class="tabela-nf">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Tipo</th>
-          <th>Número</th>
-          <th>Série</th>
-          <th>Data</th>
-          <th>Status</th>
-          <th>Observação</th>
-        </tr>
-      </thead>
+     <thead>
+  <tr>
+    <th>ID</th>
+    <th>Tipo</th>
+    <th>Número</th>
+    <th>Série</th>
+    <th>Valor Total</th>
+    <th>Data</th>
+    <th>Status</th>
+    <th>Observação</th>
+    <th>Ações</th>
+  </tr>
+</thead>
 
       <tbody id="listaNotasFiscais">
         <tr>
-          <td colspan="7">Carregando notas...</td>
+          <td colspan="9">Carregando notas...</td>
         </tr>
       </tbody>
     </table>
