@@ -2209,8 +2209,10 @@ app.get("/conferencia", (req, res) => {
 
     WHERE
       e.status_conferencia = 'PENDENTE'
-      OR e.status_conferencia = 'DIVERGENTE'
-      OR e.status_divergencia IS NOT NULL
+      OR (
+        e.status_conferencia = 'DIVERGENTE'
+        AND e.status_divergencia IN ('ABERTA', 'AGUARDANDO_COMPLEMENTO', 'DEVOLUCAO')
+      )
 
     ORDER BY e.data_entrada DESC
   `;
@@ -2393,33 +2395,70 @@ app.put("/divergencias-conferencia/:id/resolver", (req, res) => {
 
 app.get("/divergencias", (req, res) => {
   const busca = req.query.busca || "";
-  const status = req.query.status || "TODOS";
+  const status = req.query.status || "ABERTAS";
 
   let sql = `
     SELECT
-      e.*,
+      d.id,
+      d.entrada_id,
+      d.produto_id,
+      d.numero_nf,
+
+      d.quantidade_nf AS quantidade,
+      d.quantidade_conferida,
+      d.diferenca,
+
+      d.motivo AS motivo_divergencia,
+      d.justificativa AS justificativa_divergencia,
+      d.status AS status_divergencia,
+
+      d.data_registro,
+      d.data_resolucao,
+      d.observacao_resolucao,
+
       p.nome AS produto_nome,
       p.codigo AS produto_codigo,
       f.nome AS fornecedor_nome
-    FROM entrada_mercadoria e
+
+    FROM divergencia_conferencia d
+
     INNER JOIN produto p
-      ON e.produto_id = p.id
+      ON d.produto_id = p.id
+
+    INNER JOIN entrada_mercadoria e
+      ON d.entrada_id = e.id
+
     LEFT JOIN fornecedor f
       ON e.fornecedor_id = f.id
-    WHERE
-      e.status_conferencia = 'DIVERGENTE'
-      OR e.status_divergencia IS NOT NULL
+
+    WHERE 1 = 1
   `;
 
   const valores = [];
 
+  if (status === "ABERTAS") {
+    sql += `
+      AND d.status IN ('ABERTA', 'AGUARDANDO_COMPLEMENTO', 'DEVOLUCAO')
+    `;
+  } else if (status === "RESOLVIDAS") {
+    sql += `
+      AND d.status = 'RESOLVIDA'
+    `;
+  } else if (status !== "TODOS") {
+    sql += `
+      AND d.status = ?
+    `;
+    valores.push(status);
+  }
+
   if (busca) {
     sql += `
       AND (
-        e.numero_nf LIKE ?
+        d.numero_nf LIKE ?
         OR p.nome LIKE ?
         OR p.codigo LIKE ?
         OR f.nome LIKE ?
+        OR d.motivo LIKE ?
       )
     `;
 
@@ -2427,20 +2466,13 @@ app.get("/divergencias", (req, res) => {
       `%${busca}%`,
       `%${busca}%`,
       `%${busca}%`,
+      `%${busca}%`,
       `%${busca}%`
     );
   }
 
-  if (status !== "TODOS") {
-    sql += `
-      AND e.status_divergencia = ?
-    `;
-
-    valores.push(status);
-  }
-
   sql += `
-    ORDER BY e.id DESC
+    ORDER BY d.data_registro DESC, d.id DESC
   `;
 
   db.query(sql, valores, (err, result) => {
@@ -2468,10 +2500,10 @@ app.put("/divergencias/:id", (req, res) => {
   }
 
   const tiposPermitidos = [
-  "AGUARDANDO_COMPLEMENTO",
-  "DEVOLUCAO",
-  "ABATIMENTO"
-];
+    "AGUARDANDO_COMPLEMENTO",
+    "DEVOLUCAO",
+    "ABATIMENTO"
+  ];
 
   if (!tiposPermitidos.includes(tipo)) {
     return res.status(400).send("Tipo de resolução inválido ❌");
@@ -2479,12 +2511,19 @@ app.put("/divergencias/:id", (req, res) => {
 
   const sqlBusca = `
     SELECT
-      e.*,
+      d.*,
+      e.id AS entrada_id,
+      e.numero_nf,
       p.nome AS produto_nome
-    FROM entrada_mercadoria e
+    FROM divergencia_conferencia d
+
+    INNER JOIN entrada_mercadoria e
+      ON d.entrada_id = e.id
+
     INNER JOIN produto p
-      ON e.produto_id = p.id
-    WHERE e.id = ?
+      ON d.produto_id = p.id
+
+    WHERE d.id = ?
   `;
 
   db.query(sqlBusca, [id], (err, resultado) => {
@@ -2499,58 +2538,99 @@ app.put("/divergencias/:id", (req, res) => {
 
     const item = resultado[0];
 
+    let novoStatusDivergencia = tipo;
+    let novoStatusEntrada = tipo;
 
-let novoStatusConferencia = "DIVERGENTE";
-let novoStatusDivergencia = tipo;
+    if (tipo === "ABATIMENTO") {
+      novoStatusDivergencia = "RESOLVIDA";
+      novoStatusEntrada = "RESOLVIDA";
+    }
 
-if (tipo === "ABATIMENTO") {
-  novoStatusConferencia = "CONFERIDO";
-  novoStatusDivergencia = "RESOLVIDA";
-}
+    if (tipo === "DEVOLUCAO") {
+      novoStatusDivergencia = "DEVOLUCAO";
+      novoStatusEntrada = "DEVOLUCAO";
+    }
 
-if (tipo === "DEVOLUCAO") {
-  novoStatusConferencia = "DIVERGENTE";
-  novoStatusDivergencia = "DEVOLUCAO";
-}
+    if (tipo === "AGUARDANDO_COMPLEMENTO") {
+      novoStatusDivergencia = "AGUARDANDO_COMPLEMENTO";
+      novoStatusEntrada = "AGUARDANDO_COMPLEMENTO";
+    }
 
-if (tipo === "AGUARDANDO_COMPLEMENTO") {
-  novoStatusConferencia = "DIVERGENTE";
-  novoStatusDivergencia = "AGUARDANDO_COMPLEMENTO";
-}
-
-    const sqlUpdate = `
-      UPDATE entrada_mercadoria
-      SET
-        status_conferencia = ?,
-        status_divergencia = ?
-      WHERE id = ?
-    `;
-
-    db.query(
-      sqlUpdate,
-      [
-        novoStatusConferencia,
-        novoStatusDivergencia,
-        id
-      ],
-      (err) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).send("Erro ao atualizar divergência ❌");
-        }
-
-        registrarAuditoria(
-          usuario_id,
-          usuario_nome,
-          "RESOLUÇÃO DIVERGÊNCIA",
-          "entrada_mercadoria",
-          id,
-          `NF ${item.numero_nf}, produto ${item.produto_nome}. Tipo: ${tipo}. Observação: ${observacao}`
-        );
-
-        res.send("Divergência atualizada com sucesso ✅");
+    db.beginTransaction((err) => {
+      if (err) {
+        return res.status(500).send("Erro ao iniciar divergência ❌");
       }
-    );
+
+      db.query(
+        `
+          UPDATE divergencia_conferencia
+          SET
+            status = ?,
+            observacao_resolucao = ?,
+            data_resolucao = CASE
+              WHEN ? = 'RESOLVIDA' THEN NOW()
+              ELSE data_resolucao
+            END
+          WHERE id = ?
+        `,
+        [
+          novoStatusDivergencia,
+          observacao,
+          novoStatusDivergencia,
+          id
+        ],
+        (err) => {
+          if (err) {
+            console.error(err);
+            return db.rollback(() => {
+              res.status(500).send("Erro ao atualizar divergência ❌");
+            });
+          }
+
+          db.query(
+            `
+              UPDATE entrada_mercadoria
+              SET
+                status_conferencia = ?,
+                status_divergencia = ?
+              WHERE id = ?
+            `,
+            [
+              novoStatusEntrada === "RESOLVIDA" ? "CONFERIDO" : "DIVERGENTE",
+              novoStatusEntrada,
+              item.entrada_id
+            ],
+            (err) => {
+              if (err) {
+                console.error(err);
+                return db.rollback(() => {
+                  res.status(500).send("Erro ao atualizar entrada ❌");
+                });
+              }
+
+              registrarAuditoria(
+                usuario_id,
+                usuario_nome,
+                "RESOLUÇÃO DIVERGÊNCIA",
+                "divergencia_conferencia",
+                id,
+                `NF ${item.numero_nf}, produto ${item.produto_nome}. Tipo: ${tipo}. Status: ${novoStatusDivergencia}. Observação: ${observacao}`
+              );
+
+              db.commit((err) => {
+                if (err) {
+                  return db.rollback(() => {
+                    res.status(500).send("Erro ao finalizar divergência ❌");
+                  });
+                }
+
+                res.send("Divergência atualizada com sucesso ✅");
+              });
+            }
+          );
+        }
+      );
+    });
   });
 });
 
@@ -3186,27 +3266,41 @@ function salvarComPosicao(posicao) {
             });
           }
 
-          registrarAuditoria(
-  usuario_id,
-  usuario_nome,
-  "ATUALIZAÇÃO ENDEREÇAMENTO",
-  "endereco_estoque",
-  enderecoAtual.id,
-  `Quantidade do produto ${produto.nome} somada no endereço ${posicao.endereco}`
-);
+       liberarEstoqueEnderecado(
+  produto_id,
+  quantidadeArmazenada,
+  (err) => {
+    if (err) {
+      console.error(err);
 
-          return res.status(200).json({
-            mensagem: "Quantidade somada ao endereço existente ✅",
-            produto: produto.nome,
-            endereco: posicao.endereco,
-            capacidade_m3: capacidadeM3,
-            volume_produto: volumeProduto,
-            capacidade_unidades: capacidadeUnidades,
-            quantidade_solicitada: quantidadeSolicitada,
-            quantidade_armazenada: quantidadeArmazenada,
-            quantidade_total_endereco: novaQuantidade,
-            quantidade_pendente_depois: novoPendenteDepois
-          });
+      return res.status(500).json({
+        erro: "Endereço atualizado, mas erro ao liberar estoque ❌"
+      });
+    }
+
+    registrarAuditoria(
+      usuario_id,
+      usuario_nome,
+      "ATUALIZAÇÃO ENDEREÇAMENTO",
+      "endereco_estoque",
+      enderecoAtual.id,
+      `Quantidade do produto ${produto.nome} somada no endereço ${posicao.endereco}. Estoque liberado: ${quantidadeArmazenada}`
+    );
+
+    return res.status(200).json({
+      mensagem: "Quantidade somada ao endereço existente e estoque liberado ✅",
+      produto: produto.nome,
+      endereco: posicao.endereco,
+      capacidade_m3: capacidadeM3,
+      volume_produto: volumeProduto,
+      capacidade_unidades: capacidadeUnidades,
+      quantidade_solicitada: quantidadeSolicitada,
+      quantidade_armazenada: quantidadeArmazenada,
+      quantidade_total_endereco: novaQuantidade,
+      quantidade_pendente_depois: novoPendenteDepois
+    });
+  }
+);
         }
       );
     }
@@ -6161,6 +6255,141 @@ function transmitirDevolucaoCliente(nota, usuario_id, usuario_nome, res) {
   );
 }
 
+function transmitirDevolucaoFornecedor(nota, usuario_id, usuario_nome, res) {
+  db.query(
+    `
+      SELECT
+        produto_id,
+        quantidade,
+        entrada_item_origem_id
+      FROM nota_fiscal_saida_item
+      WHERE nota_id = ?
+    `,
+    [nota.id],
+    (err, itens) => {
+      if (err) {
+        console.error(err);
+        return db.rollback(() => {
+          res.status(500).send("Erro ao buscar itens da devolução ❌");
+        });
+      }
+
+      const entradasIds = itens
+        .map(i => i.entrada_item_origem_id)
+        .filter(Boolean);
+
+      const updates = itens.map(item => {
+        return new Promise((resolve, reject) => {
+          db.query(
+            `
+              UPDATE entrada_mercadoria
+              SET quantidade_disponivel = GREATEST(quantidade_disponivel - ?, 0)
+              WHERE id = ?
+                AND quantidade_disponivel >= ?
+            `,
+            [
+              item.quantidade,
+              item.entrada_item_origem_id,
+              item.quantidade
+            ],
+            (err, result) => {
+              if (err) return reject(err);
+
+              if (result.affectedRows === 0) {
+                return reject(
+                  new Error("Quantidade insuficiente na entrada original para devolução")
+                );
+              }
+
+              db.query(
+                `
+                  UPDATE produto
+                  SET quantidade_estoque = GREATEST(quantidade_estoque - ?, 0)
+                  WHERE id = ?
+                `,
+                [item.quantidade, item.produto_id],
+                (err) => {
+                  if (err) reject(err);
+                  else resolve();
+                }
+              );
+            }
+          );
+        });
+      });
+
+      Promise.all(updates)
+        .then(() => {
+          db.query(
+            `
+              UPDATE entrada_mercadoria
+              SET
+                status_conferencia = 'CONFERIDO',
+                status_divergencia = 'RESOLVIDA'
+              WHERE id IN (?)
+                AND status_divergencia = 'DEVOLUCAO'
+            `,
+            [entradasIds],
+            (err) => {
+              if (err) {
+                console.error(err);
+                return db.rollback(() => {
+                  res.status(500).send("Erro ao resolver divergência da devolução ❌");
+                });
+              }
+
+              db.query(
+                `
+                  UPDATE nota_fiscal_saida
+                  SET
+                    status = 'TRANSMITIDA',
+                    data_nf = CURDATE(),
+                    data_transmissao = NOW()
+                  WHERE id = ?
+                `,
+                [nota.id],
+                (err) => {
+                  if (err) {
+                    console.error(err);
+                    return db.rollback(() => {
+                      res.status(500).send("Erro ao transmitir NF ❌");
+                    });
+                  }
+
+                  registrarAuditoria(
+                    usuario_id,
+                    usuario_nome,
+                    "TRANSMISSÃO DEVOLUÇÃO FORNECEDOR",
+                    "nota_fiscal_saida",
+                    nota.id,
+                    `Devolução ao fornecedor transmitida. Estoque baixado e divergência marcada como resolvida.`
+                  );
+
+                  db.commit((err) => {
+                    if (err) {
+                      return db.rollback(() => {
+                        res.status(500).send("Erro ao finalizar transmissão ❌");
+                      });
+                    }
+
+                    res.send("Devolução ao fornecedor transmitida e divergência resolvida ✅");
+                  });
+                }
+              );
+            }
+          );
+        })
+        .catch(err => {
+          console.error(err);
+
+          db.rollback(() => {
+            res.status(400).send(err.message || "Erro ao baixar estoque da devolução ❌");
+          });
+        });
+    }
+  );
+}
+
 app.get("/nf/origem/vendas", (req, res) => {
   const sql = `
     SELECT
@@ -6331,6 +6560,437 @@ app.get("/nf/origem/entradas/:numeroNF/itens", (req, res) => {
     res.json(result);
   });
 });
+
+/* =========================
+   RELATÓRIOS
+========================= */
+
+app.get("/relatorios/dashboard", (req, res) => {
+  const sql = `
+    SELECT
+      (SELECT COUNT(*) FROM produto) AS total_produtos,
+      (SELECT COUNT(*) FROM cliente) AS total_clientes,
+      (SELECT COUNT(*) FROM fornecedor) AS total_fornecedores,
+
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'ABERTO') AS pedidos_abertos,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'EM_PICKING') AS pedidos_picking,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'SEPARADO') AS pedidos_separados,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status IN ('EXPEDIDO', 'EXPEDIDO_PARCIAL')) AS pedidos_expedidos,
+
+      IFNULL((
+        SELECT SUM(valor_total)
+        FROM nota_fiscal_saida
+        WHERE tipo = 'VENDA'
+          AND status = 'TRANSMITIDA'
+      ), 0) AS valor_faturado
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao carregar dashboard ❌");
+    }
+
+    res.json(result[0]);
+  });
+});
+
+app.get("/relatorios/estoque", (req, res) => {
+  const busca = req.query.busca || "";
+
+  let sql = `
+    SELECT
+      p.id,
+      p.nome,
+      p.codigo,
+      IFNULL(p.quantidade_estoque, 0) AS quantidade_estoque,
+      IFNULL(p.estoque_minimo, 0) AS estoque_minimo,
+      IFNULL(p.preco_venda, 0) AS preco_venda,
+
+      IFNULL((
+        SELECT GROUP_CONCAT(
+          CONCAT(ee.endereco, ' (', ee.quantidade_unidades, ' un)')
+          SEPARATOR ', '
+        )
+        FROM endereco_estoque ee
+        WHERE ee.produto_id = p.id
+      ), '') AS enderecos,
+
+      (
+        IFNULL(p.quantidade_estoque, 0) *
+        IFNULL(p.preco_venda, 0)
+      ) AS valor_estoque
+
+    FROM produto p
+    WHERE 1 = 1
+  `;
+
+  const valores = [];
+
+  if (busca) {
+    sql += `
+      AND (
+        p.nome LIKE ?
+        OR p.codigo LIKE ?
+        OR EXISTS (
+          SELECT 1
+          FROM endereco_estoque ee
+          WHERE ee.produto_id = p.id
+            AND ee.endereco LIKE ?
+        )
+      )
+    `;
+
+    valores.push(
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`
+    );
+  }
+
+  sql += ` ORDER BY p.nome ASC `;
+
+  db.query(sql, valores, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao carregar relatório de estoque ❌");
+    }
+
+    res.json(result);
+  });
+});
+
+app.get("/relatorios/faturamento", (req, res) => {
+  const inicio = req.query.inicio || null;
+  const fim = req.query.fim || null;
+  const busca = req.query.busca || "";
+
+  let where = `
+    WHERE
+      nf.tipo = 'VENDA'
+      AND nf.status = 'TRANSMITIDA'
+  `;
+
+  const valores = [];
+
+  if (inicio) {
+    where += ` AND nf.data_nf >= ? `;
+    valores.push(inicio);
+  }
+
+  if (fim) {
+    where += ` AND nf.data_nf <= ? `;
+    valores.push(fim);
+  }
+
+  if (busca) {
+    where += `
+      AND (
+        nf.numero_nf LIKE ?
+        OR nf.status LIKE ?
+        OR c.razao_social LIKE ?
+        OR c.cnpj LIKE ?
+      )
+    `;
+
+    valores.push(
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`
+    );
+  }
+
+  const sqlNotas = `
+    SELECT
+      nf.id,
+      nf.numero_nf,
+      nf.serie_nf,
+      nf.data_nf,
+      nf.status,
+      IFNULL(nf.valor_produtos, 0) AS valor_produtos,
+      IFNULL(nf.valor_frete, 0) AS valor_frete,
+      IFNULL(nf.valor_desconto, 0) AS valor_desconto,
+      IFNULL(nf.outras_despesas, 0) AS outras_despesas,
+      IFNULL(nf.valor_total, 0) AS valor_total,
+      c.razao_social AS cliente_nome,
+      c.cnpj AS cliente_cnpj
+    FROM nota_fiscal_saida nf
+
+    LEFT JOIN pedido_cliente pc
+      ON nf.pedido_id = pc.id
+
+    LEFT JOIN cliente c
+      ON nf.cliente_id = c.id
+      OR pc.cliente_id = c.id
+
+    ${where}
+
+    ORDER BY nf.data_nf DESC, nf.id DESC
+  `;
+
+  db.query(sqlNotas, valores, (err, notas) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao carregar faturamento ❌");
+    }
+
+    const resumo = {
+      total_notas: notas.length,
+      valor_produtos: 0,
+      valor_frete: 0,
+      valor_desconto: 0,
+      outras_despesas: 0,
+      valor_total: 0
+    };
+
+    notas.forEach(n => {
+      resumo.valor_produtos += Number(n.valor_produtos || 0);
+      resumo.valor_frete += Number(n.valor_frete || 0);
+      resumo.valor_desconto += Number(n.valor_desconto || 0);
+      resumo.outras_despesas += Number(n.outras_despesas || 0);
+      resumo.valor_total += Number(n.valor_total || 0);
+    });
+
+    res.json({
+      resumo,
+      notas
+    });
+  });
+});
+
+app.get("/relatorios/entradas-saidas", (req, res) => {
+  const { inicio, fim } = req.query;
+
+  const valoresEntrada = [];
+  const valoresSaida = [];
+
+  let filtroEntrada = "WHERE 1=1";
+  let filtroSaida = "WHERE nf.tipo = 'VENDA' AND nf.status = 'TRANSMITIDA'";
+
+  if (inicio) {
+    filtroEntrada += " AND em.data_nf >= ?";
+    filtroSaida += " AND nf.data_nf >= ?";
+    valoresEntrada.push(inicio);
+    valoresSaida.push(inicio);
+  }
+
+  if (fim) {
+    filtroEntrada += " AND em.data_nf <= ?";
+    filtroSaida += " AND nf.data_nf <= ?";
+    valoresEntrada.push(fim);
+    valoresSaida.push(fim);
+  }
+
+  const sqlEntradas = `
+    SELECT
+      'ENTRADA' AS tipo,
+      em.numero_nf AS documento,
+      em.data_nf AS data_movimento,
+      COALESCE(f.nome, 'Sem fornecedor') AS parceiro,
+      SUM(
+        IFNULL(em.quantidade_conferida, em.quantidade) *
+        IFNULL(em.custo_unitario_com_imposto, 0)
+      ) AS valor
+    FROM entrada_mercadoria em
+    LEFT JOIN fornecedor f
+      ON em.fornecedor_id = f.id
+    ${filtroEntrada}
+    GROUP BY
+      em.numero_nf,
+      em.data_nf,
+      f.nome
+  `;
+
+  const sqlSaidas = `
+    SELECT
+      'SAÍDA' AS tipo,
+      nf.numero_nf AS documento,
+      nf.data_nf AS data_movimento,
+      COALESCE(c.razao_social, 'Sem cliente') AS parceiro,
+      IFNULL(nf.valor_total, 0) AS valor
+    FROM nota_fiscal_saida nf
+    LEFT JOIN pedido_cliente pc
+      ON nf.pedido_id = pc.id
+    LEFT JOIN cliente c
+      ON nf.cliente_id = c.id
+      OR pc.cliente_id = c.id
+    ${filtroSaida}
+  `;
+
+  db.query(sqlEntradas, valoresEntrada, (err, entradas) => {
+    if (err) {
+      console.error("Erro entradas-saidas entradas:", err);
+      return res.status(500).json({
+        erro: "Erro ao buscar entradas",
+        detalhe: err.sqlMessage || err.message
+      });
+    }
+
+    db.query(sqlSaidas, valoresSaida, (err, saidas) => {
+      if (err) {
+        console.error("Erro entradas-saidas saídas:", err);
+        return res.status(500).json({
+          erro: "Erro ao buscar saídas",
+          detalhe: err.sqlMessage || err.message
+        });
+      }
+
+      const movimentos = [...entradas, ...saidas].sort((a, b) => {
+        return new Date(b.data_movimento || 0) - new Date(a.data_movimento || 0);
+      });
+
+      const totalEntradas = entradas.reduce((s, e) => s + Number(e.valor || 0), 0);
+      const totalSaidas = saidas.reduce((s, e) => s + Number(e.valor || 0), 0);
+
+      res.json({
+        resumo: {
+          total_entradas: totalEntradas,
+          total_saidas: totalSaidas,
+          saldo: totalSaidas - totalEntradas
+        },
+        movimentos
+      });
+    });
+  });
+});
+
+app.get("/relatorios/divergencias", (req, res) => {
+  const busca = req.query.busca || "";
+
+  let sql = `
+    SELECT
+      d.numero_nf,
+      p.nome AS produto_nome,
+      d.quantidade_nf,
+      d.quantidade_conferida,
+      d.diferenca,
+      d.motivo,
+      d.status
+    FROM divergencia_conferencia d
+    INNER JOIN produto p ON d.produto_id = p.id
+    WHERE 1=1
+  `;
+
+  const valores = [];
+
+  if (busca) {
+    sql += `
+      AND (
+        d.numero_nf LIKE ?
+        OR p.nome LIKE ?
+        OR d.motivo LIKE ?
+        OR d.status LIKE ?
+      )
+    `;
+    valores.push(`%${busca}%`, `%${busca}%`, `%${busca}%`, `%${busca}%`);
+  }
+
+  sql += " ORDER BY d.id DESC";
+
+  db.query(sql, valores, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar divergências ❌");
+    }
+
+    res.json(result);
+  });
+});
+
+app.get("/relatorios/enderecamento", (req, res) => {
+  const busca = req.query.busca || "";
+
+  let sql = `
+    SELECT
+      ee.endereco,
+      ee.quantidade_unidades,
+      ee.capacidade_unidades,
+      ee.ocupacao_m3,
+      p.nome AS produto_nome,
+      p.codigo AS produto_codigo
+    FROM endereco_estoque ee
+    INNER JOIN produto p ON ee.produto_id = p.id
+    WHERE 1=1
+  `;
+
+  const valores = [];
+
+  if (busca) {
+    sql += `
+      AND (
+        ee.endereco LIKE ?
+        OR p.nome LIKE ?
+        OR p.codigo LIKE ?
+      )
+    `;
+    valores.push(`%${busca}%`, `%${busca}%`, `%${busca}%`);
+  }
+
+  sql += " ORDER BY ee.rua, ee.coluna, ee.nivel";
+
+  db.query(sql, valores, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar endereçamento ❌");
+    }
+
+    res.json(result);
+  });
+});
+
+app.get("/relatorios/movimentacoes", (req, res) => {
+  const busca = req.query.busca || "";
+
+  let sql = `
+    SELECT
+      usuario_nome,
+      acao,
+      tabela_afetada AS tabela,
+      descricao,
+      data_hora AS data_registro
+    FROM auditoria
+    WHERE 1=1
+  `;
+
+  const valores = [];
+
+  if (busca) {
+    sql += `
+      AND (
+        usuario_nome LIKE ?
+        OR acao LIKE ?
+        OR tabela_afetada LIKE ?
+        OR descricao LIKE ?
+      )
+    `;
+
+    valores.push(
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`
+    );
+  }
+
+  sql += `
+    ORDER BY data_hora DESC
+    LIMIT 300
+  `;
+
+  db.query(sql, valores, (err, result) => {
+    if (err) {
+      console.error("Erro movimentações:", err);
+      return res.status(500).json({
+        erro: "Erro ao buscar movimentações",
+        detalhe: err.sqlMessage || err.message
+      });
+    }
+
+    res.json(result);
+  });
+});
+
 
 app.use((req, res) => {
   res.status(404).send("Rota não encontrada ❌");

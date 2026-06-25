@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="css/romaneio.css">
   <link rel="stylesheet" href="css/picking.css">
   <link rel="stylesheet" href="css/nota_fiscal.css">
+  <link rel="stylesheet" href="css/relatorios.css">
 </head>
 
 <body>
@@ -43,346 +44,176 @@
     </div>
 
     <nav>
+  <ul>
 
-      <ul>
+    <li class="menu-item active" onclick="carregarPagina('pages/dashboard.html')">
+      <div class="icon-text">
+        <span class="icon">🏠</span>
+        <span class="text">Dashboard</span>
+      </div>
+    </li>
 
-        <!-- DASHBOARD -->
+    <li class="menu-item has-submenu" id="menuUsuarios">
+      <div class="icon-text">
+        <span class="icon">👥</span>
+        <span class="text">Usuários</span>
+      </div>
 
-        <li class="menu-item active" onclick="carregarPagina('pages/dashboard.html')">
-          <div class="icon-text">
-          <span class="icon">🏠</span>
-          <span class="text">Dashboard</span>
-        </div>
+      <ul class="submenu">
+        <li data-permissao="funcionarios" onclick="carregarPagina('pages/funcionarios.html', 'funcionarios')">
+          Funcionários
         </li>
 
-        <!-- USUÁRIOS -->
-
-        <li class="menu-item has-submenu" id="menuUsuarios">
-
-          <div class="icon-text">
-
-            <span class="icon">👥</span>
-
-            <span class="text">
-              Usuários
-            </span>
-
-          </div>
-
-          <ul class="submenu">
-
-            <li onclick="carregarPagina(
-              'pages/funcionarios.html',
-              'funcionarios'
-            )">
-              Funcionários
-            </li>
-
-            <li onclick="carregarPagina(
-              'pages/usuarios.html',
-              'usuarios'
-            )">
-              Usuários
-            </li>
-          </ul>
-
+        <li data-permissao="usuarios" onclick="carregarPagina('pages/usuarios.html', 'usuarios')">
+          Usuários
         </li>
-
-        <!-- RECEBIMENTO -->
-
-        <li class="menu-item has-submenu" id="menuRecebimento">
-
-          <div class="icon-text">
-
-            <span class="icon">📥</span>
-
-            <span class="text">
-              Recebimento
-            </span>
-
-          </div>
-
-          <ul class="submenu">
-
-            <li onclick="carregarPagina(
-              'pages/fornecedores.html',
-              'fornecedores'
-            )">
-              Fornecedores
-            </li>
-
-            <li onclick="carregarPagina(
-              'pages/entrada.html',
-              'entrada_mercadorias'
-            )">
-              Entrada de Nota Fiscal
-            </li>
-
-            <li onclick="carregarPagina(
-              'pages/conferencia.html',
-              'conferencia'
-            )">
-              Conferência
-            </li>
-
-          <li onclick="carregarPagina('pages/divergencias.html', 'divergencias')">
-                 Divergências
-          </li>
-</li>
-
-          </ul>
-
-        </li>
-
-        <!-- ARMAZENAGEM -->
-
-        <li class="menu-item has-submenu" id="menuArmazenagem">
-
-          <div class="icon-text">
-
-            <span class="icon">🏗️</span>
-
-            <span class="text">
-              Armazenagem
-            </span>
-
-          </div>
-
-          <ul class="submenu">
-
-            <li onclick="carregarPagina(
-              'pages/enderecamento.html',
-              'enderecamento'
-            )">
-              Endereçamento
-            </li>
-
-            <li onclick="carregarPagina(
-              'pages/posicoes.html',
-              'posicoes'
-              )">
-                 Posições
-            </li>
-
-            <li onclick="carregarPagina(
-              'pages/cubagem.html',
-              'cubagem'
-            )">
-              Cubagem
-            </li>
-
-            <li onclick="carregarPagina(
-              'pages/fifo.html',
-              'fifo'
-            )">
-              FIFO
-            </li>
-
-          </ul>
-
-        </li>
-
-        <!-- ESTOQUE -->
-
-        <li class="menu-item has-submenu" id="menuEstoque">
-
-          <div class="icon-text">
-
-            <span class="icon">📦</span>
-
-            <span class="text">
-              Estoque
-            </span>
-
-          </div>
-
-          <ul class="submenu">
-
-            <li onclick="carregarPagina(
-              'pages/produtos.html',
-              'produtos'
-            )">
-              Produtos
-            </li>
-
-            <li onclick="carregarPagina(
-              'pages/estoque.html',
-              'estoque'
-            )">
-              Estoque
-            </li>
-
-            <li onclick="carregarPagina(
-              'pages/ajuste-estoque.html',
-              'ajustes_estoque'
-            )">
-              Ajustes
-            </li>
-
-            <li onclick="carregarPagina(
-              'pages/alerta_min.html',
-              'alerta_estoque'
-            )">
-              Alertas de Mínimo
-            </li>
-
-          </ul>
-
-        </li>
-
-        <!-- PICKING -->
-
-        <li
-          class="menu-item"
-          onclick="carregarPagina(
-            'pages/picking.html',
-            'picking'
-          )"
-        >
-
-          <div class="icon-text">
-
-            <span class="icon">🛒</span>
-
-            <span class="text">
-              Picking
-            </span>
-
-          </div>
-
-        </li>
-
-        <!-- EXPEDIÇÃO -->
-
-        <li class="menu-item has-submenu" id="menuExpedicao">
-
-          <div class="icon-text">
-
-            <span class="icon">🚚</span>
-
-            <span class="text">
-              Expedição
-            </span>
-
-          </div>
-
-          <ul class="submenu">
-
-            <li onclick="carregarPagina(
-              'pages/clientes.html', 'clientes' )"
-            >
-              Cliente
-          </li>
-
-          <li onclick="carregarPagina('pages/pedidos.html', 'pedidos')">
-  Pedidos
-</li>
-
-            <li onclick="carregarPagina(
-              'pages/romaneio.html',
-              'romaneio'
-            )">
-              Romaneio
-            </li>
-
-            <li onclick="carregarPagina(
-              'pages/nota_fiscal.html',
-              'nota_fiscal'
-            )">
-              Nota Fiscal
-            </li>
-
-          </ul>
-
-        </li>
-
-        <!-- RELATÓRIOS -->
-
-        <li
-          class="menu-item" id="menuRelatorios"
-          onclick="carregarPagina(
-            'pages/relatorios.html',
-            'relatorios'
-          )"
-        >
-
-          <div class="icon-text">
-
-            <span class="icon">📊</span>
-
-            <span class="text">
-              Relatórios
-            </span>
-
-          </div>
-
-        </li>
-
-        <!-- AUDITORIA -->
-
-        <li
-          class="menu-item" id="menuAuditoria"
-          onclick="carregarPagina(
-            'pages/auditoria.html',
-            'auditoria'
-          )"
-        >
-
-          <div class="icon-text">
-
-            <span class="icon">🔍</span>
-
-            <span class="text">
-              Auditoria
-            </span>
-
-          </div>
-
-        </li>
-
-        <!-- CONFIGURAÇÕES -->
-
-        <li class="menu-item has-submenu" id="menuConfiguracoes">
-
-          <div class="icon-text">
-
-            <span class="icon">⚙️</span>
-
-            <span class="text">
-              Configurações
-            </span>
-
-          </div>
-
-          <ul class="submenu">
-
-            <li onclick="carregarPagina(
-              'pages/trocar_senha.html',
-              'trocar_senha'
-            )">
-              Trocar Senha
-            </li>
-
-
-            <li onclick="carregarPagina(
-              'pages/setores.html',
-              'setores'
-            )">
-              Cadastrar Setor
-            </li>
-
-          <li onclick="carregarPagina('pages/categorias.html')">Cadastrar Categorias</li>
-
-          <li onclick="carregarPagina('pages/cores.html')">Cadastrar Cores</li>
-
-          <li onclick="carregarPagina('pages/cargos.html')">Cadastrar Cargos</li>
-          </ul>
-
-        </li>
-
       </ul>
+    </li>
 
-    </nav>
+    <li class="menu-item has-submenu" id="menuRecebimento">
+      <div class="icon-text">
+        <span class="icon">📥</span>
+        <span class="text">Recebimento</span>
+      </div>
+
+      <ul class="submenu">
+        <li data-permissao="fornecedores" onclick="carregarPagina('pages/fornecedores.html', 'fornecedores')">
+          Fornecedores
+        </li>
+
+        <li data-permissao="entrada_mercadorias" onclick="carregarPagina('pages/entrada.html', 'entrada_mercadorias')">
+          Entrada de Nota Fiscal
+        </li>
+
+        <li data-permissao="conferencia" onclick="carregarPagina('pages/conferencia.html', 'conferencia')">
+          Conferência
+        </li>
+
+        <li data-permissao="divergencias" onclick="carregarPagina('pages/divergencias.html', 'divergencias')">
+          Divergências
+        </li>
+      </ul>
+    </li>
+
+    <li class="menu-item has-submenu" id="menuArmazenagem">
+      <div class="icon-text">
+        <span class="icon">🏗️</span>
+        <span class="text">Armazenagem</span>
+      </div>
+
+      <ul class="submenu">
+        <li data-permissao="enderecamento" onclick="carregarPagina('pages/enderecamento.html', 'enderecamento')">
+          Endereçamento
+        </li>
+
+        <li data-permissao="posicoes" onclick="carregarPagina('pages/posicoes.html', 'posicoes')">
+          Posições
+        </li>
+      </ul>
+    </li>
+
+    <li class="menu-item has-submenu" id="menuEstoque">
+      <div class="icon-text">
+        <span class="icon">📦</span>
+        <span class="text">Estoque</span>
+      </div>
+
+      <ul class="submenu">
+        <li data-permissao="produtos" onclick="carregarPagina('pages/produtos.html', 'produtos')">
+          Produtos
+        </li>
+
+        <li data-permissao="estoque" onclick="carregarPagina('pages/estoque.html', 'estoque')">
+          Estoque
+        </li>
+
+        <li data-permissao="ajustes_estoque" onclick="carregarPagina('pages/ajuste-estoque.html', 'ajustes_estoque')">
+          Ajustes
+        </li>
+
+        <li data-permissao="alerta_estoque" onclick="carregarPagina('pages/alerta_min.html', 'alerta_estoque')">
+          Alertas de Mínimo
+        </li>
+      </ul>
+    </li>
+
+    <li class="menu-item" data-permissao="picking" onclick="carregarPagina('pages/picking.html', 'picking')">
+      <div class="icon-text">
+        <span class="icon">🛒</span>
+        <span class="text">Picking</span>
+      </div>
+    </li>
+
+    <li class="menu-item has-submenu" id="menuExpedicao">
+      <div class="icon-text">
+        <span class="icon">🚚</span>
+        <span class="text">Expedição</span>
+      </div>
+
+      <ul class="submenu">
+        <li data-permissao="clientes" onclick="carregarPagina('pages/clientes.html', 'clientes')">
+          Cliente
+        </li>
+
+        <li data-permissao="pedidos" onclick="carregarPagina('pages/pedidos.html', 'pedidos')">
+          Pedidos
+        </li>
+
+        <li data-permissao="romaneio" onclick="carregarPagina('pages/romaneio.html', 'romaneio')">
+          Romaneio
+        </li>
+
+        <li data-permissao="nota_fiscal" onclick="carregarPagina('pages/nota_fiscal.html', 'nota_fiscal')">
+          Nota Fiscal
+        </li>
+      </ul>
+    </li>
+
+    <li class="menu-item" id="menuRelatorios" data-permissao="relatorios" onclick="carregarPagina('pages/relatorios.html', 'relatorios')">
+      <div class="icon-text">
+        <span class="icon">📊</span>
+        <span class="text">Relatórios</span>
+      </div>
+    </li>
+
+    <li class="menu-item" id="menuAuditoria" data-permissao="auditoria" onclick="carregarPagina('pages/auditoria.html', 'auditoria')">
+      <div class="icon-text">
+        <span class="icon">🔍</span>
+        <span class="text">Auditoria</span>
+      </div>
+    </li>
+
+    <li class="menu-item has-submenu" id="menuConfiguracoes">
+      <div class="icon-text">
+        <span class="icon">⚙️</span>
+        <span class="text">Configurações</span>
+      </div>
+
+      <ul class="submenu">
+        <li data-permissao="trocar_senha" onclick="carregarPagina('pages/trocar_senha.html', 'trocar_senha')">
+          Trocar Senha
+        </li>
+
+        <li data-permissao="setores" onclick="carregarPagina('pages/setores.html', 'setores')">
+          Cadastrar Setor
+        </li>
+
+        <li data-permissao="categorias" onclick="carregarPagina('pages/categorias.html', 'categorias')">
+          Cadastrar Categorias
+        </li>
+
+        <li data-permissao="cores" onclick="carregarPagina('pages/cores.html', 'cores')">
+          Cadastrar Cores
+        </li>
+
+        <li data-permissao="cargos" onclick="carregarPagina('pages/cargos.html', 'cargos')">
+          Cadastrar Cargos
+        </li>
+      </ul>
+    </li>
+
+  </ul>
+</nav>
 
   </aside>
 
@@ -460,6 +291,13 @@
   <script src="js/picking.js"></script>
   <script src="js/romaneio.js"></script>
   <script src="js/nota_fiscal.js"></script>
+  <script src="js/relatorios.js"></script>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    carregarPagina("pages/dashboard.html");
+  });
+</script>
 
 </body>
 

@@ -1,0 +1,264 @@
+<h2 class="titulo-pagina">Relatórios</h2>
+
+<section class="card-relatorios">
+  <h3 class="subtitulo">Selecionar Relatório</h3>
+
+  <div class="filtros-relatorios">
+    <select id="tipoRelatorio" onchange="trocarRelatorio()">
+      <option value="dashboard">Dashboard</option>
+      <option value="estoque">Estoque</option>
+      <option value="faturamento">Faturamento</option>
+      <option value="entradas-saidas">Entradas x Saídas</option>
+      <option value="divergencias">Divergências</option>
+      <option value="enderecamento">Endereçamento</option>
+      <option value="movimentacoes">Movimentações</option>
+    </select>
+  </div>
+</section>
+
+<section id="relatorioDashboard" class="card-relatorios">
+  <div class="topo-relatorios">
+    <div>
+      <h3 class="subtitulo">Dashboard Gerencial</h3>
+      <p>Resumo geral do WMS LG Logística.</p>
+    </div>
+
+    <button onclick="carregarDashboardRelatorios()">🔄 Atualizar</button>
+  </div>
+
+  <div id="cardsDashboardRelatorios" class="cards-dashboard-relatorios"></div>
+</section>
+
+<section id="relatorioEstoque" class="card-relatorios hidden">
+  <h3 class="subtitulo">Relatório de Estoque</h3>
+
+  <div class="filtros-relatorios">
+    <input
+      type="text"
+      id="buscaEstoqueRelatorio"
+      placeholder="Buscar por produto, SKU ou endereço..."
+      oninput="carregarRelatorioEstoque()"
+    >
+
+    <button onclick="imprimirRelatorio('areaRelatorioEstoque')">
+      🖨 Imprimir
+    </button>
+  </div>
+
+  <div id="areaRelatorioEstoque" class="tabela-container">
+    <table class="tabela-relatorios">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>SKU</th>
+          <th>Estoque</th>
+          <th>Mínimo</th>
+          <th>Status</th>
+          <th>Endereços</th>
+          <th>Valor Estoque</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaRelatorioEstoque">
+        <tr>
+          <td colspan="7">Carregando estoque...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="relatorioFaturamento" class="card-relatorios hidden">
+  <h3 class="subtitulo">Relatório de Faturamento</h3>
+
+  <div class="filtros-relatorios">
+    <input type="date" id="dataInicioFaturamento" onchange="carregarRelatorioFaturamento()">
+    <input type="date" id="dataFimFaturamento" onchange="carregarRelatorioFaturamento()">
+
+    <input
+      type="text"
+      id="buscaFaturamentoRelatorio"
+      placeholder="Buscar NF, cliente ou status..."
+      oninput="carregarRelatorioFaturamento()"
+    >
+
+    <button onclick="imprimirRelatorio('areaRelatorioFaturamento')">
+      🖨 Imprimir
+    </button>
+  </div>
+
+  <div id="resumoFaturamentoRelatorio" class="resumo-faturamento"></div>
+
+  <div id="areaRelatorioFaturamento" class="tabela-container">
+    <table class="tabela-relatorios">
+      <thead>
+        <tr>
+          <th>NF</th>
+          <th>Série</th>
+          <th>Cliente</th>
+          <th>Data</th>
+          <th>Produtos</th>
+          <th>Frete</th>
+          <th>Desconto</th>
+          <th>Total</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaRelatorioFaturamento">
+        <tr>
+          <td colspan="9">Carregando faturamento...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="relatorioEntradasSaidas" class="card-relatorios hidden">
+  <h3 class="subtitulo">Entradas x Saídas</h3>
+
+  <div class="filtros-relatorios">
+    <input type="date" id="dataInicioES" onchange="carregarRelatorioEntradasSaidas()">
+    <input type="date" id="dataFimES" onchange="carregarRelatorioEntradasSaidas()">
+
+    <button onclick="imprimirRelatorio('areaRelatorioEntradasSaidas')">
+      🖨 Imprimir
+    </button>
+  </div>
+
+  <div id="resumoEntradasSaidas" class="resumo-faturamento"></div>
+
+  <div id="areaRelatorioEntradasSaidas" class="tabela-container">
+    <table class="tabela-relatorios">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Documento</th>
+          <th>Data</th>
+          <th>Parceiro</th>
+          <th>Valor</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaEntradasSaidas">
+        <tr>
+          <td colspan="5">Carregando entradas e saídas...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="relatorioDivergencias" class="card-relatorios hidden">
+  <h3 class="subtitulo">Divergências</h3>
+
+  <div class="filtros-relatorios">
+    <input
+      type="text"
+      id="buscaDivergencias"
+      placeholder="Buscar produto, NF ou motivo..."
+      oninput="carregarRelatorioDivergencias()"
+    >
+
+    <button onclick="imprimirRelatorio('areaRelatorioDivergencias')">
+      🖨 Imprimir
+    </button>
+  </div>
+
+  <div id="areaRelatorioDivergencias" class="tabela-container">
+    <table class="tabela-relatorios">
+      <thead>
+        <tr>
+          <th>NF</th>
+          <th>Produto</th>
+          <th>Qtd NF</th>
+          <th>Qtd Conferida</th>
+          <th>Diferença</th>
+          <th>Motivo</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaDivergencias">
+        <tr>
+          <td colspan="7">Carregando divergências...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="relatorioEnderecamento" class="card-relatorios hidden">
+  <h3 class="subtitulo">Endereçamento</h3>
+
+  <div class="filtros-relatorios">
+    <input
+      type="text"
+      id="buscaEnderecamento"
+      placeholder="Buscar produto, SKU ou endereço..."
+      oninput="carregarRelatorioEnderecamento()"
+    >
+
+    <button onclick="imprimirRelatorio('areaRelatorioEnderecamento')">
+      🖨 Imprimir
+    </button>
+  </div>
+
+  <div id="areaRelatorioEnderecamento" class="tabela-container">
+    <table class="tabela-relatorios">
+      <thead>
+        <tr>
+          <th>Endereço</th>
+          <th>Produto</th>
+          <th>SKU</th>
+          <th>Qtd</th>
+          <th>Capacidade</th>
+          <th>Ocupação m³</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaEnderecamentoRelatorio">
+        <tr>
+          <td colspan="6">Carregando endereçamentos...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="relatorioMovimentacoes" class="card-relatorios hidden">
+  <h3 class="subtitulo">Movimentações / Auditoria</h3>
+
+  <div class="filtros-relatorios">
+    <input
+      type="text"
+      id="buscaMovimentacoes"
+      placeholder="Buscar usuário, ação ou descrição..."
+      oninput="carregarRelatorioMovimentacoes()"
+    >
+
+    <button onclick="imprimirRelatorio('areaRelatorioMovimentacoes')">
+      🖨 Imprimir
+    </button>
+  </div>
+
+  <div id="areaRelatorioMovimentacoes" class="tabela-container">
+    <table class="tabela-relatorios">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Usuário</th>
+          <th>Ação</th>
+          <th>Tabela</th>
+          <th>Descrição</th>
+        </tr>
+      </thead>
+
+      <tbody id="listaMovimentacoes">
+        <tr>
+          <td colspan="5">Carregando movimentações...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

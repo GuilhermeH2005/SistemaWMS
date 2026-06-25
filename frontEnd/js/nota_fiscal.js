@@ -301,26 +301,29 @@ function renderizarItensNotaFiscalEditavelDevolucao() {
   }
 
   itensNotaFiscal.forEach((item, index) => {
-    tbody.innerHTML += `
-<tr ondblclick="abrirDetalhesNotaFiscal(${n.id})">
-        <td>${item.produto_nome}</td>
-        <td>${item.produto_codigo || "-"}</td>
-        <td>${item.quantidade_maxima}</td>
-        <td>
-          <input
-            type="number"
-            min="0"
-            max="${item.quantidade_maxima}"
-            value="${item.quantidade || 0}"
-            onchange="alterarQuantidadeDevolucaoNF(${index}, this.value)"
-            style="width:90px"
-          >
-        </td>
-        <td>${formatarMoedaNF(item.valor_unitario)}</td>
-        <td>${formatarMoedaNF(Number(item.quantidade || 0) * Number(item.valor_unitario || 0))}</td>
-      </tr>
-    `;
-  });
+  tbody.innerHTML += `
+    <tr>
+      <td>${item.produto_nome}</td>
+      <td>${item.produto_codigo || "-"}</td>
+      <td>${item.quantidade_maxima}</td>
+      <td>
+        <input
+          type="number"
+          min="0"
+          max="${item.quantidade_maxima}"
+          value="${item.quantidade || 0}"
+          onchange="alterarQuantidadeDevolucaoNF(${index}, this.value)"
+          style="width:90px"
+        >
+      </td>
+      <td>${formatarMoedaNF(item.valor_unitario)}</td>
+      <td>${formatarMoedaNF(
+        Number(item.quantidade || 0) *
+        Number(item.valor_unitario || 0)
+      )}</td>
+    </tr>
+  `;
+});
 
   calcularTotaisNF();
 }
@@ -799,7 +802,7 @@ async function carregarNotasFiscais() {
 
   notas.forEach(n => {
     tbody.innerHTML += `
-      <tr ondblclick="abrirDetalhesNotaFiscal(${n.id})">
+      <tr>
         <td>${n.id}</td>
         <td>${n.tipo}</td>
         <td>${n.numero_nf}</td>

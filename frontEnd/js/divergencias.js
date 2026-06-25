@@ -4,7 +4,7 @@ function iniciarDivergencias() {
 
 async function carregarDivergencias() {
   const busca = document.getElementById("buscarDivergencia")?.value || "";
-  const status = document.getElementById("filtroStatusDivergencia")?.value || "TODOS";
+  const status = document.getElementById("filtroStatusDivergencia")?.value || "ABERTAS";
 
   try {
     const res = await fetch(

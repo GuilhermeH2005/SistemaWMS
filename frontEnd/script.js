@@ -339,26 +339,51 @@ function abrirPagina(pagina) {
 
 // PERMISSÕES DO MENU
 function aplicarPermissoes() {
-  const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
+
+  const usuario =
+    JSON.parse(localStorage.getItem("usuarioLogado"));
 
   if (!usuario) return;
 
-  const permissoes = usuario.permissoes || [];
-
-  if (!permissoes.includes("fornecedores")) {
-    const menu = document.getElementById("menuFornecedores");
-    if (menu) menu.style.display = "none";
+  // ADMINISTRADOR TEM ACESSO TOTAL
+  if (usuario.login === "admin") {
+    return;
   }
 
-  if (!permissoes.includes("produtos")) {
-    const menu = document.getElementById("menuProdutos");
-    if (menu) menu.style.display = "none";
-  }
+  const permissoes =
+    usuario.permissoes || [];
 
-  if (!permissoes.includes("funcionarios")) {
-    const menu = document.getElementById("menuFuncionarios");
-    if (menu) menu.style.display = "none";
-  }
+  // TODOS OS ITENS QUE POSSUEM DATA-PERMISSAO
+  document
+    .querySelectorAll("[data-permissao]")
+    .forEach(item => {
+
+      const permissao =
+        item.getAttribute("data-permissao");
+
+      if (!permissoes.includes(permissao)) {
+        item.style.display = "none";
+      }
+
+    });
+
+  // ESCONDER MENUS VAZIOS
+  document
+    .querySelectorAll(".has-submenu")
+    .forEach(menu => {
+
+      const itensVisiveis =
+        [...menu.querySelectorAll(".submenu li")]
+          .filter(item =>
+            item.style.display !== "none"
+          );
+
+      if (itensVisiveis.length === 0) {
+        menu.style.display = "none";
+      }
+
+    });
+
 }
 
 function getUsuarioAuditoria() {
@@ -406,6 +431,17 @@ function carregarUsuarioTopo() {
     usuarioTopo.innerHTML = `👤 ${usuario.nomeCompleto || usuario.login}`;
   }
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
+
+  if (!usuario) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  carregarPagina("pages/dashboard.html", "dashboard");
+});
 
 // INICIAR SISTEMA
 atualizarUsuarioTopo();
