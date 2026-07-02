@@ -313,8 +313,6 @@ function renderizarPedidos(pedidos) {
   }
 
   pedidos.forEach(p => {
-    const podeEditar = p.status === "ABERTO" || p.status === "EM_PICKING";
-
     tbody.innerHTML += `
       <tr>
         <td>${p.id}</td>
@@ -330,14 +328,46 @@ function renderizarPedidos(pedidos) {
         <td>${p.observacao || "-"}</td>
         <td>
           ${
-            podeEditar
-              ? `<button onclick='editarPedido(${JSON.stringify(p)})'>Editar</button>`
+            p.status === "ABERTO"
+              ? `
+                <button onclick='editarPedido(${JSON.stringify(p)})'>
+                  ✏️ Editar
+                </button>
+
+                <button onclick="cancelarPedido(${p.id})">
+                  ❌ Cancelar
+                </button>
+              `
               : ""
           }
 
           ${
-            podeEditar
-              ? `<button onclick="cancelarPedido(${p.id})">Cancelar</button>`
+            p.status === "EM_PICKING" || p.status === "SEPARADO"
+              ? `
+                <button onclick="cancelarPickingPedido(${p.id})">
+                  ↩️ Cancelar Picking
+                </button>
+              `
+              : ""
+          }
+
+          ${
+            p.status === "EXPEDIDO" || p.status === "EXPEDIDO_PARCIAL"
+              ? `
+                <span class="aviso-pedido-expedido">
+                  Use devolução de cliente
+                </span>
+              `
+              : ""
+          }
+
+          ${
+            p.status === "CANCELADO"
+              ? `
+                <span class="aviso-pedido-cancelado">
+                  Pedido cancelado
+                </span>
+              `
               : ""
           }
         </td>
@@ -450,6 +480,13 @@ function renderizarDetalhesItensPedido(itensJson) {
 }
 
 async function cancelarPedido(id) {
+  const motivo = prompt("Informe o motivo do cancelamento:");
+
+  if (!motivo || !motivo.trim()) {
+    alert("Informe o motivo.");
+    return;
+  }
+
   if (!confirm("Deseja cancelar este pedido?")) return;
 
   try {
@@ -459,6 +496,7 @@ async function cancelarPedido(id) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
+        motivo,
         ...getUsuarioAuditoria()
       })
     });
@@ -476,6 +514,46 @@ async function cancelarPedido(id) {
   } catch (err) {
     console.error(err);
     alert("Erro ao cancelar pedido.");
+  }
+}
+
+async function cancelarPickingPedido(id) {
+  const motivo = prompt("Informe o motivo do cancelamento do picking:");
+
+  if (!motivo || !motivo.trim()) {
+    alert("Informe o motivo.");
+    return;
+  }
+
+  if (!confirm("Deseja cancelar o picking deste pedido? O estoque será devolvido.")) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_PEDIDOS}/picking/pedido/${id}/cancelar`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        motivo,
+        ...getUsuarioAuditoria()
+      })
+    });
+
+    const msg = await res.text();
+
+    if (!res.ok) {
+      alert(msg);
+      return;
+    }
+
+    alert(msg);
+    carregarPedidos();
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao cancelar picking.");
   }
 }
 

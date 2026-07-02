@@ -15,6 +15,21 @@
       </select>
     </div>
 
+     <div class="campo-form campo-origem-devolucao-fornecedor hidden">
+  <label>Origem da Devolução</label>
+  <select id="origem_devolucao" onchange="alterarOrigemDevolucaoFornecedor()">
+    <option value="ESTOQUE">Devolução física do estoque</option>
+    <option value="DIVERGENCIA">Devolução por divergência</option>
+  </select>
+</div>
+
+<div class="campo-form campo-divergencia-origem hidden">
+  <label>Divergência de Origem</label>
+  <select id="divergencia_origem_id" onchange="carregarItensDivergenciaNF()">
+    <option value="">Selecione a divergência</option>
+  </select>
+</div>
+
     <div class="campo-form campo-nf-venda-origem hidden">
   <label>NF de Venda Original</label>
   <select id="nf_venda_origem_id" onchange="carregarItensNFVendaOrigem()">
@@ -75,6 +90,8 @@
         <option value="">Selecione o fornecedor</option>
       </select>
     </div>
+
+   
 
     <div class="campo-form campo-cliente hidden">
       <label>Cliente</label>

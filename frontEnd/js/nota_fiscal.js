@@ -102,9 +102,38 @@ function alterarTipoNotaFiscal() {
   document.querySelector(".campo-cliente")?.classList.add("hidden");
   document.querySelector(".campo-nf-venda-origem")?.classList.add("hidden");
   document.querySelector(".campo-nf-entrada-origem")?.classList.add("hidden");
+  document.querySelector(".campo-origem-devolucao-fornecedor")?.classList.add("hidden");
+  document.querySelector(".campo-divergencia-origem")?.classList.add("hidden");
 
   document.getElementById("areaItensNota")?.classList.add("hidden");
   document.getElementById("formItemManualNF")?.classList.add("hidden");
+
+  const cliente = document.getElementById("cliente_id_nf");
+  if (cliente) {
+    cliente.disabled = false;
+    cliente.value = "";
+  }
+
+  const fornecedor = document.getElementById("fornecedor_id_nf");
+  if (fornecedor) {
+    fornecedor.disabled = false;
+    fornecedor.value = "";
+  }
+
+  const origem = document.getElementById("origem_devolucao");
+  if (origem) origem.value = "ESTOQUE";
+
+  const divergencia = document.getElementById("divergencia_origem_id");
+  if (divergencia) {
+    divergencia.innerHTML = `<option value="">Selecione a divergência</option>`;
+    divergencia.value = "";
+  }
+
+  const nfVenda = document.getElementById("nf_venda_origem_id");
+  if (nfVenda) nfVenda.value = "";
+
+  const nfEntrada = document.getElementById("nf_entrada_origem_id");
+  if (nfEntrada) nfEntrada.value = "";
 
   const thQtd = document.getElementById("thQtdNF");
   if (thQtd) {
@@ -113,7 +142,10 @@ function alterarTipoNotaFiscal() {
   }
 
   const areaValoresExtras = document.getElementById("areaValoresExtrasNF");
-  if (areaValoresExtras) areaValoresExtras.style.display = "none";
+  if (areaValoresExtras) {
+    areaValoresExtras.classList.add("hidden");
+    areaValoresExtras.style.display = "";
+  }
 
   itensNotaFiscal = [];
   itensOrigemDevolucao = [];
@@ -122,7 +154,10 @@ function alterarTipoNotaFiscal() {
   if (tipo === "VENDA") {
     document.querySelector(".campo-venda")?.classList.remove("hidden");
     document.getElementById("areaItensNota")?.classList.remove("hidden");
-    if (areaValoresExtras) areaValoresExtras.style.display = "grid";
+
+    if (areaValoresExtras) {
+      areaValoresExtras.classList.remove("hidden");
+    }
   }
 
   if (tipo === "DEVOLUCAO_CLIENTE") {
@@ -130,7 +165,7 @@ function alterarTipoNotaFiscal() {
     document.querySelector(".campo-nf-venda-origem")?.classList.remove("hidden");
     document.getElementById("areaItensNota")?.classList.remove("hidden");
 
-    document.getElementById("cliente_id_nf").disabled = true;
+    if (cliente) cliente.disabled = true;
 
     carregarNFsVendaOrigem();
     zerarValoresExtrasNF();
@@ -138,15 +173,38 @@ function alterarTipoNotaFiscal() {
 
   if (tipo === "DEVOLUCAO_FORNECEDOR") {
     document.querySelector(".campo-fornecedor")?.classList.remove("hidden");
+    document.querySelector(".campo-origem-devolucao-fornecedor")?.classList.remove("hidden");
     document.querySelector(".campo-nf-entrada-origem")?.classList.remove("hidden");
-    document.getElementById("areaItensNota")?.classList.remove("hidden");
 
-    document.getElementById("fornecedor_id_nf").disabled = true;
+    document.getElementById("areaItensNota")?.classList.remove("hidden");
+    document.getElementById("formItemManualNF")?.classList.add("hidden");
 
     carregarNFsEntradaOrigem();
     zerarValoresExtrasNF();
   }
 }
+
+function alterarOrigemDevolucaoFornecedor() {
+  const origem = document.getElementById("origem_devolucao")?.value || "ESTOQUE";
+
+  itensNotaFiscal = [];
+  itensOrigemDevolucao = [];
+  renderizarItensNotaFiscal();
+
+  document.querySelector(".campo-nf-entrada-origem")?.classList.add("hidden");
+  document.querySelector(".campo-divergencia-origem")?.classList.add("hidden");
+
+  if (origem === "ESTOQUE") {
+    document.querySelector(".campo-nf-entrada-origem")?.classList.remove("hidden");
+    carregarNFsEntradaOrigem();
+  }
+
+  if (origem === "DIVERGENCIA") {
+    document.querySelector(".campo-divergencia-origem")?.classList.remove("hidden");
+    carregarDivergenciasParaNF();
+  }
+}
+
 async function carregarNFsVendaOrigem() {
   const res = await fetch(`${API_NF}/nf/origem/vendas`);
 
@@ -648,6 +706,9 @@ async function salvarNotaFiscal() {
     serie_nf: document.getElementById("serie_nf_saida").value || "1",
     data_nf: null,
 
+    origem_devolucao: document.getElementById("origem_devolucao")?.value || null,
+    divergencia_origem_id: document.getElementById("divergencia_origem_id")?.value || null,
+
     nf_origem_id: document.getElementById("nf_venda_origem_id")?.value || null,
     entrada_origem_id: document.getElementById("nf_entrada_origem_id")?.value || null,
 
@@ -712,15 +773,25 @@ async function salvarNotaFiscal() {
 }
 
 if (tipo === "DEVOLUCAO_FORNECEDOR") {
-  if (!dados.entrada_origem_id) {
+
+  if (!dados.origem_devolucao) {
+    alert("Selecione a origem da devolução.");
+    return;
+  }
+
+  if (
+    dados.origem_devolucao === "ESTOQUE" &&
+    !document.getElementById("nf_entrada_origem_id").value
+  ) {
     alert("Selecione a NF de entrada original.");
     return;
   }
 
-  dados.itens = itensNotaFiscal.filter(i => Number(i.quantidade || 0) > 0);
-
-  if (dados.itens.length === 0) {
-    alert("Informe ao menos uma quantidade para devolução.");
+  if (
+    dados.origem_devolucao === "DIVERGENCIA" &&
+    !dados.divergencia_origem_id
+  ) {
+    alert("Selecione a divergência de origem.");
     return;
   }
 }
@@ -1572,4 +1643,88 @@ async function abrirDetalhesNotaFiscal(id) {
 function fecharDetalhesNotaFiscal() {
   const modal = document.getElementById("modalDetalheNF");
   if (modal) modal.remove();
+}
+
+async function carregarDivergenciasParaNF() {
+  try {
+    const select = document.getElementById("divergencia_origem_id");
+    if (!select) return;
+
+    select.innerHTML = `<option value="">Carregando divergências...</option>`;
+
+    const res = await fetch(`${API_NF}/divergencias?status=DEVOLUCAO`);
+
+    if (!res.ok) {
+      alert(await res.text());
+      select.innerHTML = `<option value="">Erro ao carregar divergências</option>`;
+      return;
+    }
+
+    const divergencias = await res.json();
+
+    select.innerHTML = `<option value="">Selecione a divergência</option>`;
+
+    if (!divergencias || divergencias.length === 0) {
+      select.innerHTML = `<option value="">Nenhuma divergência para devolução</option>`;
+      return;
+    }
+
+    divergencias.forEach(d => {
+      select.innerHTML += `
+        <option
+          value="${d.id}"
+          data-fornecedor-id="${d.fornecedor_id || ""}"
+          data-produto-id="${d.produto_id}"
+          data-produto-nome="${d.produto_nome || ""}"
+          data-produto-codigo="${d.produto_codigo || ""}"
+          data-quantidade="${Math.abs(Number(d.diferenca || 0))}"
+          data-valor-unitario="${Number(d.valor_unitario || d.custo_unitario_com_imposto || 0)}"
+        >
+          NF ${d.numero_nf} - ${d.produto_nome} - Diferença ${d.diferenca}
+        </option>
+      `;
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao carregar divergências para NF.");
+  }
+}
+
+function carregarItensDivergenciaNF() {
+  const select = document.getElementById("divergencia_origem_id");
+  const option = select?.options[select.selectedIndex];
+
+  if (!option || !option.value) {
+    itensNotaFiscal = [];
+    renderizarItensNotaFiscal();
+    return;
+  }
+
+  const fornecedorId = option.dataset.fornecedorId;
+
+if (fornecedorId) {
+  const campoFornecedor = document.getElementById("fornecedor_id_nf");
+  if (campoFornecedor) {
+    campoFornecedor.value = fornecedorId;
+    campoFornecedor.disabled = true;
+  }
+}
+
+  const quantidade = Number(option.dataset.quantidade || 0);
+
+  itensNotaFiscal = [
+    {
+      produto_id: option.dataset.produtoId,
+      produto_nome: option.dataset.produtoNome,
+      produto_codigo: option.dataset.produtoCodigo,
+      quantidade_pedido: quantidade,
+      quantidade: quantidade,
+      quantidade_faturada: quantidade,
+      quantidade_maxima: quantidade,
+      valor_unitario: Number(option.dataset.valorUnitario || 0)
+    }
+  ];
+
+  renderizarItensNotaFiscalEditavelDevolucao();
 }

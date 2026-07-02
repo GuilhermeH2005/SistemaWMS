@@ -2398,27 +2398,29 @@ app.get("/divergencias", (req, res) => {
   const status = req.query.status || "ABERTAS";
 
   let sql = `
-    SELECT
-      d.id,
-      d.entrada_id,
-      d.produto_id,
-      d.numero_nf,
+   SELECT
+  d.id,
+  d.entrada_id,
+  d.produto_id,
+  d.numero_nf,
 
-      d.quantidade_nf AS quantidade,
-      d.quantidade_conferida,
-      d.diferenca,
+  d.quantidade_nf AS quantidade,
+  d.quantidade_conferida,
+  d.diferenca,
 
-      d.motivo AS motivo_divergencia,
-      d.justificativa AS justificativa_divergencia,
-      d.status AS status_divergencia,
+  d.motivo AS motivo_divergencia,
+  d.justificativa AS justificativa_divergencia,
+  d.status AS status_divergencia,
 
-      d.data_registro,
-      d.data_resolucao,
-      d.observacao_resolucao,
+  d.data_registro,
+  d.data_resolucao,
+  d.observacao_resolucao,
 
-      p.nome AS produto_nome,
-      p.codigo AS produto_codigo,
-      f.nome AS fornecedor_nome
+  p.nome AS produto_nome,
+  p.codigo AS produto_codigo,
+
+  f.id AS fornecedor_id,
+  f.nome AS fornecedor_nome
 
     FROM divergencia_conferencia d
 
@@ -2774,21 +2776,43 @@ app.get("/dashboard", (req, res) => {
       (SELECT COUNT(*) FROM cliente) AS total_clientes,
 
       (SELECT COUNT(*) FROM entrada_mercadoria) AS total_entradas,
+
       (SELECT IFNULL(SUM(quantidade_estoque), 0) FROM produto) AS estoque_total,
-      (SELECT COUNT(*) FROM produto WHERE quantidade_estoque <= estoque_minimo) AS produtos_alerta,
 
-      (SELECT COUNT(*) FROM ajuste_estoque) AS total_ajustes,
+     (SELECT IFNULL(SUM(IFNULL(quantidade_estoque, 0) * COALESCE(custo_medio, preco_venda, 0)), 0)
+ FROM produto) AS valor_estoque,
 
-      (SELECT COUNT(*) FROM entrada_mercadoria WHERE status_conferencia = 'PENDENTE') AS conferencias_pendentes,
+      (SELECT COUNT(*)
+       FROM produto
+       WHERE IFNULL(quantidade_estoque, 0) <= IFNULL(estoque_minimo, 0)) AS produtos_alerta,
 
-      (SELECT COUNT(*) FROM entrada_mercadoria WHERE status_divergencia IS NOT NULL AND status_divergencia <> 'RESOLVIDA') AS divergencias_abertas,
+      (SELECT COUNT(*)
+       FROM entrada_mercadoria
+       WHERE status_conferencia = 'PENDENTE') AS conferencias_pendentes,
+
+      (SELECT COUNT(*)
+       FROM entrada_mercadoria
+       WHERE status_conferencia = 'CONFERIDO'
+         AND (IFNULL(quantidade_conferida, 0) - IFNULL(quantidade_enderecada, 0)) > 0) AS pendentes_enderecamento,
+
+      (SELECT COUNT(*)
+       FROM divergencia_conferencia
+       WHERE status IN ('ABERTA', 'AGUARDANDO_COMPLEMENTO', 'DEVOLUCAO', 'AGUARDANDO_NF_DEVOLUCAO')) AS divergencias_abertas,
 
       (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'ABERTO') AS pedidos_abertos,
       (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'EM_PICKING') AS pedidos_picking,
       (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'SEPARADO') AS pedidos_separados,
-      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'EXPEDIDO') AS pedidos_expedidos,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status IN ('EXPEDIDO', 'EXPEDIDO_PARCIAL')) AS pedidos_expedidos,
 
-      (SELECT COUNT(*) FROM nota_fiscal_saida) AS notas_emitidas,
+      (SELECT COUNT(*) FROM nota_fiscal_saida WHERE status = 'TRANSMITIDA') AS notas_emitidas,
+      (SELECT COUNT(*) FROM nota_fiscal_saida WHERE status = 'RASCUNHO') AS notas_rascunho,
+
+      (SELECT IFNULL(SUM(valor_total), 0)
+       FROM nota_fiscal_saida
+       WHERE tipo = 'VENDA'
+         AND status = 'TRANSMITIDA'
+         AND MONTH(data_nf) = MONTH(CURDATE())
+         AND YEAR(data_nf) = YEAR(CURDATE())) AS faturamento_mes,
 
       (SELECT COUNT(*) FROM auditoria) AS total_auditorias
   `;
@@ -2807,21 +2831,22 @@ app.get("/dashboard", (req, res) => {
 
 app.get("/dashboard/auditorias-recentes", (req, res) => {
   const sql = `
-    SELECT 
-      auditoria.acao,
-      auditoria.descricao,
-      auditoria.data_hora,
-    auditoria.usuario_nome AS usuario_login
+    SELECT
+      acao,
+      descricao,
+      data_hora,
+      usuario_nome AS usuario_login
     FROM auditoria
-    LEFT JOIN usuario ON auditoria.usuario_id = usuario.id
-    ORDER BY auditoria.data_hora DESC
-    LIMIT 5
+    ORDER BY data_hora DESC
+    LIMIT 6
   `;
 
   db.query(sql, (err, result) => {
     if (err) {
       console.error("Erro ao buscar auditorias recentes:", err);
-      return res.status(500).json({ erro: "Erro ao buscar auditorias recentes" });
+      return res.status(500).json({
+        erro: "Erro ao buscar auditorias recentes"
+      });
     }
 
     res.json(result);
@@ -4628,36 +4653,69 @@ app.put("/pedidos/:id", (req, res) => {
 
 app.put("/pedidos/:id/cancelar", (req, res) => {
   const { id } = req.params;
-  const { usuario_id, usuario_nome } = req.body;
+  const { usuario_id, usuario_nome, motivo } = req.body;
 
-  const sql = `
-    UPDATE pedido_cliente
-    SET status = 'CANCELADO'
-    WHERE id = ?
-      AND status IN ('ABERTO', 'EM_PICKING')
-  `;
+  db.query(
+    `SELECT * FROM pedido_cliente WHERE id = ?`,
+    [id],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro ao buscar pedido ❌");
+      }
 
-  db.query(sql, [id], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Erro ao cancelar pedido ❌");
+      if (result.length === 0) {
+        return res.status(404).send("Pedido não encontrado ❌");
+      }
+
+      const pedido = result[0];
+
+      if (["EXPEDIDO", "EXPEDIDO_PARCIAL"].includes(pedido.status)) {
+        return res.status(400).send(
+          "Pedido já expedido. Para desfazer, faça uma NF de devolução de cliente ❌"
+        );
+      }
+
+      if (["EM_PICKING", "SEPARADO"].includes(pedido.status)) {
+        return res.status(400).send(
+          "Este pedido possui picking. Cancele o picking antes de cancelar o pedido ❌"
+        );
+      }
+
+      if (pedido.status !== "ABERTO") {
+        return res.status(400).send("Somente pedidos ABERTOS podem ser cancelados diretamente ❌");
+      }
+
+      db.query(
+        `
+          UPDATE pedido_cliente
+          SET
+            status = 'CANCELADO',
+            data_cancelamento = NOW(),
+            motivo_cancelamento = ?
+          WHERE id = ?
+        `,
+        [motivo || null, id],
+        (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).send("Erro ao cancelar pedido ❌");
+          }
+
+          registrarAuditoria(
+            usuario_id,
+            usuario_nome,
+            "CANCELAMENTO PEDIDO",
+            "pedido_cliente",
+            id,
+            `Pedido ${id} cancelado. Motivo: ${motivo || "-"}`
+          );
+
+          res.send("Pedido cancelado com sucesso ✅");
+        }
+      );
     }
-
-    if (result.affectedRows === 0) {
-      return res.status(400).send("Pedido não pode ser cancelado ❌");
-    }
-
-    registrarAuditoria(
-      usuario_id,
-      usuario_nome,
-      "CANCELAMENTO PEDIDO",
-      "pedido_cliente",
-      id,
-      `Pedido ${id} cancelado.`
-    );
-
-    res.send("Pedido cancelado com sucesso ✅");
-  });
+  );
 });
 
 /* =========================
@@ -4736,6 +4794,189 @@ function consumirEstoqueFIFO(produtoId, quantidadeNecessaria, callback) {
   });
 }
 
+app.put("/picking/pedido/:pedidoId/cancelar", (req, res) => {
+  const { pedidoId } = req.params;
+  const { usuario_id, usuario_nome, motivo } = req.body;
+
+  db.beginTransaction((err) => {
+    if (err) return res.status(500).send("Erro ao iniciar cancelamento ❌");
+
+    db.query(
+      `SELECT * FROM pedido_cliente WHERE id = ? FOR UPDATE`,
+      [pedidoId],
+      (err, pedidos) => {
+        if (err) {
+          return db.rollback(() => res.status(500).send("Erro ao buscar pedido ❌"));
+        }
+
+        if (pedidos.length === 0) {
+          return db.rollback(() => res.status(404).send("Pedido não encontrado ❌"));
+        }
+
+        const pedido = pedidos[0];
+
+        if (["EXPEDIDO", "EXPEDIDO_PARCIAL"].includes(pedido.status)) {
+          return db.rollback(() => {
+            res.status(400).send("Pedido já expedido. Faça uma NF de devolução de cliente ❌");
+          });
+        }
+
+        if (pedido.status === "ABERTO") {
+          return db.rollback(() => {
+            res.status(400).send("Este pedido ainda não possui picking para cancelar.");
+          });
+        }
+
+        db.query(
+          `
+            SELECT *
+            FROM picking_movimento
+            WHERE pedido_id = ?
+              AND status = 'ATIVO'
+          `,
+          [pedidoId],
+          (err, movimentos) => {
+            if (err) {
+              return db.rollback(() => res.status(500).send("Erro ao buscar movimentos do picking ❌"));
+            }
+
+            const updates = movimentos.map(mov => {
+              return new Promise((resolve, reject) => {
+                db.query(
+                  `
+                    UPDATE entrada_mercadoria
+                    SET quantidade_disponivel = IFNULL(quantidade_disponivel, 0) + ?
+                    WHERE id = ?
+                  `,
+                  [mov.quantidade, mov.entrada_id],
+                  (err) => {
+                    if (err) return reject(err);
+
+                    if (mov.endereco_id) {
+                      db.query(
+                        `
+                          UPDATE endereco_estoque
+                          SET quantidade_unidades = IFNULL(quantidade_unidades, 0) + ?
+                          WHERE id = ?
+                        `,
+                        [mov.quantidade, mov.endereco_id],
+                        (err) => {
+                          if (err) return reject(err);
+
+                          db.query(
+  `
+    UPDATE posicao_estoque pe
+    INNER JOIN endereco_estoque ee
+      ON pe.id = ee.posicao_id
+    SET pe.status = 'OCUPADA'
+    WHERE ee.id = ?
+  `,
+  [mov.endereco_id],
+  (err) => {
+    if (err) return reject(err);
+
+    db.query(
+      `
+        UPDATE produto
+        SET quantidade_estoque = IFNULL(quantidade_estoque, 0) + ?
+        WHERE id = ?
+      `,
+      [mov.quantidade, mov.produto_id],
+      (err) => err ? reject(err) : resolve()
+    );
+  }
+);
+                        }
+                      );
+                    } else {
+                      db.query(
+                        `
+                          UPDATE produto
+                          SET quantidade_estoque = IFNULL(quantidade_estoque, 0) + ?
+                          WHERE id = ?
+                        `,
+                        [mov.quantidade, mov.produto_id],
+                        (err) => err ? reject(err) : resolve()
+                      );
+                    }
+                  }
+                );
+              });
+            });
+
+            Promise.all(updates)
+              .then(() => {
+                db.query(
+                  `
+                    UPDATE pedido_cliente_item
+                    SET quantidade_separada = 0
+                    WHERE pedido_id = ?
+                  `,
+                  [pedidoId],
+                  (err) => {
+                    if (err) {
+                      return db.rollback(() => res.status(500).send("Erro ao zerar separação ❌"));
+                    }
+
+                    db.query(
+                      `
+                        UPDATE picking_movimento
+                        SET status = 'CANCELADO'
+                        WHERE pedido_id = ?
+                          AND status = 'ATIVO'
+                      `,
+                      [pedidoId],
+                      (err) => {
+                        if (err) {
+                          return db.rollback(() => res.status(500).send("Erro ao cancelar histórico do picking ❌"));
+                        }
+
+                        db.query(
+                          `
+                            UPDATE pedido_cliente
+                            SET status = 'ABERTO'
+                            WHERE id = ?
+                          `,
+                          [pedidoId],
+                          (err) => {
+                            if (err) {
+                              return db.rollback(() => res.status(500).send("Erro ao voltar pedido para aberto ❌"));
+                            }
+
+                            registrarAuditoria(
+                              usuario_id,
+                              usuario_nome,
+                              "CANCELAMENTO PICKING",
+                              "pedido_cliente",
+                              pedidoId,
+                              `Picking do pedido ${pedidoId} cancelado. Estoque devolvido aos endereços. Motivo: ${motivo || "-"}`
+                            );
+
+                            db.commit((err) => {
+                              if (err) {
+                                return db.rollback(() => res.status(500).send("Erro ao finalizar cancelamento ❌"));
+                              }
+
+                              res.send("Picking cancelado e pedido voltou para ABERTO ✅");
+                            });
+                          }
+                        );
+                      }
+                    );
+                  }
+                );
+              })
+              .catch(err => {
+                console.error(err);
+                db.rollback(() => res.status(500).send("Erro ao devolver estoque do picking ❌"));
+              });
+          }
+        );
+      }
+    );
+  });
+});
+
 function consumirEnderecoProduto(produtoId, quantidadeNecessaria, callback) {
   const sqlEnderecos = `
     SELECT
@@ -4805,17 +5046,20 @@ function consumirEnderecoProduto(produtoId, quantidadeNecessaria, callback) {
 
     Promise.all(updates)
       .then(() => {
-        db.query(
-          `
-            DELETE FROM endereco_estoque
-            WHERE quantidade_unidades <= 0
-          `,
-          (err) => {
-            if (err) return callback(err);
+       db.query(
+  `
+    UPDATE posicao_estoque pe
+    INNER JOIN endereco_estoque ee
+      ON pe.id = ee.posicao_id
+    SET pe.status = 'LIVRE'
+    WHERE ee.quantidade_unidades <= 0
+  `,
+  (err) => {
+    if (err) return callback(err);
 
-            callback(null, consumoEnderecos);
-          }
-        );
+    callback(null, consumoEnderecos);
+  }
+);
       })
       .catch(callback);
   });
@@ -5074,31 +5318,99 @@ app.put("/picking/separar-produto/:produtoId", (req, res) => {
 
           let restanteSeparar = qtdSeparada;
 
-          const updatesItens = itens.map(item => {
-            return new Promise((resolve, reject) => {
-              if (restanteSeparar <= 0) return resolve();
+let filaFIFO = [...consumoFIFO];
+let filaEnderecos = [...consumoEnderecos];
 
-              const pendente =
-                Number(item.quantidade || 0) -
-                Number(item.quantidade_separada || 0);
+function pegarOrigemPicking(qtd) {
+  const origens = [];
+  let restante = Number(qtd || 0);
 
-              const separarNesteItem = Math.min(pendente, restanteSeparar);
-              restanteSeparar -= separarNesteItem;
+  while (restante > 0 && filaFIFO.length > 0 && filaEnderecos.length > 0) {
+    const fifo = filaFIFO[0];
+    const endereco = filaEnderecos[0];
 
-              db.query(
-                `
-                  UPDATE pedido_cliente_item
-                  SET quantidade_separada = quantidade_separada + ?
-                  WHERE id = ?
-                `,
-                [separarNesteItem, item.item_id],
-                (err) => {
-                  if (err) reject(err);
-                  else resolve();
-                }
-              );
-            });
-          });
+    const qtdOrigem = Math.min(
+      restante,
+      Number(fifo.quantidade || 0),
+      Number(endereco.quantidade || 0)
+    );
+
+    origens.push({
+      entrada_id: fifo.entrada_id,
+      endereco_id: endereco.endereco_id,
+      quantidade: qtdOrigem
+    });
+
+    fifo.quantidade = Number(fifo.quantidade || 0) - qtdOrigem;
+    endereco.quantidade = Number(endereco.quantidade || 0) - qtdOrigem;
+    restante -= qtdOrigem;
+
+    if (fifo.quantidade <= 0) filaFIFO.shift();
+    if (endereco.quantidade <= 0) filaEnderecos.shift();
+  }
+
+  return origens;
+}
+
+const updatesItens = itens.map(item => {
+  return new Promise((resolve, reject) => {
+    if (restanteSeparar <= 0) return resolve();
+
+    const pendente =
+      Number(item.quantidade || 0) -
+      Number(item.quantidade_separada || 0);
+
+    const separarNesteItem = Math.min(pendente, restanteSeparar);
+    restanteSeparar -= separarNesteItem;
+
+    const origens = pegarOrigemPicking(separarNesteItem);
+
+    db.query(
+      `
+        UPDATE pedido_cliente_item
+        SET quantidade_separada = quantidade_separada + ?
+        WHERE id = ?
+      `,
+      [separarNesteItem, item.item_id],
+      (err) => {
+        if (err) return reject(err);
+
+        if (origens.length === 0) return resolve();
+
+        const valoresMovimento = origens.map(origem => [
+          item.pedido_id,
+          item.item_id,
+          item.produto_id,
+          origem.entrada_id,
+          origem.endereco_id,
+          origem.quantidade,
+          "ATIVO"
+        ]);
+
+        db.query(
+          `
+            INSERT INTO picking_movimento
+            (
+              pedido_id,
+              pedido_item_id,
+              produto_id,
+              entrada_id,
+              endereco_id,
+              quantidade,
+              status
+            )
+            VALUES ?
+          `,
+          [valoresMovimento],
+          (err) => {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
+      }
+    );
+  });
+});
 
           Promise.all(updatesItens)
             .then(() => {
@@ -5659,6 +5971,8 @@ app.post("/notas-fiscais", (req, res) => {
     observacao,
     itens,
     valor_frete,
+    origem_devolucao,
+    divergencia_origem_id,
     valor_desconto,
     outras_despesas,
     usuario_id,
@@ -5701,6 +6015,8 @@ app.post("/notas-fiscais", (req, res) => {
         entrada_origem_id,
         observacao,
         status,
+        origem_devolucao,
+        divergencia_origem_id,
         valor_produtos,
         valor_frete,
         valor_desconto,
@@ -5708,28 +6024,32 @@ app.post("/notas-fiscais", (req, res) => {
         valor_total,
         usuario_id
       )
-      VALUES (?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?, ?, 'RASCUNHO', ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?, ?, 'RASCUNHO', ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(
       sqlNota,
       [
-        tipo,
-        numero_nf,
-        serie_nf || "1",
-        pedido_id || null,
-        cliente_id || null,
-        fornecedor_id || null,
-        nf_origem_id || null,
-        entrada_origem_id || null,
-        observacao || null,
-        valorProdutos,
-        frete,
-        desconto,
-        outras,
-        valorTotal,
-        usuario_id || null
-      ],
+  tipo,
+  numero_nf,
+  serie_nf || "1",
+  pedido_id || null,
+  cliente_id || null,
+  fornecedor_id || null,
+  nf_origem_id || null,
+  entrada_origem_id || null,
+  observacao || null,
+
+  origem_devolucao || null,
+  divergencia_origem_id || null,
+
+  valorProdutos,
+  frete,
+  desconto,
+  outras,
+  valorTotal,
+  usuario_id || null
+],
       (err, result) => {
         if (err) {
           console.error(err);
@@ -6256,6 +6576,16 @@ function transmitirDevolucaoCliente(nota, usuario_id, usuario_nome, res) {
 }
 
 function transmitirDevolucaoFornecedor(nota, usuario_id, usuario_nome, res) {
+
+  if (nota.origem_devolucao === "DIVERGENCIA") {
+  return transmitirDevolucaoFornecedorDivergencia(
+    nota,
+    usuario_id,
+    usuario_nome,
+    res
+  );
+}
+
   db.query(
     `
       SELECT
@@ -6386,6 +6716,88 @@ function transmitirDevolucaoFornecedor(nota, usuario_id, usuario_nome, res) {
             res.status(400).send(err.message || "Erro ao baixar estoque da devolução ❌");
           });
         });
+    }
+  );
+}
+
+function transmitirDevolucaoFornecedorDivergencia(nota, usuario_id, usuario_nome, res) {
+  db.query(
+    `
+      UPDATE nota_fiscal_saida
+      SET
+        status = 'TRANSMITIDA',
+        data_nf = CURDATE(),
+        data_transmissao = NOW()
+      WHERE id = ?
+    `,
+    [nota.id],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return db.rollback(() => {
+          res.status(500).send("Erro ao transmitir NF de devolução ❌");
+        });
+      }
+
+      db.query(
+        `
+          UPDATE divergencia_conferencia
+          SET
+            status = 'RESOLVIDA',
+            data_resolucao = NOW(),
+            observacao_resolucao = 'Resolvida por NF de devolução ao fornecedor'
+          WHERE id = ?
+        `,
+        [nota.divergencia_origem_id],
+        (err) => {
+          if (err) {
+            console.error(err);
+            return db.rollback(() => {
+              res.status(500).send("Erro ao resolver divergência ❌");
+            });
+          }
+
+          db.query(
+            `
+              UPDATE entrada_mercadoria e
+              INNER JOIN divergencia_conferencia d
+                ON d.entrada_id = e.id
+              SET
+                e.status_conferencia = 'CONFERIDO',
+                e.status_divergencia = 'RESOLVIDA'
+              WHERE d.id = ?
+            `,
+            [nota.divergencia_origem_id],
+            (err) => {
+              if (err) {
+                console.error(err);
+                return db.rollback(() => {
+                  res.status(500).send("Erro ao atualizar entrada ❌");
+                });
+              }
+
+              registrarAuditoria(
+                usuario_id,
+                usuario_nome,
+                "TRANSMISSÃO DEVOLUÇÃO FORNECEDOR DIVERGÊNCIA",
+                "nota_fiscal_saida",
+                nota.id,
+                "NF transmitida apenas documentalmente. Não baixou estoque, pois a falta já foi considerada na conferência."
+              );
+
+              db.commit((err) => {
+                if (err) {
+                  return db.rollback(() => {
+                    res.status(500).send("Erro ao finalizar transmissão ❌");
+                  });
+                }
+
+                res.send("NF transmitida e divergência resolvida ✅");
+              });
+            }
+          );
+        }
+      );
     }
   );
 }

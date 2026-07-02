@@ -25,6 +25,7 @@ async function carregarDashboard() {
     setDashboardValor("produtosAlerta", dados.produtos_alerta);
 
     setDashboardValor("conferenciasPendentes", dados.conferencias_pendentes);
+    setDashboardValor("pendentesEnderecamento", dados.pendentes_enderecamento);
     setDashboardValor("divergenciasAbertas", dados.divergencias_abertas);
 
     setDashboardValor("pedidosAbertos", dados.pedidos_abertos);
@@ -33,9 +34,11 @@ async function carregarDashboard() {
     setDashboardValor("pedidosExpedidos", dados.pedidos_expedidos);
 
     setDashboardValor("notasEmitidas", dados.notas_emitidas);
-
-    setDashboardValor("totalAjustes", dados.total_ajustes);
+    setDashboardValor("notasRascunho", dados.notas_rascunho);
     setDashboardValor("totalAuditorias", dados.total_auditorias);
+
+    setDashboardValor("valorEstoque", formatarMoedaDashboard(dados.valor_estoque));
+    setDashboardValor("faturamentoMes", formatarMoedaDashboard(dados.faturamento_mes));
 
   } catch (erro) {
     console.error("Erro ao carregar dashboard:", erro);
@@ -45,10 +48,7 @@ async function carregarDashboard() {
 
 function setDashboardValor(id, valor) {
   const elemento = document.getElementById(id);
-
-  if (elemento) {
-    elemento.textContent = valor ?? 0;
-  }
+  if (elemento) elemento.textContent = valor ?? 0;
 }
 
 async function carregarAuditoriasDashboard() {
@@ -56,15 +56,10 @@ async function carregarAuditoriasDashboard() {
     const resposta =
       await fetch(`${API_URL_DASHBOARD}/dashboard/auditorias-recentes`);
 
-    if (!resposta.ok) {
-      console.error("Erro ao carregar auditorias recentes");
-      return;
-    }
+    if (!resposta.ok) return;
 
     const auditorias = await resposta.json();
-
-    const lista =
-      document.getElementById("listaAuditoriasDashboard");
+    const lista = document.getElementById("listaAuditoriasDashboard");
 
     if (!lista) return;
 
@@ -79,11 +74,7 @@ async function carregarAuditoriasDashboard() {
       lista.innerHTML += `
         <div class="auditoria-item">
           <strong>${item.acao || "-"}</strong>
-
-          <p>
-            ${item.descricao || "-"}
-          </p>
-
+          <p>${item.descricao || "-"}</p>
           <small>
             Usuário: ${item.usuario_login || "Sistema"} |
             ${formatarDataDashboard(item.data_hora)}
@@ -99,6 +90,12 @@ async function carregarAuditoriasDashboard() {
 
 function formatarDataDashboard(data) {
   if (!data) return "-";
-
   return new Date(data).toLocaleString("pt-BR");
+}
+
+function formatarMoedaDashboard(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
 }

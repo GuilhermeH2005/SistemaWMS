@@ -8,12 +8,6 @@
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
-.form-nf {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
-}
-
 .form-nf input,
 .form-nf select,
 .form-item-nf input {
@@ -37,6 +31,23 @@
 
 .campo-observacao {
   grid-column: 1 / -1;
+}
+
+.area-valores-extras-nf {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.form-nf{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+
+    gap:18px;
+
 }
 
 .hidden {
