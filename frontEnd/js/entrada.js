@@ -9,7 +9,7 @@ function iniciarEntrada() {
 
   carregarFornecedoresEntrada();
   carregarProdutosEntrada();
-  carregarEntradas();
+  limparBuscaEntradas();
   aplicarMascarasEntrada();
   restaurarRascunhoNF();
 
@@ -128,7 +128,7 @@ renderizarItensNF();
 liberarCabecalhoNF();
 
 carregarProdutosEntrada();
-carregarEntradas();
+limparBuscaEntradas();
 
     } catch (err) {
       console.error(err);
@@ -141,7 +141,7 @@ async function carregarFornecedoresEntrada() {
   try {
 
     const res =
-      await fetch("http://localhost:3000/fornecedores");
+      await fetch("http://localhost:3000/fornecedores?listarTodos=true&limite=500");
 
     const fornecedores =
       await res.json();
@@ -406,14 +406,43 @@ function limparCamposItemNF() {
 }
 
 async function carregarEntradas() {
-  const res = await fetch("http://localhost:3000/entradas");
-  const entradas = await res.json();
+  const nf = document.getElementById("buscarEntradaNF")?.value.trim() || "";
+  const fornecedor = document.getElementById("buscarEntradaFornecedor")?.value.trim() || "";
+  const produto = document.getElementById("buscarEntradaProduto")?.value.trim() || "";
 
   const lista = document.getElementById("listaEntradas");
+  if (!lista) return;
+
+  const params = new URLSearchParams();
+
+  if (nf) params.append("nf", nf);
+  if (fornecedor) params.append("fornecedor", fornecedor);
+  if (produto) params.append("produto", produto);
+
+  if (!nf && !fornecedor && !produto) {
+    const confirmar = confirm(
+      "Você não informou nenhum filtro.\n\nDeseja listar as 50 últimas notas de entrada?"
+    );
+
+    if (!confirmar) {
+      lista.innerHTML = `<p>Digite Nº NF, fornecedor ou produto para pesquisar.</p>`;
+      return;
+    }
+
+    params.append("listarTodos", "true");
+    params.append("limite", "50");
+  }
+
+  const res = await fetch(
+    `http://localhost:3000/entradas?${params.toString()}`
+  );
+
+  const entradas = await res.json();
+
   lista.innerHTML = "";
 
   if (entradas.length === 0) {
-    lista.innerHTML = `<p>Nenhuma entrada de NF registrada.</p>`;
+    lista.innerHTML = `<p>Nenhuma entrada de NF encontrada.</p>`;
     return;
   }
 
@@ -427,7 +456,7 @@ async function carregarEntradas() {
         numero_nf: e.numero_nf,
         serie_nf: e.serie_nf,
         fornecedor_nome: e.fornecedor_nome,
-       data_nf: e.data_nf_formatada || e.data_nf,
+        data_nf: e.data_nf_formatada || e.data_nf,
         status_conferencia: e.status_conferencia,
         itens: []
       };
@@ -459,7 +488,6 @@ async function carregarEntradas() {
 
     lista.innerHTML += `
       <div class="entrada-item">
-
         <div class="entrada-topo">
           <strong>
             NF ${nf.numero_nf}
@@ -508,20 +536,16 @@ async function carregarEntradas() {
                 <th>COFINS</th>
               </tr>
             </thead>
-
-            <tbody>
-              ${itensHtml}
-            </tbody>
+            <tbody>${itensHtml}</tbody>
           </table>
         </div>
-
       </div>
     `;
   });
 }
 
 async function carregarProdutosEntrada() {
-  const res = await fetch("http://localhost:3000/produtos");
+  const res = await fetch("http://localhost:3000/produtos?listarTodos=true&limite=500");
   const produtos = await res.json();
 
   produtosEntrada = produtos;
@@ -935,4 +959,40 @@ function restaurarRascunhoNF() {
 
 function limparRascunhoNF() {
   localStorage.removeItem("rascunhoNF");
+}
+
+function abrirAbaEntrada(aba, botao) {
+  document.getElementById("abaEntradaManual")?.classList.add("hidden");
+  document.getElementById("abaEntradaXML")?.classList.add("hidden");
+  document.getElementById("abaNotasEntrada")?.classList.add("hidden");
+
+  document.querySelectorAll(".aba-entrada").forEach(b => {
+    b.classList.remove("ativa");
+  });
+
+  if (botao) botao.classList.add("ativa");
+
+  if (aba === "manual") {
+    document.getElementById("abaEntradaManual")?.classList.remove("hidden");
+  }
+
+  if (aba === "xml") {
+    document.getElementById("abaEntradaXML")?.classList.remove("hidden");
+  }
+
+  if (aba === "lista") {
+    document.getElementById("abaNotasEntrada")?.classList.remove("hidden");
+    limparBuscaEntradas();
+  }
+}
+
+function limparBuscaEntradas() {
+  document.getElementById("buscarEntradaNF").value = "";
+  document.getElementById("buscarEntradaFornecedor").value = "";
+  document.getElementById("buscarEntradaProduto").value = "";
+
+  const lista = document.getElementById("listaEntradas");
+  if (lista) {
+    lista.innerHTML = `<p>Digite Nº NF, fornecedor ou produto para pesquisar.</p>`;
+  }
 }

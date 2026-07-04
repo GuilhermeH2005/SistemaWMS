@@ -80,5 +80,19 @@
 
 <section class="card-lista">
   <h3 class="subtitulo">Funcionários Cadastrados</h3>
-  <ul id="listaFuncionarios"></ul>
+
+  <div class="barra-busca-padrao">
+    <input type="number" id="buscarFuncionarioId" placeholder="ID">
+    <input type="text" id="buscarFuncionarioNome" placeholder="Nome">
+    <input type="text" id="buscarFuncionarioCpf" placeholder="CPF">
+
+    <button type="button" onclick="carregarFuncionarios()">🔍 Buscar</button>
+    <button type="button" onclick="limparBuscaFuncionarios()">🧹 Limpar</button>
+  </div>
+
+  <ul id="listaFuncionarios">
+    <li class="sem-registro">
+      Digite ID, nome ou CPF para pesquisar funcionários.
+    </li>
+  </ul>
 </section>

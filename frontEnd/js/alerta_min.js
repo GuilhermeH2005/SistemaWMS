@@ -4,7 +4,7 @@ function iniciarAlertas() {
 
 async function carregarAlertas() {
 
-  const res = await fetch("http://localhost:3000/produtos");
+  const res = await fetch("http://localhost:3000/produtos?listarTodos=true&limite=500");
   const produtos = await res.json();
 
   const lista = document.getElementById("listaAlertas");

@@ -6,7 +6,7 @@ function iniciarEstoque() {
 
 async function carregarEstoque() {
   try {
-    const res = await fetch("http://localhost:3000/produtos");
+    const res = await fetch("http://localhost:3000/produtos?listarTodos=true&limite=500");
     produtosEstoque = await res.json();
 
     renderizarEstoque(produtosEstoque);

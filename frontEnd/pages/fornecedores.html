@@ -62,9 +62,34 @@
 
 </section>
 
-<section class="card-lista">
-
   <h3 class="subtitulo">Fornecedores Cadastrados</h3>
+
+  <section class="card-lista">
+
+  <div class="barra-busca-padrao">
+
+  <input
+    type="number"
+    id="buscarFornecedorId"
+    placeholder="ID"
+  >
+
+  <input
+    type="text"
+    id="buscarFornecedorNome"
+    placeholder="Nome do fornecedor"
+  >
+
+  <input
+    type="text"
+    id="buscarFornecedorCnpj"
+    placeholder="CNPJ"
+  >
+
+  <button type="button" onclick="carregarLista()">🔍 Buscar</button>
+<button type="button" onclick="limparBuscaFornecedores()">🧹 Limpar</button>
+
+</div>
 
   <ul id="lista"></ul>
 

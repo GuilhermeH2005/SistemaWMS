@@ -9,7 +9,7 @@ function iniciarPedidos() {
 
   carregarClientesPedido();
   carregarProdutosPedido();
-  carregarPedidos();
+  limparBuscaPedidos();
   renderizarItensPedido();
 
   const produtoBusca = document.getElementById("produtoBuscaPedido");
@@ -30,7 +30,7 @@ function iniciarPedidos() {
 
 async function carregarClientesPedido() {
   try {
-    const res = await fetch(`${API_PEDIDOS}/clientes`);
+    const res = await fetch("http://localhost:3000/clientes?listarTodos=true&limite=500");
     const clientes = await res.json();
 
     const select = document.getElementById("cliente_id");
@@ -54,7 +54,7 @@ async function carregarClientesPedido() {
 
 async function carregarProdutosPedido() {
   try {
-    const res = await fetch(`${API_PEDIDOS}/produtos`);
+    const res = await fetch("http://localhost:3000/produtos?listarTodos=true&limite=500");
     const produtos = await res.json();
 
     produtosPedido = produtos;
@@ -255,7 +255,7 @@ async function salvarPedido(confirmarEstoqueInsuficiente = false) {
 
     alert(msg);
     limparFormularioPedido();
-    carregarPedidos();
+    limparBuscaPedidos();
 
   } catch (err) {
     console.error(err);
@@ -276,11 +276,49 @@ function limparFormularioPedido() {
 }
 
 async function carregarPedidos() {
-  const busca = document.getElementById("buscarPedido")?.value || "";
+
+  const id =
+    document.getElementById("buscarPedidoId")?.value.trim() || "";
+
+  const cliente =
+    document.getElementById("buscarPedidoCliente")?.value.trim() || "";
+
+  const status =
+    document.getElementById("buscarPedidoStatus")?.value || "";
+
+  const params = new URLSearchParams();
+
+  if (id) params.append("id", id);
+  if (cliente) params.append("cliente", cliente);
+  if (status) params.append("status", status);
+
+  if (!id && !cliente && !status) {
+
+    const confirmar = confirm(
+      "Você não informou nenhum filtro.\n\nDeseja listar os 50 últimos pedidos?"
+    );
+
+    if (!confirmar) {
+
+      document.getElementById("listaPedidos").innerHTML = `
+        <tr>
+          <td colspan="8">
+            Digite ID, cliente ou status para pesquisar pedidos.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    params.append("listarTodos", "true");
+    params.append("limite", "50");
+  }
 
   try {
+
     const res = await fetch(
-      `${API_PEDIDOS}/pedidos?busca=${encodeURIComponent(busca)}`
+      `${API_PEDIDOS}/pedidos?${params.toString()}`
     );
 
     if (!res.ok) {
@@ -289,12 +327,14 @@ async function carregarPedidos() {
     }
 
     const pedidos = await res.json();
+
     renderizarPedidos(pedidos);
 
   } catch (err) {
     console.error(err);
     alert("Erro ao carregar pedidos.");
   }
+
 }
 
 function renderizarPedidos(pedidos) {
@@ -314,7 +354,7 @@ function renderizarPedidos(pedidos) {
 
   pedidos.forEach(p => {
     tbody.innerHTML += `
-      <tr>
+      <tr class="linha-pedido" onclick="abrirItensPedido(${p.id})">
         <td>${p.id}</td>
         <td>${p.cliente_nome || "-"}</td>
         <td>${formatarDataPedido(p.data_pedido)}</td>
@@ -326,7 +366,7 @@ function renderizarPedidos(pedidos) {
         <td>${p.total_itens || 0}</td>
         <td>${formatarMoedaPedido(p.valor_total || 0)}</td>
         <td>${p.observacao || "-"}</td>
-        <td>
+        <td onclick="event.stopPropagation()">
           ${
             p.status === "ABERTO"
               ? `
@@ -373,7 +413,7 @@ function renderizarPedidos(pedidos) {
         </td>
       </tr>
 
-      <tr class="linha-itens-pedido">
+      <tr id="itens-pedido-${p.id}" class="linha-itens-pedido hidden">
         <td colspan="8">
           <div class="box-itens-pedido">
             ${renderizarDetalhesItensPedido(p.itens)}
@@ -581,4 +621,30 @@ function classeStatusPedido(status) {
   if (status === "EXPEDIDO_PARCIAL") return "status-expedido";
   if (status === "CANCELADO") return "status-cancelado";
   return "status-aberto";
+}
+
+function abrirItensPedido(id) {
+  const linha = document.getElementById(`itens-pedido-${id}`);
+
+  if (!linha) return;
+
+  linha.classList.toggle("hidden");
+}
+
+function limparBuscaPedidos() {
+  document.getElementById("buscarPedidoId").value = "";
+  document.getElementById("buscarPedidoCliente").value = "";
+  document.getElementById("buscarPedidoStatus").value = "";
+
+  const tbody = document.getElementById("listaPedidos");
+
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8">
+          Digite ID, cliente ou status para pesquisar pedidos.
+        </td>
+      </tr>
+    `;
+  }
 }

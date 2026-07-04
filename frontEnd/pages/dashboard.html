@@ -36,10 +36,26 @@
     </div>
 
     <div class="card-dashboard">
+      <span>📦</span>
+      <div>
+        <h3 id="pedidosPicking">0</h3>
+        <p>Em picking</p>
+      </div>
+    </div>
+
+    <div class="card-dashboard">
       <span>🚚</span>
       <div>
+        <h3 id="pedidosSeparados">0</h3>
+        <p>Separados</p>
+      </div>
+    </div>
+
+    <div class="card-dashboard">
+      <span>✅</span>
+      <div>
         <h3 id="pedidosExpedidos">0</h3>
-        <p>Pedidos expedidos</p>
+        <p>Expedidos</p>
       </div>
     </div>
 
@@ -59,43 +75,11 @@
       </div>
     </div>
 
-    <div class="card-dashboard">
-      <span>📦</span>
-      <div>
-        <h3 id="pedidosPicking">0</h3>
-        <p>Em picking</p>
-      </div>
-    </div>
-
     <div class="card-dashboard alerta">
       <span>🚨</span>
       <div>
         <h3 id="divergenciasAbertas">0</h3>
         <p>Divergências abertas</p>
-      </div>
-    </div>
-
-    <div class="card-dashboard">
-      <span>📦</span>
-      <div>
-        <h3 id="totalProdutos">0</h3>
-        <p>Produtos</p>
-      </div>
-    </div>
-
-    <div class="card-dashboard">
-      <span>👤</span>
-      <div>
-        <h3 id="totalClientes">0</h3>
-        <p>Clientes</p>
-      </div>
-    </div>
-
-    <div class="card-dashboard">
-      <span>🏭</span>
-      <div>
-        <h3 id="totalFornecedores">0</h3>
-        <p>Fornecedores</p>
       </div>
     </div>
 
@@ -109,27 +93,40 @@
 
   </section>
 
+  <section class="dashboard-graficos">
+
+    <div class="card-info">
+      <h2>Status dos Pedidos</h2>
+      <div id="graficoPedidos" class="grafico-barras"></div>
+    </div>
+
+    <div class="card-info">
+      <h2>Operação do Estoque</h2>
+      <div id="graficoOperacao" class="grafico-barras"></div>
+    </div>
+
+  </section>
+
   <section class="dashboard-grid">
 
     <div class="card-info">
       <h2>Resumo Operacional</h2>
 
       <div class="lista-resumo-operacional">
+        <div><strong id="totalProdutos">0</strong><span>Produtos</span></div>
+        <div><strong id="totalClientes">0</strong><span>Clientes</span></div>
+        <div><strong id="totalFornecedores">0</strong><span>Fornecedores</span></div>
         <div><strong id="totalEntradas">0</strong><span>Entradas registradas</span></div>
         <div><strong id="estoqueTotal">0</strong><span>Itens em estoque</span></div>
-        <div><strong id="notasEmitidas">0</strong><span>Notas fiscais</span></div>
+        <div><strong id="notasEmitidas">0</strong><span>NFs transmitidas</span></div>
         <div><strong id="notasRascunho">0</strong><span>NFs em rascunho</span></div>
-        <div><strong id="pedidosSeparados">0</strong><span>Pedidos separados</span></div>
         <div><strong id="totalAuditorias">0</strong><span>Auditorias</span></div>
       </div>
     </div>
 
     <div class="card-info">
       <h2>Últimas Movimentações</h2>
-
-      <div id="listaAuditoriasDashboard">
-        Carregando...
-      </div>
+      <div id="listaAuditoriasDashboard">Carregando...</div>
     </div>
 
   </section>

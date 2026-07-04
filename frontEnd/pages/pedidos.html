@@ -65,29 +65,29 @@
     <div class="tabela-container">
       <table class="tabela-pedidos">
         <thead>
-  <tr>
-    <th>Produto</th>
-    <th>SKU</th>
-    <th>Qtd</th>
-    <th>Valor Unit.</th>
-    <th>Subtotal</th>
-    <th>Estoque Atual</th>
-    <th>Ação</th>
-  </tr>
-</thead>
+          <tr>
+            <th>Produto</th>
+            <th>SKU</th>
+            <th>Qtd</th>
+            <th>Valor Unit.</th>
+            <th>Subtotal</th>
+            <th>Estoque Atual</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
 
         <tbody id="listaItensPedido">
           <tr>
-            <td colspan="5">Nenhum item adicionado.</td>
+            <td colspan="7">Nenhum item adicionado.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div class="campo-form campo-total-pedido">
-  <label>Total do Pedido</label>
-  <input type="text" id="totalPedido" readonly placeholder="R$ 0,00">
-</div>
+      <label>Total do Pedido</label>
+      <input type="text" id="totalPedido" readonly placeholder="R$ 0,00">
+    </div>
 
     <button
       type="button"
@@ -98,19 +98,50 @@
     </button>
 
   </div>
-
 </section>
 
 <section class="card-lista">
   <div class="topo-lista-pedido">
-    <h3 class="subtitulo">Pedidos Cadastrados</h3>
+    <div>
+      <h3 class="subtitulo">Pedidos Cadastrados</h3>
+      <p class="descricao-pagina">
+        Pesquise os pedidos e clique em uma linha para visualizar os itens.
+      </p>
+    </div>
+  </div>
+
+  <div class="barra-busca-padrao">
+
+    <input
+      type="number"
+      id="buscarPedidoId"
+      placeholder="ID"
+    >
 
     <input
       type="text"
-      id="buscarPedido"
-      placeholder="Buscar por cliente, status ou ID..."
-      oninput="carregarPedidos()"
+      id="buscarPedidoCliente"
+      placeholder="Cliente"
     >
+
+    <select id="buscarPedidoStatus">
+      <option value="">Status</option>
+      <option value="ABERTO">Aberto</option>
+      <option value="EM_PICKING">Em Picking</option>
+      <option value="SEPARADO">Separado</option>
+      <option value="EXPEDIDO">Expedido</option>
+      <option value="EXPEDIDO_PARCIAL">Expedido Parcial</option>
+      <option value="CANCELADO">Cancelado</option>
+    </select>
+
+    <button type="button" onclick="carregarPedidos()">
+      🔍 Buscar
+    </button>
+
+    <button type="button" onclick="limparBuscaPedidos()">
+      🧹 Limpar
+    </button>
+
   </div>
 
   <div class="tabela-container">
@@ -130,7 +161,9 @@
 
       <tbody id="listaPedidos">
         <tr>
-          <td colspan="8">Carregando pedidos...</td>
+          <td colspan="8">
+            Digite ID, cliente ou status para pesquisar pedidos.
+          </td>
         </tr>
       </tbody>
     </table>

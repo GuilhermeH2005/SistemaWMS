@@ -19,6 +19,64 @@ menuItems.forEach(item => {
   });
 });
 
+const paginasSistema = [
+  { nome: "Dashboard", pagina: "pages/dashboard.html" },
+  { nome: "Fornecedores", pagina: "pages/fornecedores.html", permissao: "fornecedores" },
+  { nome: "Entrada de Nota Fiscal", pagina: "pages/entrada.html", permissao: "entrada_mercadorias" },
+  { nome: "Nota Fiscal / Saída", pagina: "pages/nota_fiscal.html", permissao: "nota_fiscal" },
+  { nome: "Conferência", pagina: "pages/conferencia.html", permissao: "conferencia" },
+  { nome: "Divergências", pagina: "pages/divergencias.html", permissao: "divergencias" },
+  { nome: "Produtos", pagina: "pages/produtos.html", permissao: "produtos" },
+  { nome: "Estoque", pagina: "pages/estoque.html", permissao: "estoque" },
+  { nome: "Endereçamento", pagina: "pages/enderecamento.html", permissao: "enderecamento" },
+  { nome: "Picking", pagina: "pages/picking.html", permissao: "picking" },
+  { nome: "Clientes", pagina: "pages/clientes.html", permissao: "clientes" },
+  { nome: "Pedidos", pagina: "pages/pedidos.html", permissao: "pedidos" },
+  { nome: "Romaneio", pagina: "pages/romaneio.html", permissao: "romaneio" },
+  { nome: "Relatórios", pagina: "pages/relatorios.html", permissao: "relatorios" },
+  { nome: "Auditoria", pagina: "pages/auditoria.html", permissao: "auditoria" },
+  { nome: "Usuários", pagina: "pages/usuarios.html", permissao: "usuarios" },
+  { nome: "Funcionários", pagina: "pages/funcionarios.html", permissao: "funcionarios" }
+];
+
+function buscarTelaGlobal() {
+  const termo = document.getElementById("buscaGlobal")?.value.toLowerCase().trim();
+  const box = document.getElementById("resultadoBuscaGlobal");
+
+  if (!box) return;
+
+  if (!termo) {
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    return;
+  }
+
+  const resultados = paginasSistema.filter(p =>
+    p.nome.toLowerCase().includes(termo)
+  );
+
+  if (resultados.length === 0) {
+    box.innerHTML = `<div class="item-busca-global">Nenhuma tela encontrada</div>`;
+    box.classList.remove("hidden");
+    return;
+  }
+
+  box.innerHTML = resultados.map(p => `
+    <div class="item-busca-global" onclick="abrirResultadoBusca('${p.pagina}', '${p.permissao || ""}')">
+      ${p.nome}
+    </div>
+  `).join("");
+
+  box.classList.remove("hidden");
+}
+
+function abrirResultadoBusca(pagina, permissao) {
+  document.getElementById("resultadoBuscaGlobal")?.classList.add("hidden");
+  document.getElementById("buscaGlobal").value = "";
+
+  carregarPagina(pagina, permissao || undefined);
+}
+
 // BOTÃO MENU
 const toggleBtn = document.getElementById("menu-toggle");
 const sidebar = document.querySelector(".sidebar");

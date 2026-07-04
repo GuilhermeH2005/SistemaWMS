@@ -95,6 +95,23 @@
   transform: translateY(-2px);
 }
 
+.resolucao-divergencia {
+  margin-top: 14px;
+  background: #ecfdf5;
+  border-left: 5px solid #16a34a;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.resolucao-divergencia strong {
+  color: #003641;
+}
+
+.resolucao-divergencia p {
+  margin-top: 6px;
+  color: #374151;
+}
+
 .status-abatimento {
   display: inline-block;
   padding: 5px 11px;

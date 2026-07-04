@@ -72,6 +72,34 @@
 <section class="card-lista">
   <h3 class="subtitulo">Produtos Cadastrados</h3>
 
+  <div class="barra-busca-padrao">
+  <input
+    type="number"
+    id="buscarProdutoId"
+    placeholder="ID"
+  >
+
+  <input
+    type="text"
+    id="buscarProdutoNome"
+    placeholder="Nome do produto"
+  >
+
+  <input
+    type="text"
+    id="buscarProdutoSku"
+    placeholder="SKU"
+  >
+
+  <button type="button" onclick="carregarListaProdutos()">
+    🔍 Buscar
+  </button>
+
+  <button type="button" onclick="limparBuscaProdutos()">
+    🧹 Limpar
+  </button>
+</div>
+
   <div class="tabela-produtos-container">
     <table class="tabela-produtos">
       <thead>

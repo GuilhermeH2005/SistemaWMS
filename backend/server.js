@@ -134,17 +134,52 @@ app.post("/fornecedores", (req, res) => {
 });
 
 app.get("/fornecedores", (req, res) => {
-  db.query(
-    "SELECT * FROM fornecedor ORDER BY nome",
-    (err, result) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Erro ao buscar fornecedores ❌");
-      }
+  const { id, nome, cnpj } = req.query;
+  const listarTodos = req.query.listarTodos === "true";
+  const limite = Number(req.query.limite || 50);
 
-      res.json(result);
+  if (!listarTodos && !id && !nome && !cnpj) {
+    return res.json([]);
+  }
+
+  let sql = `
+    SELECT *
+    FROM fornecedor
+    WHERE 1 = 1
+  `;
+
+  const valores = [];
+
+  if (id) {
+    sql += ` AND id = ? `;
+    valores.push(id);
+  }
+
+  if (nome) {
+    sql += ` AND nome LIKE ? `;
+    valores.push(`%${nome}%`);
+  }
+
+  if (cnpj) {
+    sql += ` AND cnpj LIKE ? `;
+    valores.push(`%${cnpj}%`);
+  }
+
+  sql += `
+    ORDER BY nome
+    LIMIT ?
+  `;
+
+  valores.push(limite);
+
+  db.query(sql, valores, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Erro ao buscar fornecedores ❌");
     }
-  );
+
+    res.json(result);
+  });
 });
 
 app.put("/fornecedores/:id", (req, res) => {
@@ -393,34 +428,79 @@ app.delete("/cores-produto/:id", (req, res) => {
 ========================= */
 
 app.get("/produtos", (req, res) => {
-  const sql = `
+  const busca = req.query.busca || "";
+  const { id, nome, sku } = req.query;
+  const listarTodos = req.query.listarTodos === "true";
+  const limite = Number(req.query.limite || 30);
+
+ if (!listarTodos && !busca && !id && !nome && !sku) {
+  return res.json([]);
+}
+
+  let sql = `
     SELECT
       produto.*,
       categoria_produto.nome AS categoria_nome,
       cor_produto.nome AS cor_nome,
-
       (
         SELECT fornecedor.nome
         FROM entrada_mercadoria e
-        INNER JOIN fornecedor
-          ON e.fornecedor_id = fornecedor.id
+        INNER JOIN fornecedor ON e.fornecedor_id = fornecedor.id
         WHERE e.produto_id = produto.id
         ORDER BY e.data_entrada DESC
         LIMIT 1
       ) AS fornecedor_nome
-
     FROM produto
-
-    LEFT JOIN categoria_produto
-      ON produto.categoria_id = categoria_produto.id
-
-    LEFT JOIN cor_produto
-      ON produto.cor_id = cor_produto.id
-
-    ORDER BY produto.nome
+    LEFT JOIN categoria_produto ON produto.categoria_id = categoria_produto.id
+    LEFT JOIN cor_produto ON produto.cor_id = cor_produto.id
+    WHERE 1 = 1
   `;
 
-  db.query(sql, (err, result) => {
+  const valores = [];
+
+  if (busca) {
+    sql += `
+      AND (
+        produto.id LIKE ?
+        OR produto.nome LIKE ?
+        OR produto.codigo LIKE ?
+        OR categoria_produto.nome LIKE ?
+        OR cor_produto.nome LIKE ?
+      )
+    `;
+
+    valores.push(
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`,
+      `%${busca}%`
+    );
+  }
+
+  if (id) {
+    sql += ` AND produto.id = ? `;
+    valores.push(id);
+  }
+
+  if (nome) {
+    sql += ` AND produto.nome LIKE ? `;
+    valores.push(`%${nome}%`);
+  }
+
+  if (sku) {
+    sql += ` AND produto.codigo LIKE ? `;
+    valores.push(`%${sku}%`);
+  }
+
+  sql += `
+    ORDER BY produto.nome
+    LIMIT ?
+  `;
+
+  valores.push(limite);
+
+  db.query(sql, valores, (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).send("Erro ao buscar produtos ❌");
@@ -661,34 +741,39 @@ app.delete("/produtos/:id", (req, res) => {
 app.post("/funcionarios", (req, res) => {
   const {
     nome, cpf, rg, telefone, email,
-    rua, numero, bairro, cidade, cep, cargo,
-    data_admissao, 
+    rua, numero, bairro, cidade, cep,
+    cargo_id,
+    data_admissao
   } = req.body;
 
   if (!nome || !cpf || !telefone || !email) {
     return res.status(400).send("Preencha os campos obrigatórios ❌");
   }
 
-
   const sql = `
     INSERT INTO funcionario
-    (nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao, cargo)
+    (
+      nome, cpf, rg, telefone, email,
+      rua, numero, bairro, cidade, cep,
+      data_admissao, cargo_id
+    )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
     sql,
-    [nome, cpf, rg, telefone, email, rua, numero, bairro, cidade, cep, data_admissao, cargo],
+    [
+      nome, cpf, rg, telefone, email,
+      rua, numero, bairro, cidade, cep,
+      data_admissao || null,
+      cargo_id || null
+    ],
     (err) => {
       if (err) {
-        if (err) {
-    if (err.code === "ER_DUP_ENTRY") {
-    return res.status(400).send("CPF já cadastrado ❌");
-    }
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(400).send("CPF já cadastrado ❌");
+        }
 
-  console.error(err);
-  return res.status(500).send("Erro ao cadastrar funcionário ❌");
-}
         console.error(err);
         return res.status(500).send("Erro ao cadastrar funcionário ❌");
       }
@@ -699,17 +784,59 @@ app.post("/funcionarios", (req, res) => {
 });
 
 app.get("/funcionarios", (req, res) => {
-  const sql = `
+  const { id, nome, cpf } = req.query;
+  const listarTodos = req.query.listarTodos === "true";
+  const limite = Number(req.query.limite || 50);
+
+  if (!listarTodos && !id && !nome && !cpf) {
+    return res.json([]);
+  }
+
+  let sql = `
     SELECT
-      funcionario.*,
+      funcionario.id,
+      funcionario.nome,
+      funcionario.cpf,
+      funcionario.rg,
+      funcionario.telefone,
+      funcionario.email,
+      funcionario.rua,
+      funcionario.numero,
+      funcionario.bairro,
+      funcionario.cidade,
+      funcionario.cargo_id,
       cargo.nome AS cargo_nome
     FROM funcionario
     LEFT JOIN cargo
       ON funcionario.cargo_id = cargo.id
-    ORDER BY funcionario.nome
+    WHERE 1 = 1
   `;
 
-  db.query(sql, (err, result) => {
+  const valores = [];
+
+  if (id) {
+    sql += ` AND funcionario.id = ? `;
+    valores.push(id);
+  }
+
+  if (nome) {
+    sql += ` AND funcionario.nome LIKE ? `;
+    valores.push(`%${nome}%`);
+  }
+
+  if (cpf) {
+    sql += ` AND funcionario.cpf LIKE ? `;
+    valores.push(`%${cpf}%`);
+  }
+
+  sql += `
+    ORDER BY funcionario.nome
+    LIMIT ?
+  `;
+
+  valores.push(limite);
+
+  db.query(sql, valores, (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).send("Erro ao buscar funcionários ❌");
@@ -1074,7 +1201,15 @@ function formatarDataXMLParaBR(dataXML) {
 }
 
 app.get("/entradas", (req, res) => {
-  const sql = `
+  const { nf, fornecedor, produto } = req.query;
+  const listarTodos = req.query.listarTodos === "true";
+  const limite = Number(req.query.limite || 50);
+
+  if (!listarTodos && !nf && !fornecedor && !produto) {
+    return res.json([]);
+  }
+
+  let sql = `
     SELECT
       e.*,
       DATE_FORMAT(e.data_nf, '%d/%m/%Y') AS data_nf_formatada,
@@ -1093,10 +1228,39 @@ app.get("/entradas", (req, res) => {
     LEFT JOIN usuario u
       ON e.usuario_id = u.id
 
-    ORDER BY e.data_entrada DESC
+    WHERE 1 = 1
   `;
 
-  db.query(sql, (err, result) => {
+  const valores = [];
+
+  if (nf) {
+    sql += ` AND e.numero_nf LIKE ? `;
+    valores.push(`%${nf}%`);
+  }
+
+  if (fornecedor) {
+    sql += ` AND f.nome LIKE ? `;
+    valores.push(`%${fornecedor}%`);
+  }
+
+  if (produto) {
+    sql += `
+      AND (
+        p.nome LIKE ?
+        OR p.codigo LIKE ?
+      )
+    `;
+    valores.push(`%${produto}%`, `%${produto}%`);
+  }
+
+  sql += `
+    ORDER BY e.data_entrada DESC
+    LIMIT ?
+  `;
+
+  valores.push(limite);
+
+  db.query(sql, valores, (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).send("Erro ao buscar entradas de NF ❌");
@@ -2803,6 +2967,8 @@ app.get("/dashboard", (req, res) => {
       (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'EM_PICKING') AS pedidos_picking,
       (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'SEPARADO') AS pedidos_separados,
       (SELECT COUNT(*) FROM pedido_cliente WHERE status IN ('EXPEDIDO', 'EXPEDIDO_PARCIAL')) AS pedidos_expedidos,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'CANCELADO') AS pedidos_cancelados,
+      (SELECT COUNT(*) FROM nota_fiscal_saida WHERE status = 'CANCELADA') AS notas_canceladas,
 
       (SELECT COUNT(*) FROM nota_fiscal_saida WHERE status = 'TRANSMITIDA') AS notas_emitidas,
       (SELECT COUNT(*) FROM nota_fiscal_saida WHERE status = 'RASCUNHO') AS notas_rascunho,
@@ -2853,9 +3019,251 @@ app.get("/dashboard/auditorias-recentes", (req, res) => {
   });
 });
 
+app.get("/dashboard/graficos", (req, res) => {
+  const sql = `
+    SELECT
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'ABERTO') AS pedidos_abertos,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'EM_PICKING') AS pedidos_picking,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'SEPARADO') AS pedidos_separados,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status IN ('EXPEDIDO', 'EXPEDIDO_PARCIAL')) AS pedidos_expedidos,
+      (SELECT COUNT(*) FROM pedido_cliente WHERE status = 'CANCELADO') AS pedidos_cancelados,
+
+      (SELECT COUNT(*)
+       FROM entrada_mercadoria
+       WHERE status_conferencia = 'PENDENTE') AS conferencias_pendentes,
+
+      (SELECT COUNT(*)
+       FROM entrada_mercadoria
+       WHERE status_conferencia = 'CONFERIDO'
+         AND (IFNULL(quantidade_conferida, 0) - IFNULL(quantidade_enderecada, 0)) > 0) AS pendentes_enderecamento,
+
+      (SELECT COUNT(*)
+       FROM divergencia_conferencia
+       WHERE status IN ('ABERTA', 'AGUARDANDO_COMPLEMENTO', 'DEVOLUCAO', 'AGUARDANDO_NF_DEVOLUCAO')) AS divergencias_abertas,
+
+      (SELECT COUNT(*)
+       FROM produto
+       WHERE IFNULL(quantidade_estoque, 0) <= IFNULL(estoque_minimo, 0)) AS produtos_alerta,
+
+      (SELECT COUNT(*)
+       FROM nota_fiscal_saida
+       WHERE status = 'RASCUNHO') AS notas_rascunho
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Erro ao buscar gráficos do dashboard:", err);
+      return res.status(500).json({
+        erro: "Erro ao buscar gráficos do dashboard"
+      });
+    }
+
+    res.json(result[0]);
+  });
+});
+
 /* =========================
    ENDEREÇAMENTO
 ========================= */
+
+
+app.put("/enderecamento/transferir", (req, res) => {
+  const {
+    origem_id,
+    destino_endereco,
+    quantidade,
+    usuario_id,
+    usuario_nome
+  } = req.body;
+
+  if (!origem_id || !destino_endereco || !quantidade || Number(quantidade) <= 0) {
+    return res.status(400).json({
+      erro: "Informe origem, destino e quantidade válida ❌"
+    });
+  }
+
+  db.beginTransaction((err) => {
+    if (err) return res.status(500).json({ erro: "Erro ao iniciar transferência ❌" });
+
+    db.query(
+      `SELECT * FROM endereco_estoque WHERE id = ? FOR UPDATE`,
+      [origem_id],
+      (err, origemResult) => {
+        if (err) {
+          return db.rollback(() => res.status(500).json({ erro: "Erro ao buscar origem ❌" }));
+        }
+
+        if (origemResult.length === 0) {
+          return db.rollback(() => res.status(404).json({ erro: "Endereço de origem não encontrado ❌" }));
+        }
+
+        const origem = origemResult[0];
+        const qtdTransferir = Number(quantidade);
+        const qtdOrigem = Number(origem.quantidade_unidades || 0);
+
+        if (qtdTransferir > qtdOrigem) {
+          return db.rollback(() => res.status(400).json({
+            erro: "Quantidade maior que a disponível no endereço de origem ❌"
+          }));
+        }
+
+        db.query(
+          `SELECT * FROM endereco_estoque WHERE endereco = ? FOR UPDATE`,
+          [destino_endereco],
+          (err, destinoResult) => {
+            if (err) {
+              return db.rollback(() => res.status(500).json({ erro: "Erro ao buscar destino ❌" }));
+            }
+
+            if (destinoResult.length === 0) {
+              return db.rollback(() => res.status(404).json({ erro: "Endereço destino não encontrado ❌" }));
+            }
+
+            const destino = destinoResult[0];
+
+            if (
+              destino.produto_id &&
+              Number(destino.produto_id) !== Number(origem.produto_id)
+            ) {
+              return db.rollback(() => res.status(400).json({
+                erro: "Destino já possui outro produto ❌"
+              }));
+            }
+
+            const novaQtdDestino =
+              Number(destino.quantidade_unidades || 0) + qtdTransferir;
+
+            const capacidadeDestino =
+              Number(destino.capacidade_unidades || 0);
+
+            if (capacidadeDestino > 0 && novaQtdDestino > capacidadeDestino) {
+              return db.rollback(() => res.status(400).json({
+                erro: `Capacidade do destino excedida. Máximo: ${capacidadeDestino} un.`
+              }));
+            }
+
+            const novaQtdOrigem = qtdOrigem - qtdTransferir;
+
+            db.query(
+              `
+                UPDATE endereco_estoque
+                SET
+                  quantidade_unidades = ?,
+                  ocupacao_m3 = CASE
+                    WHEN capacidade_unidades > 0
+                    THEN (? / capacidade_unidades) * capacidade_m3
+                    ELSE ocupacao_m3
+                  END,
+                  produto_id = CASE WHEN ? <= 0 THEN NULL ELSE produto_id END,
+                  entrada_id = CASE WHEN ? <= 0 THEN NULL ELSE entrada_id END,
+                  lote = CASE WHEN ? <= 0 THEN NULL ELSE lote END,
+                  validade = CASE WHEN ? <= 0 THEN NULL ELSE validade END,
+                  status = CASE WHEN ? <= 0 THEN 'LIVRE' ELSE status END
+                WHERE id = ?
+              `,
+              [
+                novaQtdOrigem,
+                novaQtdOrigem,
+                novaQtdOrigem,
+                novaQtdOrigem,
+                novaQtdOrigem,
+                novaQtdOrigem,
+                novaQtdOrigem,
+                origem.id
+              ],
+              (err) => {
+                if (err) {
+                  return db.rollback(() => res.status(500).json({ erro: "Erro ao atualizar origem ❌" }));
+                }
+
+                db.query(
+                  `
+                    UPDATE endereco_estoque
+                    SET
+                      produto_id = ?,
+                      entrada_id = ?,
+                      lote = ?,
+                      validade = ?,
+                      quantidade_unidades = ?,
+                      ocupacao_m3 = CASE
+                        WHEN capacidade_unidades > 0
+                        THEN (? / capacidade_unidades) * capacidade_m3
+                        ELSE ocupacao_m3
+                      END,
+                      status = 'OCUPADO'
+                    WHERE id = ?
+                  `,
+                  [
+                    origem.produto_id,
+                    origem.entrada_id,
+                    origem.lote,
+                    origem.validade,
+                    novaQtdDestino,
+                    novaQtdDestino,
+                    destino.id
+                  ],
+                  (err) => {
+                    if (err) {
+                      return db.rollback(() => res.status(500).json({ erro: "Erro ao atualizar destino ❌" }));
+                    }
+
+                    db.query(
+                      `
+                        UPDATE posicao_estoque
+                        SET status = 'LIVRE'
+                        WHERE id = ?
+                          AND ? <= 0
+                      `,
+                      [origem.posicao_id, novaQtdOrigem],
+                      (err) => {
+                        if (err) {
+                          return db.rollback(() => res.status(500).json({ erro: "Erro ao liberar posição origem ❌" }));
+                        }
+
+                        db.query(
+                          `
+                            UPDATE posicao_estoque
+                            SET status = 'OCUPADA'
+                            WHERE id = ?
+                          `,
+                          [destino.posicao_id],
+                          (err) => {
+                            if (err) {
+                              return db.rollback(() => res.status(500).json({ erro: "Erro ao ocupar posição destino ❌" }));
+                            }
+
+                            registrarAuditoria(
+                              usuario_id,
+                              usuario_nome,
+                              "TRANSFERÊNCIA DE ENDEREÇO",
+                              "endereco_estoque",
+                              origem.id,
+                              `Produto ID ${origem.produto_id} transferido de ${origem.endereco} para ${destino.endereco}. Quantidade: ${qtdTransferir}.`
+                            );
+
+                            db.commit((err) => {
+                              if (err) {
+                                return db.rollback(() => res.status(500).json({ erro: "Erro ao finalizar transferência ❌" }));
+                              }
+
+                              res.json({
+                                mensagem: "Produto transferido com sucesso ✅"
+                              });
+                            });
+                          }
+                        );
+                      }
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+  });
+});
 
 app.get("/produtos-pendentes-enderecamento", (req, res) => {
 
@@ -2974,31 +3382,38 @@ app.get("/enderecos/sugerir/:produtoId", (req, res) => {
     }
 
     const sqlSugestao = `
-      SELECT
-        p.id,
-        p.rua,
-        p.coluna,
-        p.nivel,
-        p.endereco,
-        p.capacidade_m3,
-        p.status,
-        p.volume_ocupado,
-        (p.capacidade_m3 - p.volume_ocupado) AS volume_disponivel,
-        FLOOR((p.capacidade_m3 - p.volume_ocupado) / ?) AS capacidade_unidades
-      FROM posicao_estoque p
-      WHERE
-        p.status = 'LIVRE'
-        AND p.rua BETWEEN ? AND ?
-        AND p.nivel <= ?
-        AND (p.capacidade_m3 - p.volume_ocupado) >= ?
-      ORDER BY
-        p.nivel ASC,
-        capacidade_unidades DESC,
-        volume_disponivel ASC,
-        p.rua ASC,
-        p.coluna ASC
-      LIMIT 1
-    `;
+  SELECT
+    p.id,
+    p.rua,
+    p.coluna,
+    p.nivel,
+    p.endereco,
+    p.capacidade_m3,
+    p.status,
+    p.volume_ocupado,
+    (p.capacidade_m3 - p.volume_ocupado) AS volume_disponivel,
+    FLOOR((p.capacidade_m3 - p.volume_ocupado) / ?) AS capacidade_unidades
+  FROM posicao_estoque p
+
+  LEFT JOIN endereco_estoque ee
+    ON ee.posicao_id = p.id
+    AND IFNULL(ee.quantidade_unidades, 0) > 0
+
+  WHERE
+    p.status = 'LIVRE'
+    AND ee.id IS NULL
+    AND p.rua BETWEEN ? AND ?
+    AND p.nivel <= ?
+    AND (p.capacidade_m3 - p.volume_ocupado) >= ?
+
+  ORDER BY
+    p.nivel ASC,
+    capacidade_unidades DESC,
+    volume_disponivel ASC,
+    p.rua ASC,
+    p.coluna ASC
+  LIMIT 1
+`;
 
     db.query(
       sqlSugestao,
@@ -3923,34 +4338,44 @@ res.send("Dimensões da posição atualizadas ✅");
 });
 
 app.get("/clientes", (req, res) => {
-  const busca = req.query.busca || "";
+  const { id, nome, cnpj } = req.query;
+  const listarTodos = req.query.listarTodos === "true";
+
+  if (!listarTodos && !id && !nome && !cnpj) {
+    return res.json([]);
+  }
 
   let sql = `
     SELECT *
     FROM cliente
+    WHERE 1 = 1
   `;
 
   const valores = [];
 
-  if (busca) {
-    sql += `
-      WHERE
-        id LIKE ?
-        OR razao_social LIKE ?
-        OR nome_fantasia LIKE ?
-        OR cnpj LIKE ?
-    `;
+  if (id) {
+    sql += ` AND id = ? `;
+    valores.push(id);
+  }
 
-    valores.push(
-      `%${busca}%`,
-      `%${busca}%`,
-      `%${busca}%`,
-      `%${busca}%`
-    );
+  if (nome) {
+    sql += `
+      AND (
+        razao_social LIKE ?
+        OR nome_fantasia LIKE ?
+      )
+    `;
+    valores.push(`%${nome}%`, `%${nome}%`);
+  }
+
+  if (cnpj) {
+    sql += ` AND cnpj LIKE ? `;
+    valores.push(`%${cnpj}%`);
   }
 
   sql += `
-    ORDER BY id DESC
+    ORDER BY razao_social
+    LIMIT 50
   `;
 
   db.query(sql, valores, (err, resultado) => {
@@ -4347,7 +4772,13 @@ app.post("/pedidos", (req, res) => {
   });
 });
 app.get("/pedidos", (req, res) => {
-  const busca = req.query.busca || "";
+  const { id, cliente, status } = req.query;
+  const listarTodos = req.query.listarTodos === "true";
+  const limite = Number(req.query.limite || 50);
+
+  if (!listarTodos && !id && !cliente && !status) {
+    return res.json([]);
+  }
 
   let sql = `
     SELECT
@@ -4358,30 +4789,42 @@ app.get("/pedidos", (req, res) => {
       pc.observacao,
       c.razao_social AS cliente_nome
     FROM pedido_cliente pc
+
     INNER JOIN cliente c
       ON pc.cliente_id = c.id
+
     WHERE 1 = 1
   `;
 
   const valores = [];
 
-  if (busca) {
-    sql += `
-      AND (
-        pc.id LIKE ?
-        OR c.razao_social LIKE ?
-        OR pc.status LIKE ?
-      )
-    `;
-
-    valores.push(
-      `%${busca}%`,
-      `%${busca}%`,
-      `%${busca}%`
-    );
+  if (id) {
+    sql += ` AND pc.id = ? `;
+    valores.push(id);
   }
 
-  sql += ` ORDER BY pc.id DESC `;
+  if (cliente) {
+    sql += `
+      AND (
+        c.razao_social LIKE ?
+        OR c.nome_fantasia LIKE ?
+        OR c.cnpj LIKE ?
+      )
+    `;
+    valores.push(`%${cliente}%`, `%${cliente}%`, `%${cliente}%`);
+  }
+
+  if (status) {
+    sql += ` AND pc.status = ? `;
+    valores.push(status);
+  }
+
+  sql += `
+    ORDER BY pc.id DESC
+    LIMIT ?
+  `;
+
+  valores.push(limite);
 
   db.query(sql, valores, (err, pedidos) => {
     if (err) {
@@ -4414,8 +4857,10 @@ app.get("/pedidos", (req, res) => {
             AND e.quantidade_disponivel > 0
         ), 0) AS quantidade_estoque
       FROM pedido_cliente_item pci
+
       INNER JOIN produto p
         ON pci.produto_id = p.id
+
       WHERE pci.pedido_id IN (?)
     `;
 
@@ -4431,15 +4876,15 @@ app.get("/pedidos", (req, res) => {
         );
 
         const valorTotal = itensPedido.reduce((soma, item) => {
-  return soma + Number(item.subtotal || 0);
-}, 0);
+          return soma + Number(item.subtotal || 0);
+        }, 0);
 
-       return {
-  ...pedido,
-  total_itens: itensPedido.length,
-  valor_total: valorTotal,
-  itens: JSON.stringify(itensPedido)
-};
+        return {
+          ...pedido,
+          total_itens: itensPedido.length,
+          valor_total: valorTotal,
+          itens: JSON.stringify(itensPedido)
+        };
       });
 
       res.json(pedidosComItens);
@@ -5933,28 +6378,85 @@ app.get("/nf/pedido/:pedidoId/itens", (req, res) => {
 });
 
 app.get("/notas-fiscais", (req, res) => {
-  const sql = `
+  const { numero, pessoa, status, tipo } = req.query;
+  const listarTodos = req.query.listarTodos === "true";
+  const limite = Number(req.query.limite || 50);
+
+ if (!listarTodos && !numero && !pessoa && !status && !tipo) {
+  return res.json([]);
+}
+
+  let sql = `
     SELECT
-      id,
-      tipo,
-      numero_nf,
-      serie_nf,
-      data_nf,
-      data_transmissao,
-      status,
-      valor_total,
-      observacao
-    FROM nota_fiscal_saida
-    ORDER BY id DESC
+      nf.*,
+      c.razao_social AS cliente_nome,
+      f.nome AS fornecedor_nome
+    FROM nota_fiscal_saida nf
+
+    LEFT JOIN pedido_cliente pc
+      ON nf.pedido_id = pc.id
+
+    LEFT JOIN cliente c
+      ON nf.cliente_id = c.id
+      OR pc.cliente_id = c.id
+
+    LEFT JOIN fornecedor f
+      ON nf.fornecedor_id = f.id
+
+    WHERE 1 = 1
   `;
 
-  db.query(sql, (err, result) => {
+  const valores = [];
+
+  if (numero) {
+    sql += ` AND nf.numero_nf LIKE ? `;
+    valores.push(`%${numero}%`);
+  }
+
+  if (pessoa) {
+    sql += `
+      AND (
+        c.razao_social LIKE ?
+        OR c.nome_fantasia LIKE ?
+        OR c.cnpj LIKE ?
+        OR f.nome LIKE ?
+        OR f.cnpj LIKE ?
+      )
+    `;
+
+    valores.push(
+      `%${pessoa}%`,
+      `%${pessoa}%`,
+      `%${pessoa}%`,
+      `%${pessoa}%`,
+      `%${pessoa}%`
+    );
+  }
+
+  if (status) {
+    sql += ` AND nf.status = ? `;
+    valores.push(status);
+  }
+
+  if (tipo) {
+  sql += ` AND nf.tipo = ? `;
+  valores.push(tipo);
+}
+
+  sql += `
+    ORDER BY nf.id DESC
+    LIMIT ?
+  `;
+
+  valores.push(limite);
+
+  db.query(sql, valores, (err, resultado) => {
     if (err) {
       console.error(err);
       return res.status(500).send("Erro ao buscar notas fiscais ❌");
     }
 
-    res.json(result);
+    res.json(resultado);
   });
 });
 

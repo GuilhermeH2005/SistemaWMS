@@ -18,7 +18,7 @@ function iniciarFuncionario() {
       rg: document.getElementById("rg").value,
       telefone: document.getElementById("telefone").value,
       email: document.getElementById("email").value,
-      cargo_id: document.getElementById("cargo_id").value || null,
+      cargo_id: document.getElementById("cargo_id").value,
 
       rua: document.getElementById("rua").value,
       numero: document.getElementById("numero").value,
@@ -92,7 +92,7 @@ function iniciarFuncionario() {
 
       form.reset();
 
-      carregarFuncionarios();
+      limparBuscaFuncionarios();
 
     } catch (err) {
 
@@ -104,7 +104,7 @@ function iniciarFuncionario() {
 
   });
 
-  carregarFuncionarios();
+  limparBuscaFuncionarios();
 }
 
 async function carregarCargosFuncionario() {
@@ -127,46 +127,105 @@ async function carregarCargosFuncionario() {
 }
 
 async function carregarFuncionarios() {
+  try {
+    const id = document.getElementById("buscarFuncionarioId")?.value.trim() || "";
+    const nome = document.getElementById("buscarFuncionarioNome")?.value.trim() || "";
+    const cpf = document.getElementById("buscarFuncionarioCpf")?.value.trim() || "";
 
-  const res =
-    await fetch("http://localhost:3000/funcionarios");
+    const lista = document.getElementById("listaFuncionarios");
+    if (!lista) return;
 
-  const funcionarios = await res.json();
+    const params = new URLSearchParams();
 
-  const lista =
-    document.getElementById("listaFuncionarios");
+    if (id) params.append("id", id);
+    if (nome) params.append("nome", nome);
+    if (cpf) params.append("cpf", cpf);
 
-  lista.innerHTML = "";
+    if (!id && !nome && !cpf) {
+      const confirmar = confirm(
+        "Você não informou nenhum filtro.\n\nDeseja listar os 50 primeiros funcionários?"
+      );
 
-  funcionarios.forEach(f => {
+      if (!confirmar) {
+        limparBuscaFuncionarios();
+        return;
+      }
 
-    lista.innerHTML += `
-  <li>
-    <div class="funcionario-topo">
-      <strong>${f.nome}</strong>
-      <span>ID: ${f.id}</span>
-    </div>
+      params.append("listarTodos", "true");
+      params.append("limite", "50");
+    }
 
-    <div class="funcionario-grid">
-      <div><span>CPF</span><strong>${f.cpf || "-"}</strong></div>
-      <div><span>RG</span><strong>${f.rg || "-"}</strong></div>
-      <div><span>Telefone</span><strong>${f.telefone || "-"}</strong></div>
-      <div><span>Email</span><strong>${f.email || "-"}</strong></div>
-      <div><span>Cargo</span><strong>${f.cargo_nome || "-"}</strong></div>
+    const res = await fetch(
+      `http://localhost:3000/funcionarios?${params.toString()}`
+    );
 
-      <div><span>Rua</span><strong>${f.rua || "-"}</strong></div>
-      <div><span>Número</span><strong>${f.numero || "-"}</strong></div>
-      <div><span>Bairro</span><strong>${f.bairro || "-"}</strong></div>
-      <div><span>Cidade</span><strong>${f.cidade || "-"}</strong></div>
-    </div>
+    if (!res.ok) {
+      alert(await res.text());
+      return;
+    }
 
-    <div class="acoes-funcionario">
-      <button onclick='editarFuncionario(${JSON.stringify(f)})'>✏️ Editar</button>
-      <button onclick="excluirFuncionario(${f.id})">🗑️ Excluir</button>
-    </div>
-  </li>
-`;
-  });
+    const funcionarios = await res.json();
+    console.log(funcionarios);
+
+    lista.innerHTML = "";
+
+    if (funcionarios.length === 0) {
+      lista.innerHTML = `
+        <li class="sem-registro">
+          Nenhum funcionário encontrado.
+        </li>
+      `;
+      return;
+    }
+
+    funcionarios.forEach(f => {
+      lista.innerHTML += `
+        <li>
+          <div class="funcionario-topo">
+            <strong>${f.nome}</strong>
+            <span>ID: ${f.id}</span>
+          </div>
+
+          <div class="funcionario-grid">
+            <div><span>CPF</span><strong>${f.cpf || "-"}</strong></div>
+            <div><span>RG</span><strong>${f.rg || "-"}</strong></div>
+            <div><span>Telefone</span><strong>${f.telefone || "-"}</strong></div>
+            <div><span>Email</span><strong>${f.email || "-"}</strong></div>
+            <div><span>Cargo</span><strong>${f.cargo_nome || "-"}</strong></div>
+            <div><span>Rua</span><strong>${f.rua || "-"}</strong></div>
+            <div><span>Número</span><strong>${f.numero || "-"}</strong></div>
+            <div><span>Bairro</span><strong>${f.bairro || "-"}</strong></div>
+            <div><span>Cidade</span><strong>${f.cidade || "-"}</strong></div>
+          </div>
+
+          <div class="acoes-funcionario">
+            <button onclick='editarFuncionario(${JSON.stringify(f)})'>✏️ Editar</button>
+            <button onclick="excluirFuncionario(${f.id})">🗑️ Excluir</button>
+          </div>
+        </li>
+      `;
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao carregar funcionários.");
+  }
+}
+
+function limparBuscaFuncionarios() {
+  document.getElementById("buscarFuncionarioId").value = "";
+  document.getElementById("buscarFuncionarioNome").value = "";
+  document.getElementById("buscarFuncionarioCpf").value = "";
+
+  const lista = document.getElementById("listaFuncionarios");
+
+  if (lista) {
+    lista.innerHTML = `
+      <li class="sem-registro">
+        Digite ID, nome ou CPF para pesquisar funcionários.
+      </li>
+    `;
+  }
 }
 
 async function carregarCargosFuncionario() {
@@ -234,32 +293,53 @@ function editarFuncionario(f) {
 }
 
 async function excluirFuncionario(id) {
+  if (!confirm("Deseja excluir este funcionário?")) return;
 
-  if (!confirm("Deseja excluir este funcionário?"))
-    return;
-
-  const res = await fetch(
-    `http://localhost:3000/funcionarios/${id}`,
-    {
+  try {
+    const res = await fetch(`http://localhost:3000/funcionarios/${id}`, {
       method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        ...getUsuarioAuditoria()
+      })
+    });
 
-       headers: {
-    "Content-Type": "application/json"
-  },
+    const msg = await res.text();
 
-   body: JSON.stringify({
-    ...getUsuarioAuditoria()
-  })
-  });
+    if (!res.ok) {
+      alert(msg);
+      return;
+    }
 
-  const msg = await res.text();
+    alert(msg || "Funcionário excluído com sucesso ✅");
 
-  if (!res.ok) {
-    alert(msg);
-    return;
+    const lista = document.getElementById("listaFuncionarios");
+    if (lista) {
+      lista.innerHTML = `
+        <li class="sem-registro">
+          Carregando os 50 primeiros funcionários...
+        </li>
+      `;
+    }
+
+    document.getElementById("buscarFuncionarioId").value = "";
+    document.getElementById("buscarFuncionarioNome").value = "";
+    document.getElementById("buscarFuncionarioCpf").value = "";
+
+    const resLista = await fetch(
+      "http://localhost:3000/funcionarios?listarTodos=true&limite=50"
+    );
+
+    const funcionarios = await resLista.json();
+
+    renderizarFuncionarios(funcionarios);
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao excluir funcionário.");
   }
-
-  carregarFuncionarios();
 }
 
 function aplicarMascarasFuncionario() {
@@ -376,4 +456,48 @@ function formatarData(data) {
   const d = new Date(data);
 
   return d.toLocaleDateString("pt-BR");
+}
+
+function renderizarFuncionarios(funcionarios) {
+  const lista = document.getElementById("listaFuncionarios");
+  if (!lista) return;
+
+  lista.innerHTML = "";
+
+  if (funcionarios.length === 0) {
+    lista.innerHTML = `
+      <li class="sem-registro">
+        Nenhum funcionário encontrado.
+      </li>
+    `;
+    return;
+  }
+
+  funcionarios.forEach(f => {
+    lista.innerHTML += `
+      <li>
+        <div class="funcionario-topo">
+          <strong>${f.nome}</strong>
+          <span>ID: ${f.id}</span>
+        </div>
+
+        <div class="funcionario-grid">
+          <div><span>CPF</span><strong>${f.cpf || "-"}</strong></div>
+          <div><span>RG</span><strong>${f.rg || "-"}</strong></div>
+          <div><span>Telefone</span><strong>${f.telefone || "-"}</strong></div>
+          <div><span>Email</span><strong>${f.email || "-"}</strong></div>
+          <div><span>Cargo</span><strong>${f.cargo_nome || "-"}</strong></div>
+          <div><span>Rua</span><strong>${f.rua || "-"}</strong></div>
+          <div><span>Número</span><strong>${f.numero || "-"}</strong></div>
+          <div><span>Bairro</span><strong>${f.bairro || "-"}</strong></div>
+          <div><span>Cidade</span><strong>${f.cidade || "-"}</strong></div>
+        </div>
+
+        <div class="acoes-funcionario">
+          <button onclick='editarFuncionario(${JSON.stringify(f)})'>✏️ Editar</button>
+          <button onclick="excluirFuncionario(${f.id})">🗑️ Excluir</button>
+        </div>
+      </li>
+    `;
+  });
 }

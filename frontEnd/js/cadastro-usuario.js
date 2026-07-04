@@ -43,7 +43,7 @@ async function carregarFuncionariosNoUsuario() {
   if (!selectFuncionario) return;
 
   try {
-    const res = await fetch("http://localhost:3000/funcionarios");
+    const res = await fetch("http://localhost:3000/funcionarios?listarTodos=true&limite=500");
     const funcionarios = await res.json();
 
     selectFuncionario.innerHTML = `

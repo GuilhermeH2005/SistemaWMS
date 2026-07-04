@@ -4,7 +4,7 @@ function iniciarClientes() {
   if (!form) return;
 
   aplicarMascarasCliente();
-  carregarClientes();
+  limparBuscaClientes();
 
   form.onsubmit = async function(e) {
     e.preventDefault();
@@ -64,7 +64,7 @@ function iniciarClientes() {
       alert(msg);
 
       limparFormularioCliente();
-      carregarClientes();
+     limparBuscaClientes();
 
     } catch (err) {
       console.error(err);
@@ -74,19 +74,46 @@ function iniciarClientes() {
 }
 
 async function carregarClientes() {
-  const busca =
-    document.getElementById("buscarCliente")?.value || "";
-
   try {
-    const res = await fetch(
-      `http://localhost:3000/clientes?busca=${encodeURIComponent(busca)}`
-    );
+    const id = document.getElementById("buscarClienteId")?.value.trim() || "";
+    const nome = document.getElementById("buscarClienteNome")?.value.trim() || "";
+    const cnpj = document.getElementById("buscarClienteCnpj")?.value.trim() || "";
+
+    const tbody = document.getElementById("listaClientes");
+    if (!tbody) return;
+
+    const params = new URLSearchParams();
+
+    if (id) params.append("id", id);
+    if (nome) params.append("nome", nome);
+    if (cnpj) params.append("cnpj", cnpj);
+
+    if (!id && !nome && !cnpj) {
+      const confirmar = confirm(
+        "Você não informou filtros. Isso pode carregar muitos registros. Deseja listar os 50 primeiros?"
+      );
+
+      if (!confirmar) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">Digite ID, nome ou CNPJ para pesquisar clientes.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      params.append("listarTodos", "true");
+      params.append("limite", "50");
+    }
+
+    const res = await fetch(`http://localhost:3000/clientes?${params.toString()}`);
+
+    if (!res.ok) {
+      alert(await res.text());
+      return;
+    }
 
     const clientes = await res.json();
-
-    const tbody = document.getElementById("tabelaClientes");
-
-    if (!tbody) return;
 
     tbody.innerHTML = "";
 
@@ -113,13 +140,8 @@ async function carregarClientes() {
             </span>
           </td>
           <td>
-            <button type="button" onclick='editarCliente(${JSON.stringify(cliente)})'>
-              Editar
-            </button>
-
-            <button type="button" onclick="desativarCliente(${cliente.id})">
-              Desativar
-            </button>
+            <button onclick='editarCliente(${JSON.stringify(cliente)})'>Editar</button>
+            <button onclick="desativarCliente(${cliente.id})">Desativar</button>
           </td>
         </tr>
       `;
@@ -264,5 +286,20 @@ function aplicarMascarasCliente() {
 
       telefone.value = valor.substring(0, 15);
     });
+  }
+}
+
+function limparBuscaClientes() {
+  document.getElementById("buscarClienteId").value = "";
+  document.getElementById("buscarClienteNome").value = "";
+  document.getElementById("buscarClienteCnpj").value = "";
+
+  const tbody = document.getElementById("listaClientes");
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8">Digite ID, nome ou CNPJ para pesquisar clientes.</td>
+      </tr>
+    `;
   }
 }

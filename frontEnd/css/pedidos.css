@@ -184,3 +184,15 @@
     width: 100%;
   }
 }
+
+.linha-pedido {
+  cursor: pointer;
+}
+
+.linha-pedido:hover {
+  background: #f1fafa;
+}
+
+.hidden {
+  display: none !important;
+}

@@ -236,8 +236,32 @@
 
 </section>
 
+
 <section class="card-lista">
   <h3 class="subtitulo">Notas Emitidas</h3>
+
+  <div class="barra-busca-padrao">
+  <input type="text" id="buscarNotaNumero" placeholder="Nº NF">
+
+  <input type="text" id="buscarNotaPessoa" placeholder="Cliente ou fornecedor">
+
+  <select id="buscarNotaTipo">
+    <option value="">Tipo</option>
+    <option value="VENDA">Venda</option>
+    <option value="DEVOLUCAO_CLIENTE">Devolução de Cliente</option>
+    <option value="DEVOLUCAO_FORNECEDOR">Devolução ao Fornecedor</option>
+  </select>
+
+  <select id="buscarNotaStatus">
+    <option value="">Status</option>
+    <option value="RASCUNHO">Rascunho</option>
+    <option value="TRANSMITIDA">Transmitida</option>
+    <option value="CANCELADA">Cancelada</option>
+  </select>
+
+  <button type="button" onclick="carregarNotasFiscais()">🔍 Buscar</button>
+  <button type="button" onclick="limparBuscaNotasFiscais()">🧹 Limpar</button>
+</div>
 
   <div class="tabela-container">
     <table class="tabela-nf">
@@ -245,6 +269,7 @@
   <tr>
     <th>ID</th>
     <th>Tipo</th>
+    <th>Cliente/Fornecedor</th>
     <th>Número</th>
     <th>Série</th>
     <th>Valor Total</th>

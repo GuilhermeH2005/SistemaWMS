@@ -264,161 +264,103 @@ function formatarDataAuditoria(data) {
 }
 
 function gerarBadgeAcao(acao) {
-
   const texto = (acao || "").toUpperCase();
 
+  if (texto.includes("TRANSFERÊNCIA") || texto.includes("TRANSFERENCIA")) {
+    return `<span class="badge-acao badge-transferencia">🔁 ${acao}</span>`;
+  }
+
+  if (texto.includes("NF") || texto.includes("NOTA FISCAL")) {
+    return `<span class="badge-acao badge-nf">🧾 ${acao}</span>`;
+  }
+
+  if (texto.includes("DEVOLU")) {
+    return `<span class="badge-acao badge-devolucao">↩️ ${acao}</span>`;
+  }
+
+  if (texto.includes("CANCEL")) {
+    return `<span class="badge-acao badge-cancelamento">⛔ ${acao}</span>`;
+  }
+
+  if (
+  texto.includes("ENDEREC") ||
+  texto.includes("ENDEREÇ") ||
+  texto.includes("ARMAZEN") ||
+  texto.includes("POSIÇÃO") ||
+  texto.includes("POSICAO")
+) {
+  return `<span class="badge-acao badge-enderecamento">📍 ${acao}</span>`;
+}
+
   if (texto.includes("CADASTRO")) {
-    return `
-      <span class="badge-acao badge-cadastro">
-        🟢 ${acao}
-      </span>
-    `;
+    return `<span class="badge-acao badge-cadastro">🟢 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("EDIÇÃO") ||
-    texto.includes("EDICAO") ||
-    texto.includes("ALTER")
-  ) {
-    return `
-      <span class="badge-acao badge-edicao">
-        🟡 ${acao}
-      </span>
-    `;
+  if (texto.includes("EDIÇÃO") || texto.includes("EDICAO") || texto.includes("ALTER")) {
+    return `<span class="badge-acao badge-edicao">🟡 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("EXCLUS")
-  ) {
-    return `
-      <span class="badge-acao badge-exclusao">
-        🔴 ${acao}
-      </span>
-    `;
+  if (texto.includes("EXCLUS")) {
+    return `<span class="badge-acao badge-exclusao">🔴 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("ENTRADA")
-  ) {
-    return `
-      <span class="badge-acao badge-entrada">
-        📥 ${acao}
-      </span>
-    `;
+  if (texto.includes("ENTRADA")) {
+    return `<span class="badge-acao badge-entrada">📥 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("SAIDA")
-  ) {
-    return `
-      <span class="badge-acao badge-saida">
-        📤 ${acao}
-      </span>
-    `;
+  if (texto.includes("SAIDA") || texto.includes("SAÍDA")) {
+    return `<span class="badge-acao badge-saida">📤 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("CONFER")
-  ) {
-    return `
-      <span class="badge-acao badge-conferencia">
-        🔵 ${acao}
-      </span>
-    `;
+  if (texto.includes("CONFER")) {
+    return `<span class="badge-acao badge-conferencia">🔵 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("DIVERG")
-  ) {
-    return `
-      <span class="badge-acao badge-divergencia">
-        🟣 ${acao}
-      </span>
-    `;
+  if (texto.includes("DIVERG")) {
+    return `<span class="badge-acao badge-divergencia">🟣 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("AJUSTE")
-  ) {
-    return `
-      <span class="badge-acao badge-ajuste">
-        🟠 ${acao}
-      </span>
-    `;
+  if (texto.includes("AJUSTE")) {
+    return `<span class="badge-acao badge-ajuste">🟠 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("ENDEREC")
-  ) {
-    return `
-      <span class="badge-acao badge-enderecamento">
-        📍 ${acao}
-      </span>
-    `;
+  if (texto.includes("ENDEREC")) {
+    return `<span class="badge-acao badge-enderecamento">📍 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("PICKING")
-  ) {
-    return `
-      <span class="badge-acao badge-picking">
-        🛒 ${acao}
-      </span>
-    `;
+  if (texto.includes("PICKING")) {
+    return `<span class="badge-acao badge-picking">🛒 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("ROMANEIO")
-  ) {
-    return `
-      <span class="badge-acao badge-romaneio">
-        🚚 ${acao}
-      </span>
-    `;
+  if (texto.includes("ROMANEIO")) {
+    return `<span class="badge-acao badge-romaneio">🚚 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("CLIENTE")
-  ) {
-    return `
-      <span class="badge-acao badge-cliente">
-        🏢 ${acao}
-      </span>
-    `;
+  if (texto.includes("PEDIDO")) {
+    return `<span class="badge-acao badge-pedido">📋 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("FORNECEDOR")
-  ) {
-    return `
-      <span class="badge-acao badge-fornecedor">
-        🏭 ${acao}
-      </span>
-    `;
+  if (texto.includes("CLIENTE")) {
+    return `<span class="badge-acao badge-cliente">🏢 ${acao}</span>`;
   }
 
-  if (
-    texto.includes("USUARIO") ||
-    texto.includes("USUÁRIO")
-  ) {
-    return `
-      <span class="badge-acao badge-usuario">
-        👤 ${acao}
-      </span>
-    `;
+  if (texto.includes("FORNECEDOR")) {
+    return `<span class="badge-acao badge-fornecedor">🏭 ${acao}</span>`;
   }
 
-  return `
-    <span class="badge-acao badge-default">
-      ⚪ ${acao || "-"}
-    </span>
-  `;
+  if (texto.includes("FUNCION")) {
+    return `<span class="badge-acao badge-funcionario">👷 ${acao}</span>`;
+  }
+
+  if (texto.includes("USUARIO") || texto.includes("USUÁRIO")) {
+    return `<span class="badge-acao badge-usuario">👤 ${acao}</span>`;
+  }
+
+  return `<span class="badge-acao badge-default">⚪ ${acao || "-"}</span>`;
 }
 
 window.alternarDetalheAuditoria = function(index) {
   const linha = document.getElementById(`detalhe-auditoria-${index}`);
-
   if (!linha) return;
-
   linha.classList.toggle("hidden");
 };

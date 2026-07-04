@@ -288,44 +288,43 @@ async function salvarEndereco(event) {
   gerarEnderecoManual();
 
   const dados = {
-  produto_id: document.getElementById("produto_id").value,
-  posicao_id: document.getElementById("posicao_id").value || null,
-  rua: document.getElementById("rua").value,
-  coluna: document.getElementById("coluna").value,
-  nivel: document.getElementById("nivel").value,
-  endereco: document.getElementById("endereco").value,
-  quantidade_unidades: document.getElementById("quantidade_unidades").value,
-  observacao: document.getElementById("observacao").value
-};
+    produto_id: document.getElementById("produto_id").value,
+    posicao_id: document.getElementById("posicao_id").value || null,
+    rua: document.getElementById("rua").value,
+    coluna: document.getElementById("coluna").value,
+    nivel: document.getElementById("nivel").value,
+    endereco: document.getElementById("endereco").value,
+    quantidade_unidades: document.getElementById("quantidade_unidades").value,
+    observacao: document.getElementById("observacao").value,
+    ...getUsuarioAuditoria()
+  };
 
   if (
-  !dados.produto_id ||
-  !dados.quantidade_unidades ||
-  !dados.rua ||
-  !dados.coluna ||
-  !dados.nivel ||
-  !dados.endereco
-) {
-  alert("Selecione o produto, informe rua, coluna, nível e quantidade.");
-  return;
-}
+    !dados.produto_id ||
+    !dados.quantidade_unidades ||
+    !dados.rua ||
+    !dados.coluna ||
+    !dados.nivel ||
+    !dados.endereco
+  ) {
+    alert("Selecione o produto, informe rua, coluna, nível e quantidade.");
+    return;
+  }
 
   try {
-    const resposta = await fetch(`${API_URL_ENDERECO}/enderecos`, {
+    const resposta = await fetch("http://localhost:3000/enderecos", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-       body: JSON.stringify({
-    ...dados,
-    ...getUsuarioAuditoria()
-  })
+      body: JSON.stringify(dados)
     });
 
     const retorno = await resposta.json();
+    console.log("Resposta endereçamento:", retorno);
 
     if (!resposta.ok) {
-      alert(retorno.erro || "Erro ao salvar endereçamento.");
+      alert(retorno.erro || "Erro ao salvar endereço");
       return;
     }
 
@@ -348,6 +347,7 @@ async function salvarEndereco(event) {
     }
 
     document.getElementById("formEndereco").reset();
+
     document.getElementById("infoProdutoEndereco").innerHTML =
       "Selecione um produto para ver o saldo pendente.";
 
@@ -392,9 +392,7 @@ async function carregarEnderecos() {
           <td>${item.capacidade_unidades}</td>
           <td>${Number(item.ocupacao_m3 || 0).toFixed(3)} m³</td>
           <td>
-            <button onclick="excluirEndereco(${item.id})">
-              Excluir
-            </button>
+  
           </td>
         </tr>
       `;
@@ -463,5 +461,60 @@ async function buscarCapacidadePorEndereco(endereco) {
     console.error("Erro ao buscar capacidade da posição:", erro);
     capacidadePosicaoAtual = null;
     mostrarInfoProduto(null);
+  }
+}
+
+let enderecoOrigemTransferenciaId = null;
+
+function abrirTransferenciaEndereco(id) {
+  enderecoOrigemTransferenciaId = id;
+
+  const destino = prompt("Digite o endereço de destino. Exemplo: R1-C2-N1");
+
+  if (!destino || !destino.trim()) {
+    alert("Informe o endereço de destino.");
+    return;
+  }
+
+  const quantidade = prompt("Digite a quantidade que deseja transferir:");
+
+  if (!quantidade || Number(quantidade) <= 0) {
+    alert("Informe uma quantidade válida.");
+    return;
+  }
+
+  transferirEndereco(destino.trim(), Number(quantidade));
+}
+
+async function transferirEndereco(destino, quantidade) {
+  try {
+    const res = await fetch(`${API_URL_ENDERECO}/enderecamento/transferir`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        origem_id: enderecoOrigemTransferenciaId,
+        destino_endereco: destino,
+        quantidade,
+        ...getUsuarioAuditoria()
+      })
+    });
+
+    const dados = await res.json();
+
+    if (!res.ok) {
+      alert(dados.erro || "Erro ao transferir produto.");
+      return;
+    }
+
+    alert(dados.mensagem || "Produto transferido com sucesso ✅");
+
+    carregarEnderecos();
+    carregarProdutosPendentes();
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao transferir endereço.");
   }
 }

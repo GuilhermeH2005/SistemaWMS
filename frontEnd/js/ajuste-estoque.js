@@ -18,7 +18,7 @@ function iniciarAjusteEstoque() {
 
 async function carregarProdutosAjuste() {
   try {
-    const resposta = await fetch(`${API_URL_AJUSTE}/produtos`);
+    const resposta = await fetch("http://localhost:3000/produtos?listarTodos=true&limite=500");
 
     if (!resposta.ok) {
       const erroTexto = await resposta.text();
@@ -115,7 +115,6 @@ async function salvarAjuste(event) {
         motivo,
         observacao,
 
-        // Depois podemos trocar isso pelo usuário logado vindo do backend/token.
         usuario_id: 1
       })
     });

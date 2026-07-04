@@ -2,6 +2,7 @@ var API_URL_DASHBOARD = "http://localhost:3000";
 
 function iniciarDashboard() {
   carregarDashboard();
+  carregarGraficosDashboard();
   carregarAuditoriasDashboard();
 }
 
@@ -44,6 +45,62 @@ async function carregarDashboard() {
     console.error("Erro ao carregar dashboard:", erro);
     alert("Erro ao conectar com o servidor");
   }
+}
+
+async function carregarGraficosDashboard() {
+  try {
+    const resposta = await fetch(`${API_URL_DASHBOARD}/dashboard/graficos`);
+
+    if (!resposta.ok) return;
+
+    const dados = await resposta.json();
+
+    renderizarGraficoBarras("graficoPedidos", [
+      { label: "Abertos", valor: dados.pedidos_abertos },
+      { label: "Picking", valor: dados.pedidos_picking },
+      { label: "Separados", valor: dados.pedidos_separados },
+      { label: "Expedidos", valor: dados.pedidos_expedidos },
+      { label: "Cancelados", valor: dados.pedidos_cancelados }
+    ]);
+
+    renderizarGraficoBarras("graficoOperacao", [
+      { label: "Conferência", valor: dados.conferencias_pendentes },
+      { label: "Endereçamento", valor: dados.pendentes_enderecamento },
+      { label: "Divergências", valor: dados.divergencias_abertas },
+      { label: "Estoque baixo", valor: dados.produtos_alerta },
+      { label: "NFs rascunho", valor: dados.notas_rascunho }
+    ]);
+
+  } catch (err) {
+    console.error("Erro ao carregar gráficos:", err);
+  }
+}
+
+function renderizarGraficoBarras(idElemento, dados) {
+  const container = document.getElementById(idElemento);
+  if (!container) return;
+
+  const maiorValor = Math.max(...dados.map(d => Number(d.valor || 0)), 1);
+
+  container.innerHTML = "";
+
+  dados.forEach(item => {
+    const valor = Number(item.valor || 0);
+    const largura = Math.max((valor / maiorValor) * 100, valor > 0 ? 8 : 2);
+
+    container.innerHTML += `
+      <div class="linha-grafico">
+        <div class="grafico-info">
+          <span>${item.label}</span>
+          <strong>${valor}</strong>
+        </div>
+
+        <div class="barra-grafico-fundo">
+          <div class="barra-grafico-preenchida" style="width: ${largura}%"></div>
+        </div>
+      </div>
+    `;
+  });
 }
 
 function setDashboardValor(id, valor) {

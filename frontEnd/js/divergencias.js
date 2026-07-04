@@ -42,6 +42,8 @@ function renderizarDivergencias(lista) {
       Number(item.quantidade_conferida || 0) -
       Number(item.quantidade || 0);
 
+    const status = item.status_divergencia || "ABERTA";
+
     div.innerHTML += `
       <div class="card-divergencia">
 
@@ -52,8 +54,8 @@ function renderizarDivergencias(lista) {
             <p>Produto: ${item.produto_nome || "-"}</p>
           </div>
 
-          <span class="${classeStatusDivergencia(item.status_divergencia)}">
-            ${item.status_divergencia || "ABERTA"}
+          <span class="${classeStatusDivergencia(status)}">
+            ${status}
           </span>
         </div>
 
@@ -84,33 +86,47 @@ function renderizarDivergencias(lista) {
           ${item.justificativa_divergencia || "-"}
         </p>
 
-        <textarea
-          id="obs-div-${item.id}"
-          placeholder="Observação da resolução"
-        ></textarea>
-<div class="acoes-divergencia">
-  ${
-    item.status_divergencia === "AGUARDANDO_COMPLEMENTO"
-      ? `
-        <button onclick="receberComplemento(${item.id})">
-          Receber Complemento
-        </button>
-      `
-      : `
-        <button onclick="resolverDivergencia(${item.id}, 'AGUARDANDO_COMPLEMENTO')">
-          Aguardar Complemento
-        </button>
+        ${
+          status === "RESOLVIDA"
+            ? `
+              <div class="resolucao-divergencia">
+                <strong>Como foi resolvida:</strong>
+                <p>${item.observacao_resolucao || "Divergência resolvida."}</p>
+              </div>
+            `
+            : `
+              <textarea
+                id="obs-div-${item.id}"
+                placeholder="Observação da resolução"
+              ></textarea>
 
-        <button onclick="resolverDivergencia(${item.id}, 'DEVOLUCAO')">
-          Devolução Pendente
-        </button>
+              <div class="acoes-divergencia">
+                ${
+                  status === "AGUARDANDO_COMPLEMENTO"
+                    ? `
+                      <button onclick="receberComplemento(${item.id})">
+                        Receber Complemento
+                      </button>
+                    `
+                    : `
+                      <button onclick="resolverDivergencia(${item.id}, 'AGUARDANDO_COMPLEMENTO')">
+                        Aguardar Complemento
+                      </button>
 
-        <button onclick="resolverDivergencia(${item.id}, 'ABATIMENTO')">
-          Abatimento Financeiro
-        </button>
-      `
-  }
-</div>
+                      <button onclick="resolverDivergencia(${item.id}, 'DEVOLUCAO')">
+                        Devolução Pendente
+                      </button>
+
+                      <button onclick="resolverDivergencia(${item.id}, 'ABATIMENTO')">
+                        Abatimento Financeiro
+                      </button>
+                    `
+                }
+              </div>
+            `
+        }
+
+      </div>
     `;
   });
 }

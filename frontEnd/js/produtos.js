@@ -29,7 +29,15 @@ campoPrecoVenda.addEventListener("input", () => {
 });
 
   carregarFornecedoresProduto();
-  carregarListaProdutos();
+  const lista = document.getElementById("listaProdutos");
+
+if (lista) {
+  lista.innerHTML = `
+    <tr>
+      <td colspan="8">Digite ID, nome ou SKU para pesquisar produtos.</td>
+    </tr>
+  `;
+}
   carregarCategoriasProduto();
   carregarCoresProduto();
 
@@ -95,7 +103,7 @@ campoPrecoVenda.addEventListener("input", () => {
 
       editandoProdutoId = null;
       form.reset();
-      carregarListaProdutos();
+     limparBuscaProdutos();
 
     } catch (err) {
       console.error("Erro ao salvar produto:", err);
@@ -167,31 +175,66 @@ async function carregarFornecedoresProduto() {
 
 async function carregarListaProdutos() {
   try {
-    const res = await fetch(`${API_URL_PRODUTO}/produtos`);
+
+    const id = document.getElementById("buscarProdutoId")?.value.trim() || "";
+    const nome = document.getElementById("buscarProdutoNome")?.value.trim() || "";
+    const sku = document.getElementById("buscarProdutoSku")?.value.trim() || "";
+
+    const lista = document.getElementById("listaProdutos");
+
+    if (!lista) return;
+
+    const params = new URLSearchParams();
+
+    if (id) params.append("id", id);
+    if (nome) params.append("nome", nome);
+    if (sku) params.append("sku", sku);
+
+    // Nenhum filtro informado
+    if (!id && !nome && !sku) {
+
+      const confirmar = confirm(
+        "Você não informou nenhum filtro.\n\nDeseja listar os 50 primeiros produtos?\n\nIsso pode demorar dependendo da quantidade de registros."
+      );
+
+      if (!confirmar) {
+        lista.innerHTML = `
+          <tr>
+            <td colspan="8">
+              Digite ID, Nome ou SKU para pesquisar produtos.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      params.append("listarTodos", "true");
+      params.append("limite", "50");
+    }
+
+    const res = await fetch(
+      `${API_URL_PRODUTO}/produtos?${params.toString()}`
+    );
 
     if (!res.ok) {
       const erro = await res.text();
-      console.error("Erro vindo do backend:", erro);
-      alert("Erro ao carregar produtos: " + erro);
+      alert(erro);
       return;
     }
 
     const produtos = await res.json();
     produtosCache = produtos;
 
-    console.log("Produtos vindos do banco:", produtos);
-
-    const lista = document.getElementById("listaProdutos");
-
-    if (!lista) {
-      console.error("Elemento listaProdutos não encontrado");
-      return;
-    }
-
     lista.innerHTML = "";
 
     if (produtos.length === 0) {
-      lista.innerHTML = `<li>Nenhum produto cadastrado.</li>`;
+      lista.innerHTML = `
+        <tr>
+          <td colspan="8">
+            Nenhum produto encontrado.
+          </td>
+        </tr>
+      `;
       return;
     }
 
@@ -375,4 +418,19 @@ function obterCustoAtualProdutoSelecionado() {
   const produto = produtosCache.find(p => Number(p.id) === Number(editandoProdutoId));
 
   return Number(produto?.ultimo_custo_com_imposto || 0);
+}
+
+function limparBuscaProdutos() {
+  document.getElementById("buscarProdutoId").value = "";
+  document.getElementById("buscarProdutoNome").value = "";
+  document.getElementById("buscarProdutoSku").value = "";
+
+  const lista = document.getElementById("listaProdutos");
+  if (lista) {
+    lista.innerHTML = `
+      <tr>
+        <td colspan="8">Digite ID, nome ou SKU para pesquisar produtos.</td>
+      </tr>
+    `;
+  }
 }

@@ -227,10 +227,17 @@
 
       <div class="search-box">
 
-        <input
-          type="text"
-          placeholder="Buscar..."
-        >
+        <div class="search-box">
+  <input
+    type="text"
+    id="buscaGlobal"
+    placeholder="Buscar tela..."
+    oninput="buscarTelaGlobal()"
+    autocomplete="off"
+  >
+
+  <div id="resultadoBuscaGlobal" class="resultado-busca-global hidden"></div>
+</div>
 
       </div>
 

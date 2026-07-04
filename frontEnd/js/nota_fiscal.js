@@ -19,7 +19,7 @@ function iniciarNotaFiscal() {
   carregarClientesNF();
   carregarFornecedoresNF();
   carregarProdutosNF();
-  carregarNotasFiscais();
+  limparBuscaNotasFiscais();
   renderizarItensNotaFiscal();
 }
 
@@ -452,7 +452,7 @@ async function transmitirNotaFiscalSelecionada() {
     }
 
     alert(msg);
-    carregarNotasFiscais();
+    limparBuscaNotasFiscais();
     carregarPedidosSeparadosNF();
 
   } catch (err) {
@@ -822,7 +822,7 @@ if (tipo === "DEVOLUCAO_FORNECEDOR") {
   alterarTipoNotaFiscal();
   renderizarItensNotaFiscal();
   carregarPedidosSeparadosNF();
-  carregarNotasFiscais();
+  limparBuscaNotasFiscais();
 }
 
 function calcularTotaisNF() {
@@ -852,20 +852,51 @@ function calcularTotaisNF() {
 }
 
 async function carregarNotasFiscais() {
-  const res = await fetch(`${API_NF}/notas-fiscais`);
-  if (!res.ok) return;
-
-  const notas = await res.json();
+  const numero = document.getElementById("buscarNotaNumero")?.value.trim() || "";
+  const pessoa = document.getElementById("buscarNotaPessoa")?.value.trim() || "";
+  const tipo = document.getElementById("buscarNotaTipo")?.value || "";
+  const status = document.getElementById("buscarNotaStatus")?.value || "";
 
   const tbody = document.getElementById("listaNotasFiscais");
   if (!tbody) return;
+
+  const params = new URLSearchParams();
+
+  if (numero) params.append("numero", numero);
+  if (pessoa) params.append("pessoa", pessoa);
+  if (tipo) params.append("tipo", tipo);
+  if (status) params.append("status", status);
+
+  if (!numero && !pessoa && !tipo && !status) {
+    const confirmar = confirm(
+      "Você não informou nenhum filtro.\n\nDeseja listar as 50 últimas notas fiscais?"
+    );
+
+    if (!confirmar) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10">Digite Nº NF, cliente/fornecedor, tipo ou status para pesquisar.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    params.append("listarTodos", "true");
+    params.append("limite", "50");
+  }
+
+  const res = await fetch(`${API_NF}/notas-fiscais?${params.toString()}`);
+
+  if (!res.ok) return;
+
+  const notas = await res.json();
 
   tbody.innerHTML = "";
 
   if (notas.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9">Nenhuma nota emitida.</td>
+        <td colspan="10">Nenhuma nota fiscal encontrada.</td>
       </tr>
     `;
     return;
@@ -873,9 +904,10 @@ async function carregarNotasFiscais() {
 
   notas.forEach(n => {
     tbody.innerHTML += `
-      <tr>
+      <tr ondblclick="abrirDetalhesNotaFiscal(${n.id})">
         <td>${n.id}</td>
         <td>${n.tipo}</td>
+        <td>${n.cliente_nome || n.fornecedor_nome || "-"}</td>
         <td>${n.numero_nf}</td>
         <td>${n.serie_nf || "-"}</td>
         <td>${formatarMoedaNF(n.valor_total || 0)}</td>
@@ -883,29 +915,16 @@ async function carregarNotasFiscais() {
         <td><span class="status-emitida">${n.status}</span></td>
         <td>${n.observacao || "-"}</td>
         <td>
-          <button type="button" onclick="abrirDetalhesNotaFiscal(${n.id})">
-            👁 Detalhes
-          </button>
-
-          <button type="button" onclick="imprimirNotaFiscal(${n.id})">
-            🖨 Imprimir
-          </button>
+          <button onclick="imprimirNotaFiscal(${n.id})">🖨 Imprimir</button>
 
           ${
             n.status === "RASCUNHO"
-              ? `<button type="button" onclick="transmitirNotaFiscal(${n.id})">🚀 Transmitir</button>`
+              ? `<button onclick="transmitirNotaFiscal(${n.id})">🚀 Transmitir</button>`
               : ""
           }
         </td>
       </tr>
     `;
-  });
-}
-
-function formatarMoedaNF(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
   });
 }
 
@@ -925,14 +944,15 @@ async function transmitirNotaFiscal(id) {
 
     const msg = await res.text();
 
-    if (!res.ok) {
-      alert(msg);
-      return;
-    }
+if (!res.ok) {
+  alert(msg);
+  return;
+}
 
-    alert(msg);
-    carregarNotasFiscais();
-    carregarPedidosSeparadosNF();
+alert(msg);
+
+limparBuscaNotasFiscais();
+
 
   } catch (err) {
     console.error(err);
@@ -1727,4 +1747,28 @@ if (fornecedorId) {
   ];
 
   renderizarItensNotaFiscalEditavelDevolucao();
+}
+
+function limparBuscaNotasFiscais() {
+  document.getElementById("buscarNotaNumero").value = "";
+  document.getElementById("buscarNotaPessoa").value = "";
+  document.getElementById("buscarNotaStatus").value = "";
+  document.getElementById("buscarNotaTipo").value = "";
+
+  const tbody = document.getElementById("listaNotasFiscais");
+
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10">Digite Nº NF, cliente/fornecedor ou status para pesquisar.</td>
+      </tr>
+    `;
+  }
+}
+
+function formatarMoedaNF(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
 }

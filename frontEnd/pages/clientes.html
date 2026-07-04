@@ -152,14 +152,16 @@
 
   <div class="topo-lista">
     <h3 class="subtitulo">Clientes Cadastrados</h3>
-
-    <input
-      type="text"
-      id="buscarCliente"
-      placeholder="Buscar por ID, nome ou CNPJ..."
-      oninput="carregarClientes()"
-    >
   </div>
+
+  <div class="barra-busca-padrao">
+  <input type="number" id="buscarClienteId" placeholder="ID">
+  <input type="text" id="buscarClienteNome" placeholder="Nome / Razão social">
+  <input type="text" id="buscarClienteCnpj" placeholder="CNPJ">
+
+  <button type="button" onclick="carregarClientes()">🔍 Buscar</button>
+  <button type="button" onclick="limparBuscaClientes()">🧹 Limpar</button>
+</div>
 
   <div class="tabela-container">
 
@@ -177,7 +179,7 @@
         </tr>
       </thead>
 
-      <tbody id="tabelaClientes">
+      <tbody id="listaClientes">
         <tr>
           <td colspan="7">
             Carregando clientes...

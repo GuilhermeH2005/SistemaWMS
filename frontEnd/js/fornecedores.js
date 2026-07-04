@@ -64,7 +64,7 @@ function iniciarFornecedor() {
   }
 
   form.reset();
-  carregarLista();
+  limparBuscaFornecedores();
 
 } catch (err) {
   console.error("Erro:", err);
@@ -72,78 +72,106 @@ function iniciarFornecedor() {
 }
   });
 
-  carregarLista();
+  limparBuscaFornecedores();
 }
 
 async function carregarLista() {
-  const res = await fetch("http://localhost:3000/fornecedores");
-  const dados = await res.json();
+  try {
+    const id = document.getElementById("buscarFornecedorId")?.value.trim() || "";
+    const nome = document.getElementById("buscarFornecedorNome")?.value.trim() || "";
+    const cnpj = document.getElementById("buscarFornecedorCnpj")?.value.trim() || "";
 
-  const lista = document.getElementById("lista");
-  lista.innerHTML = "";
+    const lista = document.getElementById("lista");
+    if (!lista) return;
 
-  dados.forEach(f => {
-    lista.innerHTML += `
-      <li>
-        <div class="fornecedor-topo">
-          <strong>${f.nome}</strong>
-          <span>CNPJ: ${f.cnpj || "-"}</span>
-        </div>
+    const params = new URLSearchParams();
 
-        <div class="fornecedor-grid">
-          <div>
-            <span>Telefone</span>
-            <strong>${f.telefone || "-"}</strong>
+    if (id) params.append("id", id);
+    if (nome) params.append("nome", nome);
+    if (cnpj) params.append("cnpj", cnpj);
+
+    if (!id && !nome && !cnpj) {
+      const confirmar = confirm(
+        "Você não informou nenhum filtro.\n\nDeseja listar os 50 primeiros fornecedores?"
+      );
+
+      if (!confirmar) {
+        lista.innerHTML = `
+          <li class="sem-registro">
+            Digite ID, Nome ou CNPJ para pesquisar fornecedores.
+          </li>
+        `;
+        return;
+      }
+
+      params.append("listarTodos", "true");
+      params.append("limite", "50");
+    }
+
+    const res = await fetch(
+      `http://localhost:3000/fornecedores?${params.toString()}`
+    );
+
+    if (!res.ok) {
+      alert(await res.text());
+      return;
+    }
+
+    const dados = await res.json();
+
+    lista.innerHTML = "";
+
+    if (dados.length === 0) {
+      lista.innerHTML = `
+        <li class="sem-registro">
+          Nenhum fornecedor encontrado.
+        </li>
+      `;
+      return;
+    }
+
+    dados.forEach(f => {
+      lista.innerHTML += `
+        <li>
+         <div class="fornecedor-topo">
+
+  <div>
+    <small class="id-fornecedor">
+      ID #${f.id}
+    </small>
+
+    <strong>${f.nome}</strong>
+  </div>
+
+  <span>
+    CNPJ: ${f.cnpj || "-"}
+  </span>
+
+</div>
+
+          <div class="fornecedor-grid">
+            <div><span>Telefone</span><strong>${f.telefone || "-"}</strong></div>
+            <div><span>Email</span><strong>${f.email || "-"}</strong></div>
+            <div><span>Inscrição Estadual</span><strong>${f.inscricao_estadual || "-"}</strong></div>
+            <div><span>CEP</span><strong>${f.cep || "-"}</strong></div>
+            <div><span>Rua</span><strong>${f.rua || "-"}</strong></div>
+            <div><span>Número</span><strong>${f.numero || "-"}</strong></div>
+            <div><span>Bairro</span><strong>${f.bairro || "-"}</strong></div>
+            <div><span>Cidade</span><strong>${f.cidade || "-"}</strong></div>
           </div>
 
-          <div>
-            <span>Email</span>
-            <strong>${f.email || "-"}</strong>
+          <div class="acoes-fornecedor">
+            <button onclick='editarFornecedor(${JSON.stringify(f)})'>✏️ Editar</button>
+            <button onclick="excluir(${f.id})">🗑️ Excluir</button>
           </div>
+        </li>
+      `;
+    });
 
-          <div>
-            <span>Inscrição Estadual</span>
-            <strong>${f.inscricao_estadual || "-"}</strong>
-          </div>
-
-          <div>
-            <span>CEP</span>
-            <strong>${f.cep || "-"}</strong>
-          </div>
-
-          <div>
-            <span>Rua</span>
-            <strong>${f.rua || "-"}</strong>
-          </div>
-
-          <div>
-            <span>Número</span>
-            <strong>${f.numero || "-"}</strong>
-          </div>
-
-          <div>
-            <span>Bairro</span>
-            <strong>${f.bairro || "-"}</strong>
-          </div>
-
-          <div>
-            <span>Cidade</span>
-            <strong>${f.cidade || "-"}</strong>
-          </div>
-        </div>
-
-        <div class="acoes-fornecedor">
-          <button onclick='editarFornecedor(${JSON.stringify(f)})'>
-            ✏️ Editar
-          </button>
-
-          <button onclick="excluir(${f.id})">
-            🗑️ Excluir
-          </button>
-        </div>
-      </li>
-    `;
-  });
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao carregar fornecedores.");
+  }
 }
 
 function editarFornecedor(f) {
@@ -211,4 +239,20 @@ function aplicarMascaras() {
 
     cep.value = valor.substring(0, 9);
   });
+}
+
+function limparBuscaFornecedores() {
+  document.getElementById("buscarFornecedorId").value = "";
+  document.getElementById("buscarFornecedorNome").value = "";
+  document.getElementById("buscarFornecedorCnpj").value = "";
+
+  const lista = document.getElementById("lista");
+
+  if (lista) {
+    lista.innerHTML = `
+      <li class="sem-registro">
+        Digite ID, Nome ou CNPJ para pesquisar fornecedores.
+      </li>
+    `;
+  }
 }
